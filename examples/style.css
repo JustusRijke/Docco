@@ -252,12 +252,47 @@ pre code {
     padding: 0;
 }
 
-/* Images (future phase) */
+/* Images */
 img {
     max-width: 100%;
     height: auto;
     display: block;
     margin: 5mm auto;
+    page-break-inside: avoid;
+}
+
+/* Image class: icon (small decorative images) */
+img.icon {
+    width: 80px;
+    height: auto;
+    display: inline-block;
+    margin: 2mm;
+    vertical-align: middle;
+}
+
+/* Image class: diagram (medium-sized technical diagrams) */
+img.diagram {
+    width: 60%;
+    max-width: 150mm;
+    margin: 8mm auto;
+    display: block;
+}
+
+/* Image class: large (full-width images) */
+img.large {
+    width: 100%;
+    margin: 10mm auto;
+}
+
+/* Image error message styling */
+.image-error {
+    color: #d32f2f;
+    background-color: #ffebee;
+    padding: 2mm 4mm;
+    border-left: 3pt solid #d32f2f;
+    display: block;
+    margin: 5mm 0;
+    font-family: monospace;
 }
 
 figure {

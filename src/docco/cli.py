@@ -70,6 +70,7 @@ def build(markdown_file: Path, css_file: Path, output: Path | None):
             subtitle=metadata.get("subtitle"),
             date=date_value,
             author=metadata.get("author"),
+            markdown_file_path=markdown_file,
         )
 
         # Ensure output directory exists
@@ -133,13 +134,14 @@ def _build_html_from_markdown(
     subtitle: str | None = None,
     date: str | None = None,
     author: str | None = None,
+    markdown_file_path: Path | None = None,
 ) -> str:
     """
     Build complete HTML document from markdown content and metadata.
 
     Parses markdown for:
     - Headings (for TOC generation)
-    - HTML comment directives (<!-- landscape -->, <!-- portrait -->)
+    - HTML comment directives (<!-- landscape -->, <!-- portrait -->, <!-- img ... -->)
 
     Args:
         content: Markdown content
@@ -147,6 +149,7 @@ def _build_html_from_markdown(
         subtitle: Optional subtitle
         date: Optional date
         author: Optional author
+        markdown_file_path: Path to markdown file (for resolving image paths)
 
     Returns:
         Complete HTML document string
@@ -163,7 +166,7 @@ def _build_html_from_markdown(
     title_page = "\n".join(title_parts)
 
     # Parse content into sections with directives
-    sections = _parse_sections(content)
+    sections = _parse_sections(content, markdown_file_path)
 
     # Build TOC
     toc_html = _build_toc(sections)
@@ -196,7 +199,58 @@ def _build_html_from_markdown(
     return "\n".join(html_parts)
 
 
-def _parse_sections(content: str) -> list[dict]:
+def _process_image_directives(content: str, image_processor, image_pattern) -> str:
+    """
+    Process image directives in content and replace with HTML img tags.
+
+    Args:
+        content: Markdown content with image directives
+        image_processor: ImageProcessor instance
+        image_pattern: Compiled regex pattern for image directives
+
+    Returns:
+        Content with image directives replaced by HTML img tags
+    """
+    from docco.content.images import parse_image_directive
+
+    def replace_image(match):
+        directive_content = match.group(1)
+        img_directive = parse_image_directive(directive_content)
+
+        if not img_directive:
+            # Invalid directive, leave as-is
+            return match.group(0)
+
+        try:
+            # Process image
+            img_info = image_processor.process_image(img_directive['path'])
+
+            # Build img tag
+            img_attrs = [f'src="{img_info["file_url"]}"']
+
+            if img_directive['css_class']:
+                img_attrs.append(f'class="{img_directive["css_class"]}"')
+
+            if img_directive['style']:
+                img_attrs.append(f'style="{img_directive["style"]}"')
+
+            # Add alt text (use filename without extension)
+            alt_text = Path(img_directive['path']).stem
+            img_attrs.append(f'alt="{alt_text}"')
+
+            img_tag = f'<img {" ".join(img_attrs)} />'
+            return img_tag
+
+        except (FileNotFoundError, ValueError) as e:
+            # Image processing failed, show error in output
+            click.echo(f"✗ Image error: {e}", err=True)
+            return f'<span class="image-error">[Image error: {e}]</span>'
+
+    # Replace all image directives
+    return image_pattern.sub(replace_image, content)
+
+
+def _parse_sections(content: str, markdown_file_path: Path | None = None) -> list[dict]:
     """
     Parse markdown content into sections with orientation and addendum directives.
 
@@ -204,28 +258,42 @@ def _parse_sections(content: str) -> list[dict]:
     - <!-- landscape --> : Next section uses landscape orientation
     - <!-- portrait --> : Next section uses portrait orientation
     - <!-- addendum --> : Next section is an appendix (lettered A, B, C...)
+    - <!-- img "path" "style/class" --> : Inline image
 
     Args:
         content: Markdown content
+        markdown_file_path: Path to markdown file (for resolving image paths)
 
     Returns:
         List of section dicts with keys: html, orientation, title, level, id, number, is_addendum
     """
     import re
     from docco.content.markdown import MarkdownConverter
+    from docco.content.images import ImageProcessor, parse_image_directive
 
     converter = MarkdownConverter()
     sections = []
+
+    # Initialize image processor if markdown file path provided
+    image_processor = ImageProcessor(markdown_file_path) if markdown_file_path else None
 
     # Find all headings (H1, H2, H3)
     heading_pattern = re.compile(r"^(#{1,3})\s+(.+)$", re.MULTILINE)
     directive_pattern = re.compile(r"<!--\s*(landscape|portrait|addendum)\s*-->", re.IGNORECASE)
 
+    # Pattern for image directives (will be processed separately)
+    image_directive_pattern = re.compile(r"<!--\s*(img\s+[^>]+)\s*-->", re.IGNORECASE)
+
     headings = list(heading_pattern.finditer(content))
 
     if not headings:
         # No headings - treat entire content as single section
-        html = converter.convert(content)
+        # Process image directives
+        processed_content = content
+        if image_processor:
+            processed_content = _process_image_directives(content, image_processor, image_directive_pattern)
+
+        html = converter.convert(processed_content)
         sections.append({
             "html": html,
             "orientation": "portrait",
@@ -289,6 +357,10 @@ def _parse_sections(content: str) -> list[dict]:
         if heading_end == -1:
             heading_end = heading_start + len(heading_match.group(0))
         section_content = content[heading_end + 1:content_end].strip()
+
+        # Process image directives in section content
+        if section_content and image_processor:
+            section_content = _process_image_directives(section_content, image_processor, image_directive_pattern)
 
         # Convert section content to HTML (without heading)
         content_html = converter.convert(section_content) if section_content else ""

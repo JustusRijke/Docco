@@ -83,6 +83,24 @@ External link: [Markdown Guide](https://www.markdownguide.org/)
 > "Simplicity is the ultimate sophistication."
 > — Leonardo da Vinci
 
+## Images
+
+Docco supports inline images using HTML directives.
+
+### Inline Styled Image
+
+This image uses inline CSS styling:
+
+<!-- img "images/idea.svg" "width:100px; display:block; margin:20px auto;" -->
+
+### Class-Based Image
+
+This image uses a CSS class for styling:
+
+<!-- img "images/idea.svg" "class:icon" -->
+
+Images are resolved relative to the markdown file location.
+
 ## Horizontal Rule
 
 ---
