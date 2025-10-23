@@ -99,20 +99,35 @@ The table above demonstrates basic table support.
         '<p class="subtitle">Technical Specification</p>',
         '<p class="date">October 2025</p>',
         "</div>",
-        # Table of Contents (WeasyPrint will generate this)
+        # Table of Contents
         '<div class="toc-page">',
         "<h1>Table of Contents</h1>",
-        '<nav class="toc"></nav>',
+        '<nav class="toc">',
+    ]
+
+    # Build TOC entries
+    for section in sections:
+        section_id = f"section-{section['number'].replace('.', '-')}"
+        indent_class = f"toc-level-{section['level']}"
+        html_parts.append(
+            f'<div class="{indent_class}">'
+            f'<a href="#{section_id}">{section["number"]} {section["title"]}</a>'
+            f'</div>'
+        )
+
+    html_parts.extend([
+        '</nav>',
         "</div>",
         # Content sections
         '<div class="content">',
-    ]
+    ])
 
-    # Add each section
+    # Add each section with ID anchors
     for section in sections:
+        section_id = f"section-{section['number'].replace('.', '-')}"
         h_tag = f"h{section['level']}"
         html_parts.append(
-            f'<{h_tag} class="section">'
+            f'<{h_tag} class="section" id="{section_id}">'
             f'{section["number"]} {section["title"]}'
             f"</{h_tag}>"
         )
@@ -202,21 +217,37 @@ body {
     padding-bottom: 3mm;
 }
 
-/* TOC generation via CSS */
-.toc::before {
-    content: "";
+/* TOC entries */
+.toc > div {
+    margin: 2mm 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.toc a {
+    text-decoration: none;
+    color: #333;
+    flex-grow: 1;
 }
 
 .toc a::after {
     content: leader('.') target-counter(attr(href), page);
-    float: right;
+    margin-left: 3mm;
 }
 
-/* Generate TOC entries from h1, h2 */
-h1.section, h2.section {
-    bookmark-level: none;
+/* TOC indentation levels */
+.toc-level-1 {
+    font-weight: bold;
+    margin-top: 3mm;
 }
 
+.toc-level-2 {
+    margin-left: 8mm;
+    font-weight: normal;
+}
+
+/* PDF Bookmarks from sections */
 h1.section {
     bookmark-label: content();
     bookmark-level: 1;
