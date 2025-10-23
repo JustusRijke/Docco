@@ -4,30 +4,33 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Docco** is a Python-based PDF documentation generator that uses HTML/CSS for layout and WeasyPrint for rendering. The system generates professional A4 PDFs with automatic table of contents, hierarchical section numbering, and support for mixed portrait/landscape orientations.
+**Docco** is a pure CLI tool that converts Markdown files (with YAML frontmatter) and CSS stylesheets into professional A4 PDFs. The system uses markdown-it-py for parsing and WeasyPrint for PDF rendering.
 
 ### Core Architecture
 
-The system follows a **3-stage pipeline**:
+The system follows a **simple 2-stage pipeline**:
 
-1. **Asset Preparation**: Optimize images with Pillow, save to `output/optimized_images/` (planned)
-2. **Document Assembly**: Build complete HTML document via modular components
-   - Manage hierarchical numbering (sections: `1.1.2`, addendums: `A`, `B`)
-   - Convert Markdown fragments to HTML using markdown-it-py
-   - Concatenate all content into single HTML string
-3. **PDF Rendering**: Pass HTML + CSS to WeasyPrint for final PDF generation
+1. **Parse & Convert**:
+   - Read Markdown file and parse YAML frontmatter (title, subtitle, date, author)
+   - Convert Markdown content to HTML using markdown-it-py
+   - Build complete HTML document with title page and content
+
+2. **Render PDF**:
+   - Read external CSS file
+   - Pass HTML + CSS to WeasyPrint for PDF generation
+   - Save debug HTML alongside PDF for troubleshooting
 
 ### Key Design Principles
 
-- **Modular Architecture**: Code organized into logical modules with clear responsibilities
-- **Testability**: Unit and integration tests using pytest
-- **CSS-Driven Layout**: All layout, typography, headers/footers defined via CSS (print styling)
-- **Python String Construction**: HTML generation uses direct string concatenation, not templating engines
-- **Programmatic Numbering**: Section numbers (`1`, `1.1`, `1.1.1`) and addendum letters (`A`, `B`) automatically managed
+- **Pure CLI Tool**: No Python API - users interact only via command line
+- **External Assets**: CSS is completely external (not embedded in code)
+- **Expert-Friendly**: Designed for users comfortable with Markdown and CSS
+- **Simple Architecture**: Minimal abstractions, easy to understand
+- **Separation of Concerns**: Content (Markdown) and layout (CSS) are completely separated
 
 ## Development Commands
 
-### Running the Generator
+### Running the CLI
 
 ```bash
 # Activate virtual environment (if not already active)
@@ -36,16 +39,16 @@ source .venv/bin/activate
 # Install package in editable mode (first time only)
 pip install -e .
 
-# Generate PDF using the example
-python examples/basic_document.py
+# Generate PDF using the examples
+docco build examples/document.md examples/style.css --output output/example.pdf
 
-# Or use the CLI
-docco build examples/basic_document.py
+# Or without output flag (uses default output/document.pdf)
+docco build examples/document.md examples/style.css
 ```
 
-Output files are created in the `output/` directory:
-- `output/debug.html` - Intermediate HTML for browser debugging
-- `output/final.pdf` - Generated A4 PDF
+Output files are created in the specified directory (or `output/` by default):
+- `<output-path>.pdf` - Generated A4 PDF
+- `debug.html` - Intermediate HTML for browser debugging
 
 ### Environment Setup
 
@@ -70,10 +73,10 @@ pytest
 pytest --cov=docco --cov-report=html
 
 # Run specific test file
-pytest tests/unit/test_section.py
+pytest tests/unit/test_cli.py
 
 # Run specific test
-pytest tests/unit/test_section.py::TestSectionNumberer::test_hierarchical_numbering
+pytest tests/unit/test_cli.py::TestCliBuild::test_build_command_success
 ```
 
 ### Code Quality
@@ -88,10 +91,10 @@ ruff check src/ tests/
 
 ### Debugging Layout Issues
 
-1. Run the example with `python examples/basic_document.py`
-2. Open `output/debug.html` in a browser to verify layout before PDF conversion
-3. Modify CSS in `src/docco/rendering/css_builder.py`
-4. Re-run to see changes
+1. Run docco build with your markdown and CSS files
+2. Open the generated `debug.html` in a browser to verify layout before PDF conversion
+3. Modify your CSS file
+4. Re-run docco build to see changes
 
 ## Project Structure
 
@@ -100,121 +103,124 @@ Docco/
 ├── src/
 │   └── docco/
 │       ├── __init__.py              # Package exports
-│       ├── core/
-│       │   ├── document.py          # Document class (main orchestrator)
-│       │   └── section.py           # Section model and numbering logic
+│       ├── cli.py                   # CLI entry point with build command
 │       ├── content/
 │       │   └── markdown.py          # Markdown to HTML conversion
 │       └── rendering/
-│           ├── html_builder.py      # HTML document generation
-│           ├── css_builder.py       # CSS generation
 │           └── pdf_renderer.py      # WeasyPrint wrapper
 ├── tests/
 │   ├── conftest.py                  # Pytest fixtures
-│   ├── unit/                        # Unit tests for individual modules
-│   │   ├── test_section.py
-│   │   ├── test_markdown.py
-│   │   └── test_html_builder.py
+│   ├── unit/                        # Unit tests
+│   │   ├── test_cli.py              # CLI tests
+│   │   └── test_markdown.py         # Markdown conversion tests
 │   └── integration/                 # Integration tests
-│       └── test_document.py
+│       └── test_pdf_generation.py   # End-to-end PDF generation tests
 ├── examples/
-│   └── basic_document.py            # Example document generation
+│   ├── document.md                  # Example markdown with frontmatter
+│   └── style.css                    # Example stylesheet
 ├── output/                          # Generated files (gitignored)
 ├── pyproject.toml                   # Package configuration
 ├── requirements.txt                 # Production dependencies
 ├── requirements-dev.txt             # Development dependencies
-└── README.md                        # Full technical specification
+└── README.md                        # User documentation
 ```
 
 ### Module Responsibilities
 
-#### `docco.core.document` (document.py)
-- **Document class**: Main API for building PDFs
-- Coordinates section numbering, HTML building, and PDF rendering
-- Methods: `add_section()`, `build_html()`, `render_pdf()`
-
-#### `docco.core.section` (section.py)
-- **Section dataclass**: Represents a document section
-- **SectionNumberer class**: Automatic hierarchical numbering
-- Supports regular sections (1, 1.1, 1.1.1) and addendums (A, B, C)
+#### `docco.cli` (cli.py)
+- **CLI commands**: `docco build`, `docco version`
+- Parses YAML frontmatter from markdown files
+- Builds HTML documents with title pages
+- Orchestrates markdown-to-PDF conversion
+- Helper functions: `_parse_frontmatter()`, `_build_html_from_markdown()`, `_escape_html()`
 
 #### `docco.content.markdown` (markdown.py)
 - **MarkdownConverter class**: Wrapper around markdown-it-py
 - Converts Markdown to HTML with inline and block modes
 
-#### `docco.rendering.html_builder` (html_builder.py)
-- **HTMLBuilder class**: Constructs HTML documents
-- Builds title pages, table of contents, and content sections
-- Handles HTML escaping and ID generation
-
-#### `docco.rendering.css_builder` (css_builder.py)
-- **CSSBuilder class**: Generates CSS for PDF layout
-- Default A4 portrait styling with customization options
-
 #### `docco.rendering.pdf_renderer` (pdf_renderer.py)
 - **PDFRenderer class**: WeasyPrint wrapper
 - Converts HTML+CSS to PDF files or bytes
 
-#### `docco.cli` (cli.py)
-- **CLI commands**: `docco build`, `docco version`
-- Executes Python scripts that build documents
-
 ## Current Implementation Status
 
-**Phase 2** (Current): Modular architecture with testing
-- ✅ Modular package structure
+**Complete**: Pure CLI tool with external CSS
+- ✅ CLI interface (`docco build <md> <css>`)
+- ✅ YAML frontmatter parsing
+- ✅ Markdown to HTML conversion
+- ✅ External CSS support (no embedded CSS)
+- ✅ PDF output with WeasyPrint
+- ✅ Debug HTML generation
 - ✅ Unit and integration tests
-- ✅ CLI interface (`docco build`)
-- ✅ Automatic section numbering
-- ✅ Addendum sections (level=0)
-- ✅ PDF output with headers/footers
-- ✅ WeasyPrint TOC generation (CSS-based)
 
-**Not Yet Implemented**:
-- Phase 3: Image optimization/embedding, mixed orientations
-- Phase 4: Reusable content modules, template system
+**Not Implemented**:
+- Image optimization/embedding
+- Table of contents generation
+- Mixed portrait/landscape orientations
+- Reusable content modules
 
 ## Using Docco
 
 ### Basic Example
 
-```python
-from docco import Document
+Create a markdown file with YAML frontmatter:
 
-# Create document
-doc = Document(
-    title="My Documentation",
-    subtitle="Technical Guide",
-    date="2025-10-23"
-)
+```markdown
+---
+title: My Documentation
+subtitle: Technical Guide
+date: 2025-10-23
+author: Your Name
+---
 
-# Add sections
-doc.add_section(
-    level=1,
-    title="Introduction",
-    content="This is the **introduction** with *markdown*."
-)
+# Introduction
 
-doc.add_section(
-    level=2,
-    title="Details",
-    content="""
-More details here:
+This is the **introduction** with *markdown*.
+
+## Details
+
 - Point 1
 - Point 2
-"""
-)
-
-# Generate PDF
-doc.render_pdf("output/my_doc.pdf", save_html=True)
 ```
 
-### Section Levels
+Create a CSS file:
 
-- **Level 1**: Top-level sections (numbered 1, 2, 3, ...)
-- **Level 2**: Subsections (numbered 1.1, 1.2, 2.1, ...)
-- **Level 3**: Sub-subsections (numbered 1.1.1, 1.1.2, ...)
-- **Level 0**: Addendum sections (lettered A, B, C, ...)
+```css
+@page {
+    size: A4 portrait;
+    margin: 25mm;
+
+    @top-center {
+        content: "My Documentation";
+        font-size: 9pt;
+    }
+
+    @bottom-right {
+        content: "Page " counter(page);
+        font-size: 9pt;
+    }
+}
+
+.title-page {
+    page-break-after: always;
+}
+```
+
+Generate PDF:
+
+```bash
+docco build document.md style.css --output my_doc.pdf
+```
+
+### YAML Frontmatter
+
+Required fields:
+- `title`: Document title (required)
+
+Optional fields:
+- `subtitle`: Document subtitle
+- `date`: Publication date
+- `author`: Author name
 
 ### Markdown Support
 
@@ -224,77 +230,58 @@ Content uses markdown-it-py for parsing. Supported features:
 - Tables
 - Code blocks and inline code
 - Paragraphs
+- Headings (H1, H2, H3)
 
 ### CSS Customization
 
-CSS is generated by `CSSBuilder.generate_default_css()` and includes:
+All layout and styling is controlled via the external CSS file:
 - `@page` rules for A4 setup, headers/footers
 - `.title-page` - Title page styling
-- `.toc-page` - Table of contents
-- `.content` sections with h1/h2/h3 styling
-- Table, list, and inline formatting
+- `.content` - Content wrapper
+- Standard HTML selectors (h1, h2, h3, p, table, etc.)
 
-Custom CSS can be provided to `render_pdf()`:
-
-```python
-from docco.rendering.css_builder import CSSBuilder
-
-custom_css = CSSBuilder.generate_custom_css(
-    header_text="My Custom Header",
-    font_family='"Times New Roman", serif'
-)
-
-doc.render_pdf("output/doc.pdf", css=custom_css)
-```
+Users provide their own CSS file - there is no default embedded CSS.
 
 ## Important Technical Details
 
-### WeasyPrint TOC Generation
+### YAML Frontmatter Parsing
 
-The system uses WeasyPrint's built-in CSS Paged Media support for automatic TOC:
-- Sections must have `class="section"` and appropriate heading level
-- `bookmark-level` and `bookmark-label` CSS properties control TOC entries
-- `target-counter(attr(href), page)` generates page numbers
+The CLI parses YAML frontmatter delimited by `---`:
+- Frontmatter must be at the start of the file
+- Must have opening and closing `---` delimiters
+- Title field is required; others are optional
+- Invalid YAML raises an error
 
-### Section Numbering Strategy
+### HTML Generation
 
-Section numbering is fully automatic:
-- **SectionNumberer** maintains hierarchical counters `[level1, level2, level3]`
-- When adding a section, increment counter at that level
-- Reset all deeper level counters
-- Addendum sections (level=0) use separate letter counter
+HTML is built directly in the CLI module using string concatenation:
+- Title page is generated from frontmatter metadata
+- Markdown content is converted to HTML by MarkdownConverter
+- Complete document structure includes `<!DOCTYPE>`, `<html>`, `<head>`, `<body>`
+- HTML entities are escaped using `_escape_html()` helper
 
-Example flow:
-- Section level=1 → "1" (counters: [1, 0, 0])
-- Section level=2 → "1.1" (counters: [1, 1, 0])
-- Section level=2 → "1.2" (counters: [1, 2, 0])
-- Section level=1 → "2" (counters: [2, 0, 0])
-- Section level=0 → "A" (addendum counter: 1)
+### PDF Rendering
+
+WeasyPrint converts HTML + CSS to PDF:
+- Supports CSS Paged Media (`@page` rules)
+- Handles headers, footers, page numbers via CSS
+- Title page can omit headers/footers using `@page :first`
+- Debug HTML is saved for troubleshooting
 
 ### Testing Strategy
 
 **Unit tests** verify individual components:
-- Section numbering logic
-- Markdown conversion
-- HTML generation
-- CSS generation
+- YAML frontmatter parsing
+- HTML escaping
+- CLI command execution
+- Error handling
 
 **Integration tests** verify full workflows:
-- Complete document building
-- PDF generation
-- Complex multi-level documents
+- Complete PDF generation
+- Complex markdown documents
+- Default output paths
 
 Run tests with `pytest` after installing dev dependencies.
-
-### Mixed Orientations (Planned)
-
-Documents will support both portrait and landscape pages via CSS `@page` selectors targeting specific sections.
-
-### Image Handling (Planned)
-
-- Resize images to ~300px width using Pillow
-- Optimize before embedding to control PDF file size
-- Support captions via `<figure>` and `<figcaption>` HTML tags
 
 ## Design Constraints
 
@@ -304,3 +291,13 @@ Documents will support both portrait and landscape pages via CSS `@page` selecto
 - All dependencies must be open source with permissive licenses
 - Target rendering time: <10 seconds for ~50 page documents
 - Test coverage should remain high (aim for >80%)
+- Use short/concise git commit messages
+
+## Migration Notes
+
+**v0.2.0 → v0.3.0**: Removed Python API entirely
+- Deleted: `Document`, `Section`, `SectionNumberer`, `HTMLBuilder`, `CSSBuilder`
+- Deleted: `markdown_parser.py` (was part of Python API)
+- Deleted: `src/docco/core/` directory
+- CLI now accepts `.md` + `.css` files directly
+- No programmatic document building - pure CLI tool

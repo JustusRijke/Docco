@@ -1,27 +1,3 @@
-"""
-CSS generation for PDF layout.
-"""
-
-
-class CSSBuilder:
-    """
-    Generates CSS for PDF rendering with WeasyPrint.
-
-    Future enhancements:
-    - Template-based CSS loading
-    - Customizable themes
-    - Per-document style overrides
-    """
-
-    @staticmethod
-    def generate_default_css() -> str:
-        """
-        Generate default CSS for A4 PDF documents.
-
-        Returns:
-            CSS string with print layout rules
-        """
-        return """
 /* Page setup - Portrait (default) */
 @page {
     size: A4 portrait;
@@ -148,24 +124,18 @@ body {
     font-size: 10pt;
 }
 
-.toc-level-addendum {
-    font-weight: bold;
-    margin-top: 5mm;
-    color: #555;
-}
-
 /* PDF Bookmarks from sections */
-h1.section {
+h1 {
     bookmark-label: content();
     bookmark-level: 1;
 }
 
-h2.section {
+h2 {
     bookmark-label: content();
     bookmark-level: 2;
 }
 
-h3.section {
+h3 {
     bookmark-label: content();
     bookmark-level: 3;
 }
@@ -175,18 +145,21 @@ h3.section {
     margin-top: 0;
 }
 
-/* Apply landscape orientation to landscape sections */
+/* Section orientation wrappers */
 .section-wrapper.landscape {
     page: landscape;
     page-break-before: always;
 }
 
-/* Apply portrait orientation and page break when returning from landscape */
+.section-wrapper.portrait {
+    /* Portrait is default, but force page break when returning from landscape */
+}
+
 .section-wrapper.landscape + .section-wrapper.portrait {
     page-break-before: always;
 }
 
-h1.section {
+h1 {
     font-size: 18pt;
     margin-top: 15mm;
     margin-bottom: 5mm;
@@ -196,7 +169,7 @@ h1.section {
     padding-bottom: 2mm;
 }
 
-h2.section {
+h2 {
     font-size: 14pt;
     margin-top: 8mm;
     margin-bottom: 4mm;
@@ -204,7 +177,7 @@ h2.section {
     color: #333;
 }
 
-h3.section {
+h3 {
     font-size: 12pt;
     margin-top: 6mm;
     margin-bottom: 3mm;
@@ -298,31 +271,3 @@ figcaption {
     color: #666;
     margin-top: 2mm;
 }
-"""
-
-    @staticmethod
-    def generate_custom_css(
-        header_text: str = "Product Documentation",
-        font_family: str = '"DejaVu Sans", Arial, sans-serif',
-    ) -> str:
-        """
-        Generate CSS with custom parameters.
-
-        Args:
-            header_text: Text to display in page headers
-            font_family: CSS font-family value
-
-        Returns:
-            Customized CSS string
-        """
-        css = CSSBuilder.generate_default_css()
-
-        # Replace header text
-        css = css.replace('"Product Documentation"', f'"{header_text}"')
-
-        # Replace font family
-        css = css.replace(
-            'font-family: "DejaVu Sans", Arial, sans-serif;', f"font-family: {font_family};"
-        )
-
-        return css

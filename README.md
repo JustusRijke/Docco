@@ -1,205 +1,295 @@
-# Python-Based Documentation Builder
-## Technical Specification
+# Docco
+
+**A pure CLI tool for generating professional A4 PDFs from Markdown and CSS.**
+
+Docco converts Markdown documents with YAML frontmatter into styled PDFs using WeasyPrint's CSS Paged Media support.
 
 ---
 
-## Project Goal
+## Features
 
-Develop a Python tool to generate professional product documentation (A4 PDF) using HTML/CSS for layout. The tool must allow flexible, modular content creation with reusable parts and automatic document structure handling.
-
----
-
-## 1. Functional Requirements
-
-### 1.1 PDF Output
-
-* Output format: **A4 PDF**
-* Consistent header, footer, and page numbering
-* Must support **mixed orientations** (portrait + landscape pages)
-* Layout and typography fully defined via **CSS** (modern print styling)
-* TOC and page numbering must remain accurate across orientations
-
-**Context**: Documents must be A4-sized PDFs, primarily portrait, with some addendum sections (e.g., drawings) in landscape. Mixed orientations in one PDF are needed for flexibility.
-
-### 1.2 Document Structure
-
-* Hierarchical sectioning: numbered headings (`1`, `1.1`, `1.1.1`, …)
-* Support for **addendum sections** (`A:`, `B:` …) with independent numbering
-* Automatic **Table of Contents** generation with correct page numbers
-* Reusable content modules (e.g., disclaimer, intro) importable from Python files
-* Content composed via **Python string construction**, not templates
-
-**Context**: Sections require auto-numbered headers (e.g., "1 Intro", "1.1 Specifications") for clarity. Addendum sections use letters (e.g., "A: Overview Drawing"). Numbers should be managed programmatically.
-
-### 1.3 Content Authoring
-
-* Core text authored in **Markdown** (bold, italic, links, lists, tables)
-* Markdown converted to HTML before rendering
-* Embedded **images** (PNG/JPG/SVG) with:
-  * Automatic resizing using Pillow to avoid bloated PDFs
-  * Optional captions below images
-* Support for **nested tables** and simple layout tables
-
-**Context**: Paragraphs use Markdown for simplicity, supporting basic formatting to keep content authoring lightweight. Documents include tables (potentially nested) for product specs, requiring clean styling and proper pagination.
-
-### 1.4 Simplicity & Maintainability
-
-* Keep the code **simple, explicit, and readable** – no unnecessary abstraction layers
-* Focus on maintainability over automation complexity
-* Initial implementation as a **single script with supporting content module**
-* Clean separation of layout (CSS) and logic (Python)
-* Refactor and re-evaluate architecture after achieving a working example
-
-**Context**: Code must be easy to understand years later, avoiding complex abstractions to ensure maintainability. Documents are small (~50 pages max), so performance optimization is not a primary concern.
+- **Pure Markdown Input**: Write your documentation in Markdown with YAML frontmatter for metadata
+- **External CSS Styling**: Complete control over layout, typography, headers, and footers via CSS
+- **Professional PDFs**: A4 output with proper pagination, headers, footers, and page numbering
+- **Simple CLI**: Single command to generate PDFs from source files
+- **Debug Support**: Generates intermediate HTML for browser-based debugging
 
 ---
 
-## 2. Non-Functional Requirements
+## Installation
 
-| Aspect              | Requirement                                             |
-| ------------------- | ------------------------------------------------------- |
-| **Performance**     | Documents up to ~50 pages should render quickly (<10s) |
-| **Portability**     | Must run on standard Python environment (≥3.10)        |
-| **Dependencies**    | All open source, permissive licenses                   |
-| **Maintainability** | Clear code organization and minimal "magic"            |
-|
----
+### System Requirements
 
-## 3. Required Libraries
+- Python 3.10+
+- WeasyPrint system dependencies (see below)
 
-| Purpose          | Library            | License | Notes                                                                    |
-| ---------------- | ------------------ | ------- | ------------------------------------------------------------------------ |
-| PDF rendering    | **WeasyPrint**     | BSD     | Primary rendering engine; supports `@page`, headers/footers, mixed orientation, automatic TOC |
-| Markdown parsing | **markdown-it-py** | MIT     | Fast, clean conversion for Markdown subset                               |
-| Image handling   | **Pillow**         | HPND    | Resize, compress, and re-encode images                                   |
+### Debian/Ubuntu
 
-**Installation (Debian)**: 
-`pip install weasyprint markdown-it-py pillow`
-`apt install weasyprint`
+```bash
+# Install system dependencies
+apt install weasyprint
 
-**Note on TOC**: WeasyPrint's built-in CSS Paged Media support will be used for automatic TOC generation. This should be tested early in the project to verify it meets requirements.
+# Clone repository
+git clone <repo-url>
+cd Docco
 
----
-
-## 4. Suggested Architecture (Initial Implementation)
-
-Start with a minimal structure and refactor after achieving a working example:
-
-```
-docs_tool/
-├── content/               # reusable content modules
-│   └── standard.py       # disclaimers, common sections
-├── assets/
-│   ├── style.css         # print layout, headers, footers, TOC
-│   └── images/           # source images
-├── output/
-│   ├── optimized_images/ # resized images for PDF
-│   ├── debug.html        # optional: for browser debugging
-│   └── final.pdf
-└── main.py               # single script: content → HTML → PDF
+# Install package
+pip install -e .
 ```
 
-### Architecture Principles
+### Dependencies
 
-The system follows a **3-stage pipeline**:
-
-1. **Asset Preparation**: Optimize images with Pillow, save to `output/optimized_images/`
-2. **Document Assembly**: Build complete HTML document via Python string construction
-   - Manage hierarchical numbering (sections: `1.1.2`, addendums: `A`, `B`)
-   - Convert Markdown fragments to HTML
-   - Concatenate all content into single HTML string
-3. **PDF Rendering**: Pass HTML + CSS to WeasyPrint for final PDF generation
+Docco uses the following libraries:
+- **WeasyPrint**: PDF rendering engine with CSS Paged Media support
+- **markdown-it-py**: Fast Markdown to HTML conversion
+- **PyYAML**: YAML frontmatter parsing
+- **Click**: CLI framework
 
 ---
 
-## 5. Processing Flow
+## Quick Start
 
-1. **Prepare assets**: Resize and optimize images using Pillow
-2. **Assemble document content** from modular Python functions
-3. **Apply section numbering**: Track and apply hierarchical numbers programmatically
-4. **Convert Markdown** fragments to HTML using markdown-it-py
-5. **Compose full HTML document** (sections, tables, images) via string construction
-6. **Render PDF** with WeasyPrint (single pass, relying on CSS for TOC)
-7. **(Optional)** Save intermediate HTML for browser-based layout debugging
+### 1. Create a Markdown file with YAML frontmatter
+
+**document.md**:
+```markdown
+---
+title: My Documentation
+subtitle: Technical Guide
+date: 2025-10-23
+author: Your Name
+---
+
+# Introduction
+
+This is the **introduction** section with *markdown* formatting.
+
+## Features
+
+Key features include:
+- Item 1
+- Item 2
+- Item 3
+
+# Details
+
+More content here...
+```
+
+### 2. Create a CSS stylesheet
+
+**style.css**:
+```css
+@page {
+    size: A4 portrait;
+    margin: 25mm;
+
+    @top-center {
+        content: "My Documentation";
+        font-size: 9pt;
+        color: #666;
+    }
+
+    @bottom-right {
+        content: "Page " counter(page);
+        font-size: 9pt;
+    }
+}
+
+@page :first {
+    @top-center { content: none; }
+    @bottom-right { content: none; }
+}
+
+body {
+    font-family: "DejaVu Sans", Arial, sans-serif;
+    font-size: 11pt;
+    line-height: 1.6;
+}
+
+.title-page {
+    page-break-after: always;
+    text-align: center;
+    padding-top: 100mm;
+}
+
+.title-page h1 {
+    font-size: 28pt;
+}
+
+h1 {
+    font-size: 18pt;
+    page-break-after: avoid;
+}
+
+h2 {
+    font-size: 14pt;
+    page-break-after: avoid;
+}
+```
+
+### 3. Generate PDF
+
+```bash
+docco build document.md style.css --output my_doc.pdf
+```
+
+Output:
+- `my_doc.pdf` - Final rendered PDF
+- `debug.html` - Intermediate HTML (for debugging)
 
 ---
 
-## 6. Key Implementation Details
+## Usage
 
-### 6.1 HTML Generation
-- Use Python string construction (direct concatenation or f-strings)
-- No templating engine required initially
-- Keep HTML generation logic simple and explicit
+### CLI Commands
 
-### 6.2 Section Numbering
-- Python logic manages hierarchical counters (e.g., `[1, 1, 2]` for section 1.1.2)
-- Separate letter-based counter for addendum sections
-- Numbers inserted directly into HTML heading tags
+**Build a PDF**:
+```bash
+docco build <markdown-file> <css-file> [--output <pdf-path>]
+```
 
-### 6.3 Table of Contents
-- **Trust WeasyPrint's built-in TOC capabilities** via CSS Paged Media
-- Test this early to verify it handles:
-  - Correct page numbers
-  - Mixed orientations
-  - PDF bookmarks
-- Fall back to 2-pass approach only if needed
+**Show version**:
+```bash
+docco version
+```
 
-### 6.4 Image Handling
-- Resize images to reasonable dimensions (~300px width or as appropriate)
-- Optimize before embedding to control PDF file size
-- Support optional captions via HTML `<figure>` and `<figcaption>` tags
+### YAML Frontmatter
 
-### 6.5 Reusable Content
-- Store common content (disclaimers, standard sections) in `content/` module
-- Import as Python strings or functions
-- Allow both raw Markdown and pre-formatted HTML
+The Markdown file must include YAML frontmatter with at least a `title` field:
+
+```yaml
+---
+title: Document Title       # Required
+subtitle: Subtitle          # Optional
+date: 2025-10-23           # Optional
+author: Author Name        # Optional
+---
+```
+
+### Markdown Support
+
+Docco uses `markdown-it-py` for parsing, supporting:
+- **Bold**, *italic*, `inline code`
+- Headings (H1, H2, H3)
+- Lists (ordered and unordered)
+- Tables
+- Code blocks
+- Links
+
+### CSS Customization
+
+All layout and styling is controlled via CSS. Key features:
+- `@page` rules for page setup (size, margins, headers, footers)
+- `@page :first` to customize the title page
+- Standard CSS selectors for content styling
+- Print-specific properties (page breaks, widows, orphans)
+
+See `examples/style.css` for a complete example.
 
 ---
 
-## 7. Deliverables
+## Examples
 
-* Python project with `requirements.txt` for dependencies
-* Single script entry point (`main.py`) that generates complete PDF from defined sections
-* Example CSS file with A4 layout, headers, footers, TOC styling
-* Example content module with reusable sections
-* Short README with:
-  - Setup instructions
-  - Basic usage example
-  - Notes on testing TOC generation early
+Example files are provided in the `examples/` directory:
+- `document.md` - Sample markdown document with frontmatter
+- `style.css` - Default stylesheet with A4 layout
 
----
-
-## 8. Development Strategy
-
-1. **Phase 1**: Implement minimal working example
-   - Single portrait page with one section
-   - Basic Markdown conversion
-   - Simple PDF output
-   - **Test WeasyPrint TOC generation**
-
-2. **Phase 2**: Add core features
-   - Hierarchical section numbering
-   - Image optimization and embedding
-   - Tables support
-   - Headers/footers
-
-3. **Phase 3**: Advanced features
-   - Mixed portrait/landscape orientation
-   - Addendum sections
-   - Reusable content modules
-
-4. **Phase 4**: Refactor and optimize
-   - Evaluate single-script approach
-   - Refactor into modules if needed
-   - Optimize performance if required
+Generate the example:
+```bash
+docco build examples/document.md examples/style.css --output output/example.pdf
+```
 
 ---
 
-## Notes for Development Team
+## Architecture
 
-* **Prioritize simplicity**: Start with the simplest implementation that works
-* **Test TOC early**: Verify WeasyPrint's automatic TOC meets all requirements before implementing alternatives
-* **Debug in browser**: Save intermediate HTML and verify layout in browser before PDF conversion
-* **Image sizing**: Experiment with optimal image dimensions for quality vs. file size
-* **CSS first**: Define all layout, spacing, and styling in CSS rather than programmatically
-* **Refactor later**: Don't over-engineer the initial implementation; refactor after achieving working prototype
+Docco follows a simple 2-stage pipeline:
+
+1. **Parse & Convert**: Read Markdown file, parse YAML frontmatter, convert Markdown to HTML
+2. **Render PDF**: Pass HTML + CSS to WeasyPrint for PDF generation
+
+### Project Structure
+
+```
+Docco/
+├── src/
+│   └── docco/
+│       ├── cli.py                    # CLI entry point
+│       ├── content/
+│       │   └── markdown.py           # Markdown converter
+│       └── rendering/
+│           └── pdf_renderer.py       # WeasyPrint wrapper
+├── examples/
+│   ├── document.md                   # Example markdown file
+│   └── style.css                     # Example stylesheet
+├── tests/
+│   ├── unit/                         # Unit tests
+│   └── integration/                  # Integration tests
+└── README.md
+```
+
+---
+
+## Development
+
+### Running Tests
+
+```bash
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=docco --cov-report=html
+
+# Run specific test
+pytest tests/unit/test_cli.py
+```
+
+### Code Quality
+
+```bash
+# Format code
+black src/ tests/
+
+# Lint code
+ruff check src/ tests/
+```
+
+---
+
+## Design Principles
+
+- **Simplicity**: No complex abstractions or Python API - just a CLI tool
+- **Separation of Concerns**: Content (Markdown) and layout (CSS) are completely separated
+- **Expert-Friendly**: Designed for users comfortable with Markdown and CSS
+- **Maintainability**: Clean, readable code that's easy to understand and modify
+- **Transparency**: Generates debug HTML for easy troubleshooting
+
+---
+
+## Troubleshooting
+
+### PDF Generation Issues
+
+1. **Check debug HTML**: Open `debug.html` in a browser to verify content and layout
+2. **Validate CSS**: Ensure your CSS uses valid CSS Paged Media syntax
+3. **Check frontmatter**: Verify YAML frontmatter is properly formatted with `title` field
+
+### WeasyPrint Errors
+
+- Ensure WeasyPrint system dependencies are installed
+- Check that font names in CSS match available system fonts
+- Use `--verbose` flag for detailed error messages (future feature)
+
+---
+
+## License
+
+[License information here]
+
+---
+
+## Contributing
+
+[Contribution guidelines here]
