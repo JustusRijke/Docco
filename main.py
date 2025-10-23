@@ -23,11 +23,10 @@ def md_to_html(markdown_text: str) -> str:
 def build_document() -> str:
     """Build complete HTML document"""
 
-    # Document sections with markdown content
+    # Document sections with markdown content (numbering is automatic)
     sections = [
         {
             "level": 1,
-            "number": "1",
             "title": "Introduction",
             "content": """
 This is the **introduction** section. It demonstrates:
@@ -41,7 +40,6 @@ The goal is to validate WeasyPrint's built-in TOC capabilities.
         },
         {
             "level": 2,
-            "number": "1.1",
             "title": "Purpose",
             "content": """
 This subsection explains the *purpose* of the documentation system.
@@ -52,7 +50,6 @@ appear correctly in the generated table of contents.
         },
         {
             "level": 2,
-            "number": "1.2",
             "title": "Scope",
             "content": """
 Phase 1 scope includes:
@@ -68,7 +65,6 @@ page numbering works correctly in the table of contents.
         },
         {
             "level": 1,
-            "number": "2",
             "title": "Technical Details",
             "content": """
 This section contains technical information about the system.
@@ -83,6 +79,17 @@ The table above demonstrates basic table support.
 """,
         },
     ]
+
+    # Calculate section numbers automatically
+    counters = [0, 0, 0]  # Support up to 3 levels
+    for section in sections:
+        level = section["level"]
+        counters[level - 1] += 1
+        # Reset deeper level counters
+        for i in range(level, len(counters)):
+            counters[i] = 0
+        # Generate number string (e.g., "1.2.3")
+        section["number"] = ".".join(str(c) for c in counters[:level] if c > 0)
 
     # Start HTML document
     html_parts = [
