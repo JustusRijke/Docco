@@ -347,6 +347,24 @@ class TestBuildToc:
 
         assert toc == ""
 
+    def test_build_toc_escapes_special_characters_once(self):
+        """Test that TOC entries with special characters are escaped only once."""
+        from docco.cli import _build_toc
+
+        sections = [
+            {"title": "Links & Quotes", "level": 2, "id": "section-2-4", "number": "2.4", "is_addendum": False},
+            {"title": "Code <snippet>", "level": 1, "id": "section-3", "number": "3", "is_addendum": False},
+        ]
+
+        toc = _build_toc(sections)
+
+        # Should escape once (& -> &amp;), not twice (& -> &amp; -> &amp;amp;)
+        assert "2.4 Links &amp; Quotes" in toc
+        assert "&amp;amp;" not in toc
+        # Should escape angle brackets
+        assert "3 Code &lt;snippet&gt;" in toc
+        assert "<snippet>" not in toc
+
 
 class TestCliVersion:
     """Tests for version command."""

@@ -352,7 +352,7 @@ def _build_toc(sections: list[dict]) -> str:
 
     for section in toc_sections:
         level = section["level"]
-        title = _escape_html(section["title"])
+        title = section["title"]
         section_id = section["id"]
         number = section["number"]
         is_addendum = section.get("is_addendum", False)
