@@ -3,8 +3,8 @@ Document class - main orchestrator for PDF generation.
 """
 
 from pathlib import Path
-from typing import Optional
-from docco.core.section import Section, SectionNumberer
+from typing import Optional, Union
+from docco.core.section import Section, SectionNumberer, Orientation
 from docco.content.markdown import MarkdownConverter
 from docco.rendering.html_builder import HTMLBuilder
 from docco.rendering.css_builder import CSSBuilder
@@ -56,6 +56,7 @@ class Document:
         title: str,
         content: str,
         number: Optional[str] = None,
+        orientation: Union[Orientation, str] = Orientation.PORTRAIT,
     ) -> "Document":
         """
         Add a section to the document.
@@ -65,11 +66,18 @@ class Document:
             title: Section title
             content: Markdown content
             number: Optional manual number (auto-numbered if not provided)
+            orientation: Page orientation (Orientation.PORTRAIT or Orientation.LANDSCAPE)
 
         Returns:
             self (for method chaining)
         """
-        section = Section(level=level, title=title, content=content, number=number)
+        section = Section(
+            level=level,
+            title=title,
+            content=content,
+            number=number,
+            orientation=orientation,
+        )
         self.sections.append(section)
         self._numbered = False  # Mark as needing renumbering
         return self

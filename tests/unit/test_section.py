@@ -3,7 +3,7 @@ Unit tests for Section and SectionNumberer.
 """
 
 import pytest
-from docco.core.section import Section, SectionNumberer
+from docco.core.section import Section, SectionNumberer, Orientation
 
 
 class TestSection:
@@ -36,6 +36,26 @@ class TestSection:
         """Test that empty title raises ValueError."""
         with pytest.raises(ValueError, match="Section title cannot be empty"):
             Section(level=1, title="", content="Content")
+
+    def test_section_default_orientation(self):
+        """Test that section has portrait orientation by default."""
+        section = Section(level=1, title="Test", content="Content")
+        assert section.orientation == Orientation.PORTRAIT
+
+    def test_section_landscape_orientation(self):
+        """Test creating a section with landscape orientation."""
+        section = Section(level=1, title="Test", content="Content", orientation=Orientation.LANDSCAPE)
+        assert section.orientation == Orientation.LANDSCAPE
+
+    def test_section_orientation_from_string(self):
+        """Test creating a section with string orientation (backward compatibility)."""
+        section = Section(level=1, title="Test", content="Content", orientation="landscape")
+        assert section.orientation == Orientation.LANDSCAPE
+
+    def test_invalid_orientation_raises_error(self):
+        """Test that invalid orientation raises ValueError."""
+        with pytest.raises(ValueError, match="Orientation must be Orientation.PORTRAIT or Orientation.LANDSCAPE"):
+            Section(level=1, title="Test", content="Content", orientation="invalid")
 
 
 class TestSectionNumberer:

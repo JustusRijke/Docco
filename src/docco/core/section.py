@@ -3,7 +3,15 @@ Section data model and automatic numbering logic.
 """
 
 from dataclasses import dataclass
-from typing import Optional
+from enum import Enum
+from typing import Optional, Union
+
+
+class Orientation(str, Enum):
+    """Page orientation options for sections."""
+
+    PORTRAIT = "portrait"
+    LANDSCAPE = "landscape"
 
 
 @dataclass
@@ -16,12 +24,14 @@ class Section:
         title: Section title
         content: Markdown content
         number: Auto-generated section number (e.g., "1.2.3" or "A")
+        orientation: Page orientation (Orientation.PORTRAIT or Orientation.LANDSCAPE)
     """
 
     level: int
     title: str
     content: str
     number: Optional[str] = None
+    orientation: Union[Orientation, str] = Orientation.PORTRAIT
 
     def __post_init__(self):
         """Validate section attributes."""
@@ -29,6 +39,14 @@ class Section:
             raise ValueError(f"Section level must be 0-3, got {self.level}")
         if not self.title:
             raise ValueError("Section title cannot be empty")
+        # Convert string to Orientation if needed (for backward compatibility)
+        if isinstance(self.orientation, str):
+            try:
+                self.orientation = Orientation(self.orientation)
+            except ValueError:
+                raise ValueError(
+                    f"Orientation must be Orientation.PORTRAIT or Orientation.LANDSCAPE, got {self.orientation}"
+                )
 
 
 class SectionNumberer:

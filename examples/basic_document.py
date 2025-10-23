@@ -6,6 +6,7 @@ This example generates a simple multi-section PDF document with:
 - Table of contents
 - Hierarchical sections
 - Markdown formatting
+- Mixed portrait and landscape orientations
 
 Run with:
     python examples/basic_document.py
@@ -14,7 +15,7 @@ Run with:
 """
 
 from pathlib import Path
-from docco import Document
+from docco import Document, Orientation
 
 # Output directory
 OUTPUT_DIR = Path("output")
@@ -87,6 +88,45 @@ This section contains technical information about the system.
 | Layout | CSS Paged Media |
 
 The table above demonstrates basic table support.
+""",
+    )
+
+    # Add a landscape section for wide content
+    doc.add_section(
+        level=2,
+        title="System Architecture Diagram",
+        orientation=Orientation.LANDSCAPE,
+        content="""
+This section is in **landscape orientation** to accommodate wide diagrams or tables.
+
+| Component | Input | Processing | Output | Storage | Monitoring |
+|-----------|-------|------------|--------|---------|------------|
+| Document Builder | Markdown | Parse & Convert | HTML | Memory | Logging |
+| CSS Generator | Templates | Compile | CSS Rules | Cache | None |
+| PDF Renderer | HTML + CSS | WeasyPrint | PDF Bytes | File System | Progress |
+| Section Numberer | Sections | Calculate | Numbers | State | None |
+
+Landscape orientation is useful for:
+- Wide tables and charts
+- Architecture diagrams
+- Process flow diagrams
+- Gantt charts and timelines
+""",
+    )
+
+    # Return to portrait orientation
+    doc.add_section(
+        level=2,
+        title="Implementation Notes",
+        content="""
+This section returns to **portrait orientation** (the default).
+
+The system automatically handles page breaks when switching between orientations.
+
+Key features:
+- Automatic page break before landscape sections
+- Consistent headers and footers across orientations
+- Table of contents works seamlessly with mixed orientations
 """,
     )
 

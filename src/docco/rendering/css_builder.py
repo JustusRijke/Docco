@@ -22,10 +22,30 @@ class CSSBuilder:
             CSS string with print layout rules
         """
         return """
-/* Page setup */
+/* Page setup - Portrait (default) */
 @page {
     size: A4 portrait;
     margin: 25mm 20mm 25mm 20mm;
+
+    @top-center {
+        content: "Product Documentation";
+        font-size: 9pt;
+        color: #666;
+        border-bottom: 0.5pt solid #ccc;
+        padding-bottom: 3mm;
+    }
+
+    @bottom-right {
+        content: "Page " counter(page);
+        font-size: 9pt;
+        color: #666;
+    }
+}
+
+/* Page setup - Landscape */
+@page landscape {
+    size: A4 landscape;
+    margin: 20mm 25mm 20mm 25mm;
 
     @top-center {
         content: "Product Documentation";
@@ -153,6 +173,17 @@ h3.section {
 /* Content sections */
 .content {
     margin-top: 0;
+}
+
+/* Apply landscape orientation to landscape sections */
+.section-wrapper.landscape {
+    page: landscape;
+    page-break-before: always;
+}
+
+/* Apply portrait orientation and page break when returning from landscape */
+.section-wrapper.landscape + .section-wrapper.portrait {
+    page-break-before: always;
 }
 
 h1.section {

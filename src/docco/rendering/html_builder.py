@@ -91,17 +91,22 @@ class HTMLBuilder:
         # Determine heading tag (addendums use h1)
         h_tag = f"h{section.level}" if section.level > 0 else "h1"
 
+        # Wrap section in div with orientation class (use .value to get string)
+        parts = [f'<div class="section-wrapper {section.orientation.value}">']
+
         # Build section header with number and title
-        parts = [
+        parts.append(
             f'<{h_tag} class="section" id="{section_id}">'
             f"{section.number} {self._escape_html(section.title)}"
             f"</{h_tag}>"
-        ]
+        )
 
         # Convert and add content
         if section.content and section.content.strip():
             html_content = self.md_converter.convert(section.content)
             parts.append(html_content)
+
+        parts.append("</div>")
 
         return "\n".join(parts)
 

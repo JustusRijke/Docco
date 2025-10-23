@@ -4,7 +4,7 @@ Unit tests for HTMLBuilder.
 
 import pytest
 from docco.rendering.html_builder import HTMLBuilder
-from docco.core.section import Section
+from docco.core.section import Section, Orientation
 
 
 class TestHTMLBuilder:
@@ -129,3 +129,21 @@ class TestHTMLBuilder:
         result = html_builder.build_title_page("Test & Title <script>")
         assert "Test &amp; Title &lt;script&gt;" in result
         assert "<script>" not in result
+
+    def test_section_portrait_orientation_class(self, html_builder):
+        """Test section wrapper has portrait class by default."""
+        section = Section(level=1, title="Test", content="Content", number="1")
+        result = html_builder.build_section(section)
+        assert '<div class="section-wrapper portrait">' in result
+
+    def test_section_landscape_orientation_class(self, html_builder):
+        """Test section wrapper has landscape class when specified."""
+        section = Section(
+            level=1,
+            title="Test",
+            content="Content",
+            number="1",
+            orientation=Orientation.LANDSCAPE
+        )
+        result = html_builder.build_section(section)
+        assert '<div class="section-wrapper landscape">' in result
