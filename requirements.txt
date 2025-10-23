@@ -1,0 +1,10 @@
+# PDF Documentation Generator Dependencies
+
+# PDF rendering engine with CSS Paged Media support
+weasyprint==66.0
+
+# Markdown parser for content conversion
+markdown-it-py==4.0.0
+
+# Image handling and optimization
+pillow==12.0.0
