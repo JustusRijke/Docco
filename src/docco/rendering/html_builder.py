@@ -64,6 +64,10 @@ class HTMLBuilder:
         parts = ['<div class="toc-page">', "<h1>Table of Contents</h1>", '<nav class="toc">']
 
         for section in sections:
+            # Skip sections excluded from TOC
+            if section.exclude_from_toc:
+                continue
+
             section_id = self._make_section_id(section.number)
             indent_class = f"toc-level-{section.level}" if section.level > 0 else "toc-level-addendum"
 

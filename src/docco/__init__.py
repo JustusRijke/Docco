@@ -5,6 +5,7 @@ Docco - PDF documentation generator using HTML/CSS.
 from docco.core.document import Document
 from docco.core.section import Section, SectionNumberer, Orientation
 from docco.content.markdown import MarkdownConverter
+from docco.content.markdown_parser import MarkdownDocumentParser
 from docco.rendering.html_builder import HTMLBuilder
 from docco.rendering.css_builder import CSSBuilder
 from docco.rendering.pdf_renderer import PDFRenderer
@@ -17,6 +18,7 @@ __all__ = [
     "SectionNumberer",
     "Orientation",
     "MarkdownConverter",
+    "MarkdownDocumentParser",
     "HTMLBuilder",
     "CSSBuilder",
     "PDFRenderer",

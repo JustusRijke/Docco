@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Optional, Union
 from docco.core.section import Section, SectionNumberer, Orientation
 from docco.content.markdown import MarkdownConverter
+from docco.content.markdown_parser import MarkdownDocumentParser
 from docco.rendering.html_builder import HTMLBuilder
 from docco.rendering.css_builder import CSSBuilder
 from docco.rendering.pdf_renderer import PDFRenderer
@@ -79,6 +80,39 @@ class Document:
             orientation=orientation,
         )
         self.sections.append(section)
+        self._numbered = False  # Mark as needing renumbering
+        return self
+
+    def load_from_markdown(self, file_path: Union[Path, str]) -> "Document":
+        """
+        Load sections from a markdown file.
+
+        Parses markdown headings into sections and supports HTML comment directives:
+        - <!-- landscape --> : Next section uses landscape orientation
+        - <!-- portrait --> : Next section uses portrait orientation
+        - <!-- addendum --> : Next section is an appendix (level 0, lettered)
+        - <!-- notoc --> : Next section excluded from table of contents
+
+        Args:
+            file_path: Path to markdown file
+
+        Returns:
+            self (for method chaining)
+
+        Raises:
+            FileNotFoundError: If file doesn't exist
+
+        Example:
+            doc = Document(title="My Doc")
+            doc.load_from_markdown("content.md")
+            doc.render_pdf("output.pdf")
+        """
+        parser = MarkdownDocumentParser()
+        sections = parser.parse_file(file_path)
+
+        for section in sections:
+            self.sections.append(section)
+
         self._numbered = False  # Mark as needing renumbering
         return self
 

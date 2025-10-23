@@ -25,6 +25,7 @@ class Section:
         content: Markdown content
         number: Auto-generated section number (e.g., "1.2.3" or "A")
         orientation: Page orientation (Orientation.PORTRAIT or Orientation.LANDSCAPE)
+        exclude_from_toc: If True, section will not appear in table of contents
     """
 
     level: int
@@ -32,6 +33,7 @@ class Section:
     content: str
     number: Optional[str] = None
     orientation: Union[Orientation, str] = Orientation.PORTRAIT
+    exclude_from_toc: bool = False
 
     def __post_init__(self):
         """Validate section attributes."""
