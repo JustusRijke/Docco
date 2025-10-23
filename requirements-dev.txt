@@ -1,0 +1,13 @@
+# Development Dependencies
+# Install with: pip install -r requirements-dev.txt
+
+# Testing
+pytest>=8.0.0
+pytest-cov>=4.1.0
+
+# Code formatting and linting
+black>=24.0.0
+ruff>=0.3.0
+
+# Install package in editable mode with dev dependencies
+-e .[dev]

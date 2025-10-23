@@ -8,3 +8,6 @@ markdown-it-py==4.0.0
 
 # Image handling and optimization
 pillow==12.0.0
+
+# CLI framework
+click>=8.0.0
