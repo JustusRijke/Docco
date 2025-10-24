@@ -2,294 +2,95 @@
 
 **A pure CLI tool for generating professional A4 PDFs from Markdown and CSS.**
 
-Docco converts Markdown documents with YAML frontmatter into styled PDFs using WeasyPrint's CSS Paged Media support.
-
----
+Docco converts Markdown documents into styled PDFs using WeasyPrint. Write your content in Markdown, style it with CSS, and generate beautiful PDFs with automatic table of contents, section numbering, headers, footers, and multilingual support.
 
 ## Features
 
-- **Pure Markdown Input**: Write your documentation in Markdown with YAML frontmatter for metadata
-- **External CSS Styling**: Complete control over layout, typography, headers, and footers via CSS
-- **Professional PDFs**: A4 output with proper pagination, headers, footers, and page numbering
-- **Simple CLI**: Single command to generate PDFs from source files
-- **Debug Support**: Generates intermediate HTML for browser-based debugging
+- **Markdown to PDF**: Convert Markdown content to professional A4 PDFs
+- **External CSS Styling**: Complete layout control via CSS (no embedded styles)
+- **Table of Contents**: Automatically generated with section numbers
+- **Multilingual Support**: Generate language-specific PDFs from a single file
+- **Custom Commands**: Define reusable HTML components via templates
+- **Orientation Control**: Mix portrait and landscape pages
+- **Headers & Footers**: Language-specific templates with variable substitution
+- **Debug HTML**: Intermediate HTML output for browser-based layout debugging
 
----
+## Installation (Linux)
 
-## Installation
-
-### System Requirements
-
-- Python 3.10+
-- WeasyPrint system dependencies (see below)
-
-### Debian/Ubuntu
+### System Dependencies
 
 ```bash
-# Install system dependencies
-apt install weasyprint
+# Debian/Ubuntu
+sudo apt install weasyprint
 
+# Arch
+sudo pacman -S python-weasyprint
+
+# Fedora
+sudo dnf install weasyprint
+```
+
+### Install Docco
+
+```bash
 # Clone repository
 git clone <repo-url>
 cd Docco
 
 # Install package
 pip install -e .
-```
 
-### Dependencies
-
-Docco uses the following libraries:
-- **WeasyPrint**: PDF rendering engine with CSS Paged Media support
-- **markdown-it-py**: Fast Markdown to HTML conversion
-- **PyYAML**: YAML frontmatter parsing
-- **Click**: CLI framework
-
----
-
-## Quick Start
-
-### 1. Create a Markdown file with YAML frontmatter
-
-**document.md**:
-```markdown
----
-title: My Documentation
-subtitle: Technical Guide
-date: 2025-10-23
-author: Your Name
----
-
-# Introduction
-
-This is the **introduction** section with *markdown* formatting.
-
-## Features
-
-Key features include:
-- Item 1
-- Item 2
-- Item 3
-
-# Details
-
-More content here...
-```
-
-### 2. Create a CSS stylesheet
-
-**style.css**:
-```css
-@page {
-    size: A4 portrait;
-    margin: 25mm;
-
-    @top-center {
-        content: "My Documentation";
-        font-size: 9pt;
-        color: #666;
-    }
-
-    @bottom-right {
-        content: "Page " counter(page);
-        font-size: 9pt;
-    }
-}
-
-@page :first {
-    @top-center { content: none; }
-    @bottom-right { content: none; }
-}
-
-body {
-    font-family: "DejaVu Sans", Arial, sans-serif;
-    font-size: 11pt;
-    line-height: 1.6;
-}
-
-.title-page {
-    page-break-after: always;
-    text-align: center;
-    padding-top: 100mm;
-}
-
-.title-page h1 {
-    font-size: 28pt;
-}
-
-h1 {
-    font-size: 18pt;
-    page-break-after: avoid;
-}
-
-h2 {
-    font-size: 14pt;
-    page-break-after: avoid;
-}
-```
-
-### 3. Generate PDF
-
-```bash
-docco build document.md style.css --output my_doc.pdf
-```
-
-Output:
-- `my_doc.pdf` - Final rendered PDF
-- `debug.html` - Intermediate HTML (for debugging)
-
----
-
-## Usage
-
-### CLI Commands
-
-**Build a PDF**:
-```bash
-docco build <markdown-file> <css-file> [--output <pdf-path>]
-```
-
-**Show version**:
-```bash
+# Verify installation
 docco version
 ```
 
-### YAML Frontmatter
+## Quick Start
 
-The Markdown file must include YAML frontmatter with at least a `title` field:
+```bash
+# Generate PDF from examples
+docco build examples/Feature\ Showcase.md examples/style.css
 
-```yaml
----
-title: Document Title       # Required
-subtitle: Subtitle          # Optional
-date: 2025-10-23           # Optional
-author: Author Name        # Optional
----
+# Output will be in output/ directory
+# - Feature Showcase.pdf (generated PDF)
+# - debug.html (intermediate HTML for debugging)
 ```
 
-### Markdown Support
+## Basic Usage
 
-Docco uses `markdown-it-py` for parsing, supporting:
-- **Bold**, *italic*, `inline code`
-- Headings (H1, H2, H3)
-- Lists (ordered and unordered)
-- Tables
-- Code blocks
-- Links
+```bash
+# Generate single PDF
+docco build document.md style.css
 
-### CSS Customization
+# Specify output path
+docco build document.md style.css --output report.pdf
 
-All layout and styling is controlled via CSS. Key features:
-- `@page` rules for page setup (size, margins, headers, footers)
-- `@page :first` to customize the title page
-- Standard CSS selectors for content styling
-- Print-specific properties (page breaks, widows, orphans)
-
-See `examples/style.css` for a complete example.
-
----
+# Multilingual documents (generates document_EN.pdf, document_DE.pdf, etc.)
+docco build multilingual.md style.css
+```
 
 ## Examples
 
-Example files are provided in the `examples/` directory:
-- `document.md` - Sample markdown document with frontmatter
-- `style.css` - Default stylesheet with A4 layout
+The `examples/` directory contains complete working examples:
 
-Generate the example:
-```bash
-docco build examples/document.md examples/style.css --output output/example.pdf
-```
+- **Feature Showcase.md** - Demonstrates all features (TOC, numbering, orientation control, images)
+- **Multilingual Example.md** - Shows language filtering and multilingual PDF generation
+- **style.css** - Production-ready stylesheet with A4 layout, headers, footers
+- **commands/** - Custom command templates (callout boxes, etc.)
+- **header.html / footer.html** - Header/footer templates with language variants
 
----
+These examples serve as the primary documentation. Study them to learn:
+- How to structure markdown documents
+- How to use custom commands (`<!-- cmd: callout -->`)
+- How to control orientation (`<!-- landscape -->`, `<!-- portrait -->`)
+- How to create addendums (`<!-- addendum -->`)
+- How to filter content by language (`<!-- lang:EN -->`)
+- How to style with CSS (@page rules, section numbering, etc.)
 
-## Architecture
+## Documentation
 
-Docco follows a simple 2-stage pipeline:
-
-1. **Parse & Convert**: Read Markdown file, parse YAML frontmatter, convert Markdown to HTML
-2. **Render PDF**: Pass HTML + CSS to WeasyPrint for PDF generation
-
-### Project Structure
-
-```
-Docco/
-├── src/
-│   └── docco/
-│       ├── cli.py                    # CLI entry point
-│       ├── content/
-│       │   └── markdown.py           # Markdown converter
-│       └── rendering/
-│           └── pdf_renderer.py       # WeasyPrint wrapper
-├── examples/
-│   ├── document.md                   # Example markdown file
-│   └── style.css                     # Example stylesheet
-├── tests/
-│   ├── unit/                         # Unit tests
-│   └── integration/                  # Integration tests
-└── README.md
-```
-
----
-
-## Development
-
-### Running Tests
-
-```bash
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=docco --cov-report=html
-
-# Run specific test
-pytest tests/unit/test_cli.py
-```
-
-### Code Quality
-
-```bash
-# Format code
-black src/ tests/
-
-# Lint code
-ruff check src/ tests/
-```
-
----
-
-## Design Principles
-
-- **Simplicity**: No complex abstractions or Python API - just a CLI tool
-- **Separation of Concerns**: Content (Markdown) and layout (CSS) are completely separated
-- **Expert-Friendly**: Designed for users comfortable with Markdown and CSS
-- **Maintainability**: Clean, readable code that's easy to understand and modify
-- **Transparency**: Generates debug HTML for easy troubleshooting
-
----
-
-## Troubleshooting
-
-### PDF Generation Issues
-
-1. **Check debug HTML**: Open `debug.html` in a browser to verify content and layout
-2. **Validate CSS**: Ensure your CSS uses valid CSS Paged Media syntax
-3. **Check frontmatter**: Verify YAML frontmatter is properly formatted with `title` field
-
-### WeasyPrint Errors
-
-- Ensure WeasyPrint system dependencies are installed
-- Check that font names in CSS match available system fonts
-- Use `--verbose` flag for detailed error messages (future feature)
-
----
+- **CLAUDE.md** - Complete technical documentation covering architecture, modules, features, and coding guidelines
+- **examples/** - Working examples demonstrating all features
 
 ## License
 
-[License information here]
-
----
-
-## Contributing
-
-[Contribution guidelines here]
+MIT

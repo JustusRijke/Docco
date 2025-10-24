@@ -8,17 +8,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Core Architecture
 
-The system follows a **simple 2-stage pipeline**:
+The system follows a **simple pipeline**:
 
-1. **Parse & Convert**:
-   - Read Markdown file and parse YAML frontmatter (title, subtitle, date, author)
-   - Convert Markdown content to HTML using markdown-it-py
-   - Build complete HTML document with title page and content
-
-2. **Render PDF**:
-   - Read external CSS file
-   - Pass HTML + CSS to WeasyPrint for PDF generation
-   - Save debug HTML alongside PDF for troubleshooting
+1. **Parse Frontmatter**: Extract metadata (languages, no_headers_first_page)
+2. **Process Content**: Filter by language, expand custom commands, convert Markdown to HTML
+3. **Build Document**: Generate TOC, number sections, wrap with orientation classes, inject headers/footers
+4. **Render PDF**: Pass HTML + CSS to WeasyPrint for each language variant
 
 ### Key Design Principles
 
@@ -27,6 +22,7 @@ The system follows a **simple 2-stage pipeline**:
 - **Expert-Friendly**: Designed for users comfortable with Markdown and CSS
 - **Simple Architecture**: Minimal abstractions, easy to understand
 - **Separation of Concerns**: Content (Markdown) and layout (CSS) are completely separated
+- **Multilingual Support**: Single markdown file generates multiple language-specific PDFs
 
 ## Development Commands
 
@@ -39,16 +35,17 @@ source .venv/bin/activate
 # Install package in editable mode (first time only)
 pip install -e .
 
-# Generate PDF using the examples
-docco build examples/document.md examples/style.css --output output/example.pdf
+# Generate PDF from examples
+docco build examples/Feature\ Showcase.md examples/style.css
 
-# Or without output flag (uses default output/document.pdf)
-docco build examples/document.md examples/style.css
+# Generate multilingual PDFs
+docco build examples/Multilingual\ Example.md examples/style.css
 ```
 
-Output files are created in the specified directory (or `output/` by default):
-- `<output-path>.pdf` - Generated A4 PDF
-- `debug.html` - Intermediate HTML for browser debugging
+Output files are created in `output/` directory:
+- `<filename>.pdf` - Generated A4 PDF (single language)
+- `<filename>_EN.pdf`, `<filename>_DE.pdf`, etc. - Language-specific PDFs (multilingual)
+- `debug.html` or `debug_EN.html` - Intermediate HTML for browser debugging
 
 ### Environment Setup
 
@@ -74,9 +71,6 @@ pytest --cov=docco --cov-report=html
 
 # Run specific test file
 pytest tests/unit/test_cli.py
-
-# Run specific test
-pytest tests/unit/test_cli.py::TestCliBuild::test_build_command_success
 ```
 
 ### Code Quality
@@ -106,22 +100,31 @@ Docco/
 │       ├── cli.py                   # CLI entry point with build command
 │       ├── content/
 │       │   ├── markdown.py          # Markdown to HTML conversion
-│       │   └── commands.py          # Custom command processor
+│       │   ├── commands.py          # Custom command processor
+│       │   └── language_filter.py   # Language filtering for multilingual docs
 │       └── rendering/
-│           └── pdf_renderer.py      # WeasyPrint wrapper
+│           ├── pdf_renderer.py      # WeasyPrint wrapper
+│           └── headers_footers.py   # Header/footer template system
 ├── tests/
 │   ├── conftest.py                  # Pytest fixtures
 │   ├── unit/                        # Unit tests
 │   │   ├── test_cli.py              # CLI tests
 │   │   ├── test_markdown.py         # Markdown conversion tests
-│   │   └── test_commands.py         # Command processor tests
+│   │   ├── test_commands.py         # Command processor tests
+│   │   ├── test_language_filter.py  # Language filter tests
+│   │   └── test_headers_footers.py  # Header/footer tests
 │   └── integration/                 # Integration tests
 │       └── test_pdf_generation.py   # End-to-end PDF generation tests
 ├── examples/
-│   ├── document.md                  # Example markdown with frontmatter
+│   ├── Feature Showcase.md          # Example with all features
+│   ├── Multilingual Example.md      # Multilingual example
 │   ├── style.css                    # Example stylesheet
 │   ├── commands/                    # Custom command templates
 │   │   └── callout.html             # Callout box template
+│   ├── header.html                  # Default header template
+│   ├── footer.html                  # Default footer template
+│   ├── header.EN.html, etc.         # Language-specific headers
+│   ├── footer.EN.html, etc.         # Language-specific footers
 │   └── images/                      # Image assets
 ├── output/                          # Generated files (gitignored)
 ├── pyproject.toml                   # Package configuration
@@ -134,10 +137,12 @@ Docco/
 
 #### `docco.cli` (cli.py)
 - **CLI commands**: `docco build`, `docco version`
-- Parses YAML frontmatter from markdown files
-- Builds HTML documents with title pages
-- Orchestrates markdown-to-PDF conversion
-- Helper functions: `_parse_frontmatter()`, `_build_html_from_markdown()`, `_escape_html()`
+- Parses YAML frontmatter (languages, no_headers_first_page)
+- Orchestrates multilingual PDF generation loop
+- Builds HTML documents with TOC, section numbering, orientation wrappers
+- Processes directives: `<!-- landscape -->`, `<!-- portrait -->`, `<!-- addendum -->`
+- Handles image path resolution and figure/figcaption wrapping
+- Helper functions: `_parse_frontmatter()`, `_build_html_from_markdown()`, `_parse_sections()`, `_build_toc()`, `_escape_html()`
 
 #### `docco.content.markdown` (markdown.py)
 - **MarkdownConverter class**: Wrapper around markdown-it-py
@@ -149,36 +154,45 @@ Docco/
 - Loads HTML templates from `commands/` folder
 - Substitutes `{{variables}}` with command arguments and content
 
+#### `docco.content.language_filter` (language_filter.py)
+- **LanguageFilter class**: Filters markdown by language tags
+- Processes `<!-- lang:XX -->...<!-- /lang -->` blocks
+- Keeps untagged content in all languages, removes non-matching tagged content
+
 #### `docco.rendering.pdf_renderer` (pdf_renderer.py)
 - **PDFRenderer class**: WeasyPrint wrapper
 - Converts HTML+CSS to PDF files or bytes
 
 #### `docco.rendering.headers_footers` (headers_footers.py)
 - **HeaderFooterProcessor class**: Manages header/footer templates
-- Loads `header.html` and `footer.html` from markdown directory
-- Replaces variables ({{filename}}, {{title}}, etc.) in templates
+- Loads `header.html`, `footer.html`, or language-specific variants (e.g., `header.EN.html`)
+- Replaces variables (`{{filename}}`, `{{language}}`) in templates
 - Injects running elements into HTML document
 - **modify_css_for_running_elements()**: Modifies CSS to use element(header) and element(footer)
 - Detects conflicts with existing @page content rules and warns
-- Skips @page :first to preserve title page without headers/footers
+- Respects `no_headers_first_page` flag (default: True)
 
-## Current Implementation Status
+## Features
 
-**Complete**: Pure CLI tool with external CSS
+### Complete Feature Set
+
 - ✅ CLI interface (`docco build <md> <css>`)
-- ✅ YAML frontmatter parsing
-- ✅ Markdown to HTML conversion
+- ✅ YAML frontmatter parsing (languages, no_headers_first_page)
+- ✅ Markdown to HTML conversion (headings, bold, italic, lists, tables, code, links)
 - ✅ External CSS support (no embedded CSS)
 - ✅ PDF output with WeasyPrint
 - ✅ Debug HTML generation
+- ✅ Table of contents generation with section numbers
+- ✅ Automatic section numbering (1, 1.1, 1.2.3, etc.)
+- ✅ Addendum sections with letter numbering (A, B, C)
+- ✅ Mixed portrait/landscape orientations (`<!-- landscape -->`, `<!-- portrait -->`)
+- ✅ Custom commands system (`<!-- cmd: name args -->...<!-- /cmd -->`)
+- ✅ Headers and footers system with variable substitution
+- ✅ Language-specific headers/footers (header.EN.html, footer.DE.html, etc.)
+- ✅ Multilingual document support (`languages: EN DE NL` in frontmatter)
+- ✅ Language filtering (`<!-- lang:XX -->...<!-- /lang -->`)
+- ✅ Image path resolution and figure/figcaption wrapping
 - ✅ Unit and integration tests
-- ✅ Table of contents generation
-- ✅ Mixed portrait/landscape orientations
-- ✅ Custom commands system
-- ✅ Headers and footers system
-
-**Not Implemented**:
-- Image optimization/embedding
 
 ## Using Docco
 
@@ -187,13 +201,6 @@ Docco/
 Create a markdown file with YAML frontmatter:
 
 ```markdown
----
-title: My Documentation
-subtitle: Technical Guide
-date: 2025-10-23
-author: Your Name
----
-
 # Introduction
 
 This is the **introduction** with *markdown*.
@@ -212,7 +219,7 @@ Create a CSS file:
     margin: 25mm;
 }
 
-.title-page {
+.toc-page {
     page-break-after: always;
 }
 
@@ -221,35 +228,19 @@ Create a CSS file:
 }
 ```
 
-Optionally create header.html and footer.html in the same directory:
-
-**header.html:**
-```html
-<div style="font-size: 9pt; color: #666;">{{title}}</div>
-```
-
-**footer.html:**
-```html
-<div class="page-number" style="font-size: 9pt; color: #666;"></div>
-```
-
 Generate PDF:
 
 ```bash
-docco build document.md style.css --output my_doc.pdf
+docco build document.md style.css --output output/my_doc.pdf
 ```
 
 ### YAML Frontmatter
 
-Required fields:
-- `title`: Document title (required)
-
 Optional fields:
-- `subtitle`: Document subtitle
-- `date`: Publication date
-- `author`: Author name
+- `languages`: Space-separated language codes (e.g., `EN DE NL`) for multilingual PDFs
+- `no_headers_first_page`: Boolean (default: true) - whether to skip headers/footers on first page
 
-### Markdown Support
+### Markdown Features
 
 Content uses markdown-it-py for parsing. Supported features:
 - Bold, italic, links
@@ -258,6 +249,29 @@ Content uses markdown-it-py for parsing. Supported features:
 - Code blocks and inline code
 - Paragraphs
 - Headings (H1, H2, H3)
+- Images with automatic path resolution and figure/figcaption wrapping
+
+### Section Numbering and TOC
+
+- All H1, H2, H3 headings are automatically numbered (1, 1.1, 1.2.3, etc.)
+- Table of Contents is automatically generated from headings
+- Use `<!-- addendum -->` before a heading to create appendix sections (A, B, C)
+
+### Orientation Control
+
+Use HTML comments to control page orientation:
+
+```markdown
+<!-- landscape -->
+# Wide Section
+
+This content appears in landscape orientation.
+
+<!-- portrait -->
+# Normal Section
+
+Back to portrait orientation.
+```
 
 ### Custom Commands
 
@@ -290,23 +304,51 @@ Or self-closing: `<!-- cmd: name arg="val" /-->`
 
 **Processing:** Commands are expanded before markdown conversion, so content can contain markdown.
 
+### Multilingual Documents
+
+Generate language-specific PDFs from a single markdown file:
+
+**Frontmatter:**
+```yaml
+---
+languages: EN DE NL
+---
+```
+
+**Language tags in content:**
+```markdown
+This text appears in all languages.
+
+<!-- lang:EN -->
+This text only appears in the English PDF.
+<!-- /lang -->
+
+<!-- lang:DE -->
+Dieser Text erscheint nur im deutschen PDF.
+<!-- /lang -->
+```
+
+**Output:**
+- `output/document_EN.pdf`
+- `output/document_DE.pdf`
+- `output/document_NL.pdf`
+
 ### Headers and Footers
 
 Headers and footers can be defined using optional `header.html` and `footer.html` files in the same directory as the markdown file.
 
 **File location:** Same directory as the markdown file (e.g., `examples/header.html`)
 
+**Language-specific variants:** `header.EN.html`, `footer.DE.html`, etc. (falls back to `header.html`/`footer.html`)
+
 **Variable replacements:**
 - `{{filename}}` - Markdown filename without path/extension
-- `{{title}}` - From frontmatter
-- `{{subtitle}}` - From frontmatter
-- `{{date}}` - From frontmatter
-- `{{author}}` - From frontmatter
+- `{{language}}` - Language code (for multilingual documents)
 
 **Example header.html:**
 ```html
 <div style="font-size: 9pt; color: #666;">
-    {{title}}
+    {{filename}}
 </div>
 ```
 
@@ -326,15 +368,16 @@ Headers and footers can be defined using optional `header.html` and `footer.html
 - If header.html exists, docco automatically injects `@top-center { content: element(header); }` into all `@page` rules
 - If footer.html exists, docco automatically injects `@bottom-right { content: element(footer); }` into all `@page` rules
 - Existing `@page` content rules are replaced with warnings
-- `@page :first` is never modified (title page has no headers/footers)
+- First page headers/footers controlled by `no_headers_first_page` frontmatter flag (default: true, meaning no headers on first page)
 
 ### CSS Customization
 
 All layout and styling is controlled via the external CSS file:
 - `@page` rules for A4 setup, margins, orientation
-- `.title-page` - Title page styling
+- `.toc-page` - TOC page styling
 - `.content` - Content wrapper
-- Standard HTML selectors (h1, h2, h3, p, table, etc.)
+- `.section-wrapper.portrait` / `.section-wrapper.landscape` - Orientation-specific styling
+- Standard HTML selectors (h1, h2, h3, p, table, figure, figcaption, etc.)
 
 Users provide their own CSS file - there is no default embedded CSS.
 
@@ -345,23 +388,27 @@ Users provide their own CSS file - there is no default embedded CSS.
 The CLI parses YAML frontmatter delimited by `---`:
 - Frontmatter must be at the start of the file
 - Must have opening and closing `---` delimiters
-- Title field is required; others are optional
+- All fields are optional
 - Invalid YAML raises an error
 
 ### HTML Generation
 
-HTML is built directly in the CLI module using string concatenation:
-- Title page is generated from frontmatter metadata
+HTML is built in the CLI module using string operations:
+- Custom commands are expanded before markdown conversion
+- Content is filtered by language (for multilingual docs)
 - Markdown content is converted to HTML by MarkdownConverter
+- Sections are parsed with orientation directives
+- TOC is generated from headings with automatic numbering
+- Images are resolved and wrapped in figure/figcaption elements
+- Headers/footers are injected as running elements
 - Complete document structure includes `<!DOCTYPE>`, `<html>`, `<head>`, `<body>`
-- HTML entities are escaped using `_escape_html()` helper
 
 ### PDF Rendering
 
 WeasyPrint converts HTML + CSS to PDF:
 - Supports CSS Paged Media (`@page` rules)
-- Handles headers, footers, page numbers via CSS
-- Title page can omit headers/footers using `@page :first`
+- Handles headers, footers, page numbers via CSS running elements
+- First page headers/footers controlled by `no_headers_first_page` flag
 - Debug HTML is saved for troubleshooting
 
 ### Testing Strategy
@@ -369,28 +416,29 @@ WeasyPrint converts HTML + CSS to PDF:
 **Unit tests** verify individual components:
 - YAML frontmatter parsing
 - HTML escaping
+- Section parsing and numbering
+- Language filtering
+- Custom command processing
+- Header/footer template loading and variable substitution
 - CLI command execution
 - Error handling
 
 **Integration tests** verify full workflows:
 - Complete PDF generation
-- Complex markdown documents
+- Multilingual document generation
 - Default output paths
 
 Run tests with `pytest` after installing dev dependencies.
 
-## Design Constraints
+## Coding Guidelines
 
-- Documents are small (~50 pages max), so performance optimization is not a priority
 - Focus on maintainability over automation complexity
 - Code should be understandable years later
 - All dependencies must be open source with permissive licenses
 - Target rendering time: <10 seconds for ~50 page documents
 - Test coverage should remain high (aim for >80%)
-
-## Manual Additions to CLAUDE.md
 - Use short/concise git commit messages, try to condense it in 1 or 2 lines
-- do not add generated with / co-authored with claude section to the git commit message
+- Do not add generated with / co-authored with claude section to the git commit message
 - When rewriting code, always try reduce LOC and bloat
-- When added code or documentation or examples, stick to the bare minimum, do not add more than asked. Keep it light-weight & simple.
-- After code changes, always rebuild the example.md pdf file
+- When added code or documentation or examples, stick to the bare minimum, do not add more than asked. Keep it light-weight & simple. KISS & DRY all the way.
+- After code changes, always run Docco on all the example md files
