@@ -15,9 +15,11 @@ Docco converts Markdown documents into styled PDFs using WeasyPrint. Write your 
 - **Headers & Footers**: Language-specific templates with variable substitution
 - **Debug HTML**: Intermediate HTML output for browser-based layout debugging
 
-## Installation (Linux)
+## Installation
 
-### System Dependencies
+### Linux
+
+**System Dependencies:**
 
 ```bash
 # Debian/Ubuntu
@@ -30,7 +32,7 @@ sudo pacman -S python-weasyprint
 sudo dnf install weasyprint
 ```
 
-### Install Docco
+**Install Docco:**
 
 ```bash
 # Clone repository
@@ -43,6 +45,29 @@ pip install -e .
 # Verify installation
 docco version
 ```
+
+### Windows
+
+**System Dependencies:**
+
+1. Download WeasyPrint executable from: https://github.com/Kozea/WeasyPrint/releases
+2. Extract and add to PATH (or place in a directory already in PATH)
+
+**Install Docco:**
+
+```powershell
+# Clone repository
+git clone https://github.com/JustusRijke/Docco
+cd Docco
+
+# Install package
+pip install -e .
+
+# Verify installation
+docco version
+```
+
+**Note:** Docco will automatically use the WeasyPrint executable if the Python library is unavailable.
 
 ## Quick Start
 

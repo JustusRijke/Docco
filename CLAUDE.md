@@ -160,8 +160,9 @@ Docco/
 - Keeps untagged content in all languages, removes non-matching tagged content
 
 #### `docco.rendering.pdf_renderer` (pdf_renderer.py)
-- **PDFRenderer class**: WeasyPrint wrapper
+- **PDFRenderer class**: WeasyPrint wrapper with executable fallback
 - Converts HTML+CSS to PDF files or bytes
+- Automatically uses `weasyprint` executable if Python library unavailable (Windows support)
 
 #### `docco.rendering.headers_footers` (headers_footers.py)
 - **HeaderFooterProcessor class**: Manages header/footer templates
