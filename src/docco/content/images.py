@@ -3,6 +3,7 @@ Image processing and validation utilities.
 """
 
 from pathlib import Path
+import re
 from typing import Optional, TYPE_CHECKING
 import warnings
 
@@ -184,8 +185,6 @@ def parse_image_directive(directive_content: str) -> Optional[dict]:
             - css_class: CSS class name (str) or None
         Returns None if not a valid image directive
     """
-    import re
-
     # Match: img "path" "style/class"
     pattern = re.compile(r'img\s+"([^"]+)"\s+"([^"]+)"', re.IGNORECASE)
     match = pattern.match(directive_content.strip())

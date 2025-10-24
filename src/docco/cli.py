@@ -3,6 +3,7 @@ Command-line interface for Docco.
 """
 
 from pathlib import Path
+import re
 import click
 import yaml
 from docco.rendering.pdf_renderer import PDFRenderer
@@ -73,11 +74,9 @@ def build(markdown_file: Path, css_file: Path, output: Path | None):
             markdown_file_path=markdown_file,
         )
 
-        # Ensure output directory exists
-        output.parent.mkdir(parents=True, exist_ok=True)
-
-        # Save debug HTML if requested
+        # Save debug HTML
         debug_html = output.parent / "debug.html"
+        output.parent.mkdir(parents=True, exist_ok=True)
         debug_html.write_text(html, encoding="utf-8")
         click.echo(f"Debug HTML saved to: {debug_html}")
 
@@ -267,7 +266,6 @@ def _parse_sections(content: str, markdown_file_path: Path | None = None) -> lis
     Returns:
         List of section dicts with keys: html, orientation, title, level, id, number, is_addendum
     """
-    import re
     from docco.content.markdown import MarkdownConverter
     from docco.content.images import ImageProcessor, parse_image_directive
 
@@ -396,7 +394,6 @@ def _make_section_id(number: str) -> str:
     Returns:
         Valid HTML ID (e.g., "section-1-2-3" or "section-a")
     """
-    import re
     return f"section-{re.sub(r'[^a-z0-9]+', '-', number.lower()).strip('-')}"
 
 

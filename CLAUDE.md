@@ -152,12 +152,11 @@ Docco/
 - ✅ PDF output with WeasyPrint
 - ✅ Debug HTML generation
 - ✅ Unit and integration tests
+- ✅ Table of contents generation
+- ✅ Mixed portrait/landscape orientations
 
 **Not Implemented**:
 - Image optimization/embedding
-- Table of contents generation
-- Mixed portrait/landscape orientations
-- Reusable content modules
 
 ## Using Docco
 
@@ -301,3 +300,4 @@ Run tests with `pytest` after installing dev dependencies.
 - Deleted: `src/docco/core/` directory
 - CLI now accepts `.md` + `.css` files directly
 - No programmatic document building - pure CLI tool
+- do not add generated with / co-authored with claude section to the git commit message
