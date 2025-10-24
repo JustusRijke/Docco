@@ -153,6 +153,15 @@ Docco/
 - **PDFRenderer class**: WeasyPrint wrapper
 - Converts HTML+CSS to PDF files or bytes
 
+#### `docco.rendering.headers_footers` (headers_footers.py)
+- **HeaderFooterProcessor class**: Manages header/footer templates
+- Loads `header.html` and `footer.html` from markdown directory
+- Replaces variables ({{filename}}, {{title}}, etc.) in templates
+- Injects running elements into HTML document
+- **modify_css_for_running_elements()**: Modifies CSS to use element(header) and element(footer)
+- Detects conflicts with existing @page content rules and warns
+- Skips @page :first to preserve title page without headers/footers
+
 ## Current Implementation Status
 
 **Complete**: Pure CLI tool with external CSS
@@ -166,6 +175,7 @@ Docco/
 - ✅ Table of contents generation
 - ✅ Mixed portrait/landscape orientations
 - ✅ Custom commands system
+- ✅ Headers and footers system
 
 **Not Implemented**:
 - Image optimization/embedding
@@ -200,21 +210,27 @@ Create a CSS file:
 @page {
     size: A4 portrait;
     margin: 25mm;
-
-    @top-center {
-        content: "My Documentation";
-        font-size: 9pt;
-    }
-
-    @bottom-right {
-        content: "Page " counter(page);
-        font-size: 9pt;
-    }
 }
 
 .title-page {
     page-break-after: always;
 }
+
+.page-number::after {
+    content: counter(page);
+}
+```
+
+Optionally create header.html and footer.html in the same directory:
+
+**header.html:**
+```html
+<div style="font-size: 9pt; color: #666;">{{title}}</div>
+```
+
+**footer.html:**
+```html
+<div class="page-number" style="font-size: 9pt; color: #666;"></div>
 ```
 
 Generate PDF:
@@ -274,10 +290,48 @@ Or self-closing: `<!-- cmd: name arg="val" /-->`
 
 **Processing:** Commands are expanded before markdown conversion, so content can contain markdown.
 
+### Headers and Footers
+
+Headers and footers can be defined using optional `header.html` and `footer.html` files in the same directory as the markdown file.
+
+**File location:** Same directory as the markdown file (e.g., `examples/header.html`)
+
+**Variable replacements:**
+- `{{filename}}` - Markdown filename without path/extension
+- `{{title}}` - From frontmatter
+- `{{subtitle}}` - From frontmatter
+- `{{date}}` - From frontmatter
+- `{{author}}` - From frontmatter
+
+**Example header.html:**
+```html
+<div style="font-size: 9pt; color: #666;">
+    {{title}}
+</div>
+```
+
+**Example footer.html:**
+```html
+<div class="page-number" style="font-size: 9pt; color: #666;"></div>
+```
+
+**Page numbers:** Use the `.page-number` class with a CSS `::after` pseudo-element:
+```css
+.page-number::after {
+    content: counter(page);
+}
+```
+
+**Behavior:**
+- If header.html exists, docco automatically injects `@top-center { content: element(header); }` into all `@page` rules
+- If footer.html exists, docco automatically injects `@bottom-right { content: element(footer); }` into all `@page` rules
+- Existing `@page` content rules are replaced with warnings
+- `@page :first` is never modified (title page has no headers/footers)
+
 ### CSS Customization
 
 All layout and styling is controlled via the external CSS file:
-- `@page` rules for A4 setup, headers/footers
+- `@page` rules for A4 setup, margins, orientation
 - `.title-page` - Title page styling
 - `.content` - Content wrapper
 - Standard HTML selectors (h1, h2, h3, p, table, etc.)

@@ -7,6 +7,7 @@ import re
 import click
 import yaml
 from docco.rendering.pdf_renderer import PDFRenderer
+from docco.rendering.headers_footers import HeaderFooterProcessor, modify_css_for_running_elements
 
 
 @click.group()
@@ -60,6 +61,27 @@ def build(markdown_file: Path, css_file: Path, output: Path | None):
         # Read CSS
         css = css_file.read_text(encoding="utf-8")
 
+        # Process header/footer templates
+        hf_processor = HeaderFooterProcessor(markdown_file)
+        header_template, footer_template = hf_processor.load_templates()
+
+        # Replace variables in templates
+        header_html = None
+        footer_html = None
+        if header_template:
+            header_html = hf_processor.replace_variables(header_template, metadata)
+            click.echo("Using header.html")
+        if footer_template:
+            footer_html = hf_processor.replace_variables(footer_template, metadata)
+            click.echo("Using footer.html")
+
+        # Modify CSS for running elements
+        css, css_warnings = modify_css_for_running_elements(
+            css, has_header=header_html is not None, has_footer=footer_html is not None
+        )
+        for warning in css_warnings:
+            click.echo(warning, err=True)
+
         # Build HTML (convert date to string if it's a datetime object)
         date_value = metadata.get("date")
         if date_value is not None and not isinstance(date_value, str):
@@ -73,6 +95,9 @@ def build(markdown_file: Path, css_file: Path, output: Path | None):
             author=metadata.get("author"),
             markdown_file_path=markdown_file,
         )
+
+        # Inject running elements into HTML
+        html = hf_processor.inject_running_elements(html, header_html, footer_html)
 
         # Save debug HTML
         debug_html = output.parent / "debug.html"

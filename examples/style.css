@@ -2,46 +2,23 @@
 @page {
     size: A4 portrait;
     margin: 25mm 20mm 25mm 20mm;
-
-    @top-center {
-        content: "Product Documentation";
-        font-size: 9pt;
-        color: #666;
-        border-bottom: 0.5pt solid #ccc;
-        padding-bottom: 3mm;
-    }
-
-    @bottom-right {
-        content: "Page " counter(page);
-        font-size: 9pt;
-        color: #666;
-    }
 }
 
 /* Page setup - Landscape */
 @page landscape {
     size: A4 landscape;
     margin: 20mm 25mm 20mm 25mm;
-
-    @top-center {
-        content: "Product Documentation";
-        font-size: 9pt;
-        color: #666;
-        border-bottom: 0.5pt solid #ccc;
-        padding-bottom: 3mm;
-    }
-
-    @bottom-right {
-        content: "Page " counter(page);
-        font-size: 9pt;
-        color: #666;
-    }
 }
 
 /* No headers/footers on title page */
 @page :first {
     @top-center { content: none; }
     @bottom-right { content: none; }
+}
+
+/* Page number styling for footer.html */
+.page-number::after {
+    content: counter(page);
 }
 
 /* Base typography */
