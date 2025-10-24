@@ -68,23 +68,17 @@ def build(markdown_file: Path, css_file: Path, output: Path | None):
         # Read CSS
         css = css_file.read_text(encoding="utf-8")
 
-        # Process header/footer templates
+        # Initialize header/footer processor
         hf_processor = HeaderFooterProcessor(markdown_file)
-        header_template, footer_template = hf_processor.load_templates()
 
-        # Replace variables in templates
-        header_html = None
-        footer_html = None
-        if header_template:
-            header_html = hf_processor.replace_variables(header_template)
-            click.echo("Using header.html")
-        if footer_template:
-            footer_html = hf_processor.replace_variables(footer_template)
-            click.echo("Using footer.html")
+        # Check if any header/footer templates exist (for CSS modification)
+        # Try first language to determine if headers/footers should be injected into CSS
+        first_lang = languages[0]
+        sample_header, sample_footer = hf_processor.load_templates(first_lang)
 
-        # Modify CSS for running elements
+        # Modify CSS for running elements (done once, applies to all languages)
         css, css_warnings = modify_css_for_running_elements(
-            css, has_header=header_html is not None, has_footer=footer_html is not None,
+            css, has_header=sample_header is not None, has_footer=sample_footer is not None,
             no_headers_first_page=no_headers_first_page
         )
         for warning in css_warnings:
@@ -93,6 +87,27 @@ def build(markdown_file: Path, css_file: Path, output: Path | None):
         # Generate PDF for each language
         language_filter = LanguageFilter()
         for language in languages:
+            # Load language-specific header/footer templates
+            header_template, footer_template = hf_processor.load_templates(language)
+
+            # Replace variables in templates
+            header_html = None
+            footer_html = None
+            if header_template:
+                header_html = hf_processor.replace_variables(header_template, language)
+                # Determine which file was actually loaded
+                if language and (hf_processor.base_dir / f"header.{language}.html").exists():
+                    click.echo(f"Using header.{language}.html")
+                else:
+                    click.echo("Using header.html")
+            if footer_template:
+                footer_html = hf_processor.replace_variables(footer_template, language)
+                # Determine which file was actually loaded
+                if language and (hf_processor.base_dir / f"footer.{language}.html").exists():
+                    click.echo(f"Using footer.{language}.html")
+                else:
+                    click.echo("Using footer.html")
+
             # Filter content for this language
             if language:
                 filtered_content = language_filter.filter_for_language(content, language)

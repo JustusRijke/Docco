@@ -19,35 +19,57 @@ class HeaderFooterProcessor:
         self.base_dir = markdown_file_path.parent
         self.filename = markdown_file_path.stem  # filename without extension
 
-    def load_templates(self) -> tuple[str | None, str | None]:
+    def load_templates(self, language: str | None = None) -> tuple[str | None, str | None]:
         """
         Load header.html and footer.html from the markdown file's directory.
+
+        Supports language-specific templates:
+        - If language is provided, tries header.{language}.html first, then header.html
+        - Same for footer templates
+
+        Args:
+            language: Optional language code (e.g., "EN", "NL", "DE")
 
         Returns:
             Tuple of (header_html, footer_html) where each is None if file doesn't exist
         """
-        header_path = self.base_dir / "header.html"
-        footer_path = self.base_dir / "footer.html"
+        def load_template(base_name: str) -> str | None:
+            if language:
+                # Try language-specific file first
+                lang_path = self.base_dir / f"{base_name}.{language}.html"
+                if lang_path.exists():
+                    return lang_path.read_text(encoding="utf-8")
 
-        header_html = header_path.read_text(encoding="utf-8") if header_path.exists() else None
-        footer_html = footer_path.read_text(encoding="utf-8") if footer_path.exists() else None
+            # Fall back to generic file
+            generic_path = self.base_dir / f"{base_name}.html"
+            return generic_path.read_text(encoding="utf-8") if generic_path.exists() else None
+
+        header_html = load_template("header")
+        footer_html = load_template("footer")
 
         return header_html, footer_html
 
-    def replace_variables(self, template: str) -> str:
+    def replace_variables(self, template: str, language: str | None = None) -> str:
         """
         Replace {{variables}} in template with values.
 
         Supported variables:
         - {{filename}} - markdown filename without extension
+        - {{language}} - language code (if provided)
 
         Args:
             template: HTML template string
+            language: Optional language code
 
         Returns:
             Template with variables replaced
         """
-        return template.replace("{{filename}}", self.filename)
+        result = template.replace("{{filename}}", self.filename)
+        if language:
+            result = result.replace("{{language}}", language)
+        else:
+            result = result.replace("{{language}}", "")
+        return result
 
     def inject_running_elements(self, html: str, header_content: str | None, footer_content: str | None) -> str:
         """
