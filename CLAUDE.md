@@ -290,16 +290,10 @@ Run tests with `pytest` after installing dev dependencies.
 - All dependencies must be open source with permissive licenses
 - Target rendering time: <10 seconds for ~50 page documents
 - Test coverage should remain high (aim for >80%)
-- Use short/concise git commit messages
 
-## Migration Notes
-
-**v0.2.0 → v0.3.0**: Removed Python API entirely
-- Deleted: `Document`, `Section`, `SectionNumberer`, `HTMLBuilder`, `CSSBuilder`
-- Deleted: `markdown_parser.py` (was part of Python API)
-- Deleted: `src/docco/core/` directory
-- CLI now accepts `.md` + `.css` files directly
-- No programmatic document building - pure CLI tool
+## Manual Additions to CLAUDE.md
+- Use short/concise git commit messages, try to condense it in 1 or 2 lines
 - do not add generated with / co-authored with claude section to the git commit message
 - When rewriting code, always try reduce LOC and bloat
 - When added code or documentation or examples, stick to the bare minimum, do not add more than asked. Keep it light-weight & simple.
+- After code changes, always rebuild the example.md pdf file

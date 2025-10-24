@@ -111,6 +111,19 @@ Images are resolved relative to the markdown file location.
 
 ---
 
+## Borderless Table with Icon
+
+<table style="border:none;">
+<tr>
+<td style="border:none; width:60px; vertical-align:middle; padding-right:10px;"><img src="images/idea.svg" style="width:50px;" /></td>
+<td style="border:none; vertical-align:middle;">Using borderless tables with icons creates effective callout boxes. This technique is useful for highlighting important information or warnings in your documents.</td>
+</tr>
+</table>
+
+## Horizontal Rule
+
+---
+
 <!-- landscape -->
 # Landscape Orientation
 
