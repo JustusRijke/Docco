@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
-    {name = "Your Name", email = "your.email@example.com"}
+    {name = "Justus Rijke", email = "justusrijke@gmail.com"}
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -24,6 +24,7 @@ classifiers = [
 dependencies = [
     "weasyprint>=66.0",
     "markdown-it-py>=4.0.0",
+    "pyyaml>=6.0.0",
     "pillow>=12.0.0",
     "click>=8.0.0",
 ]
