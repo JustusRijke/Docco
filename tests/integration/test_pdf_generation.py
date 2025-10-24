@@ -198,18 +198,9 @@ Content.
 
     def test_document_with_images(self, tmp_path):
         """Test document generation with inline images."""
-        pytest.importorskip("PIL")  # Skip if Pillow not installed
-
-        from PIL import Image
-
         # Create images directory
         images_dir = tmp_path / "images"
         images_dir.mkdir()
-
-        # Create a test PNG image
-        png_file = images_dir / "test.png"
-        img = Image.new('RGB', (100, 100), color='blue')
-        img.save(png_file, format='PNG')
 
         # Create a test SVG image
         svg_file = images_dir / "icon.svg"
@@ -219,27 +210,17 @@ Content.
             '</svg>'
         )
 
-        # Create markdown with image directives
+        # Create markdown with HTML img tags
         md_file = tmp_path / "document.md"
         md_content = """---
 title: Image Test Document
-subtitle: Testing Image Support
-date: 2025-10-23
 ---
 
 # Images
 
-Testing inline image support.
+<img src="images/icon.svg" style="width:50px; margin:10px auto; display:block;" />
 
-## PNG Image with Inline Style
-
-<!-- img "images/test.png" "width:50px; margin:10px auto; display:block;" -->
-
-## SVG Image with CSS Class
-
-<!-- img "images/icon.svg" "class:icon" -->
-
-Done!
+<img src="images/icon.svg" class="icon" alt="Figure 1: Test icon" />
 """
         md_file.write_text(md_content, encoding="utf-8")
 
@@ -295,7 +276,8 @@ img.icon {
         assert '<img' in html_content, "No img tags found in HTML"
         assert 'src="file://' in html_content, "Image src not using file:// URL"
         assert 'class="icon"' in html_content, "CSS class not applied to image"
-        assert 'width:50px' in html_content, "Inline style not applied"
+        assert '<figure>' in html_content, "Figure element not created for img with alt"
+        assert '<figcaption>' in html_content, "Figcaption not created for img with alt"
 
     def test_document_with_missing_image(self, tmp_path):
         """Test that missing images generate error messages."""
@@ -306,7 +288,7 @@ title: Missing Image Test
 
 # Test
 
-<!-- img "nonexistent.png" "width:100px" -->
+<img src="nonexistent.png" style="width:100px" />
 """
         md_file.write_text(md_content, encoding="utf-8")
 

@@ -85,19 +85,25 @@ External link: [Markdown Guide](https://www.markdownguide.org/)
 
 ## Images
 
-Docco supports inline images using HTML directives.
+Docco supports standard HTML `<img>` tags for inline images.
 
 ### Inline Styled Image
 
 This image uses inline CSS styling:
 
-<!-- img "images/idea.svg" "width:100px; display:block; margin:20px auto;" -->
+<img src="images/idea.svg" style="width:100px; display:block; margin:20px auto;" />
 
 ### Class-Based Image
 
 This image uses a CSS class for styling:
 
-<!-- img "images/idea.svg" "class:icon" -->
+<img src="images/idea.svg" class="icon" />
+
+### Images with Captions
+
+Images with `alt` text are automatically wrapped in `<figure>` elements with `<figcaption>`:
+
+<img src="images/idea.svg" style="width:120px; display:block; margin:20px auto;" alt="Figure 1: Innovation concept illustration" />
 
 Images are resolved relative to the markdown file location.
 

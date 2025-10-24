@@ -140,7 +140,8 @@ def _build_html_from_markdown(
 
     Parses markdown for:
     - Headings (for TOC generation)
-    - HTML comment directives (<!-- landscape -->, <!-- portrait -->, <!-- img ... -->)
+    - HTML comment directives (<!-- landscape -->, <!-- portrait -->, <!-- addendum -->)
+    - HTML img tags (for caption wrapping and path resolution)
 
     Args:
         content: Markdown content
@@ -198,55 +199,76 @@ def _build_html_from_markdown(
     return "\n".join(html_parts)
 
 
-def _process_image_directives(content: str, image_processor, image_pattern) -> str:
+def _process_html_images(html: str, markdown_file_path: Path | None = None) -> str:
     """
-    Process image directives in content and replace with HTML img tags.
+    Post-process HTML img tags to:
+    1. Resolve relative image paths to file:// URLs
+    2. Wrap images with alt text in <figure> elements with <figcaption>
 
     Args:
-        content: Markdown content with image directives
-        image_processor: ImageProcessor instance
-        image_pattern: Compiled regex pattern for image directives
+        html: HTML content containing img tags
+        markdown_file_path: Path to markdown file (for resolving relative paths)
 
     Returns:
-        Content with image directives replaced by HTML img tags
+        HTML with processed img tags
     """
-    from docco.content.images import parse_image_directive
+    if not markdown_file_path:
+        return html
 
-    def replace_image(match):
-        directive_content = match.group(1)
-        img_directive = parse_image_directive(directive_content)
+    base_dir = markdown_file_path.parent
 
-        if not img_directive:
-            # Invalid directive, leave as-is
+    # Pattern to match img tags and extract attributes
+    img_pattern = re.compile(
+        r'<img\s+([^>]+)\s*/?>',
+        re.IGNORECASE
+    )
+
+    def process_img_tag(match):
+        attrs_str = match.group(1)
+
+        # Extract src attribute
+        src_match = re.search(r'src=(["\'])([^"\']+)\1', attrs_str)
+        if not src_match:
+            return match.group(0)  # No src, leave as-is
+
+        src_path = src_match.group(2)
+
+        # Skip if already a file:// URL or absolute path
+        if src_path.startswith('file://') or src_path.startswith('/'):
             return match.group(0)
 
+        # Resolve relative path to file:// URL
         try:
-            # Process image
-            img_info = image_processor.process_image(img_directive['path'])
+            resolved_path = (base_dir / src_path).resolve()
+            if not resolved_path.exists():
+                click.echo(f"✗ Image not found: {src_path}", err=True)
+                return f'<span class="image-error">[Image not found: {src_path}]</span>'
 
-            # Build img tag
-            img_attrs = [f'src="{img_info["file_url"]}"']
+            file_url = resolved_path.as_uri()
 
-            if img_directive['css_class']:
-                img_attrs.append(f'class="{img_directive["css_class"]}"')
+            # Replace src with file:// URL
+            new_attrs = attrs_str.replace(src_match.group(0), f'src="{file_url}"')
+            new_img_tag = f'<img {new_attrs} />'
 
-            if img_directive['style']:
-                img_attrs.append(f'style="{img_directive["style"]}"')
+            # Check if img has alt attribute for caption
+            alt_match = re.search(r'alt=(["\'])([^"\']+)\1', attrs_str)
+            if alt_match and alt_match.group(2).strip():
+                alt_text = alt_match.group(2)
+                # Wrap in figure with figcaption
+                return (
+                    f'<figure>\n'
+                    f'  {new_img_tag}\n'
+                    f'  <figcaption>{_escape_html(alt_text)}</figcaption>\n'
+                    f'</figure>'
+                )
+            else:
+                return new_img_tag
 
-            # Add alt text (use filename without extension)
-            alt_text = Path(img_directive['path']).stem
-            img_attrs.append(f'alt="{alt_text}"')
-
-            img_tag = f'<img {" ".join(img_attrs)} />'
-            return img_tag
-
-        except (FileNotFoundError, ValueError) as e:
-            # Image processing failed, show error in output
-            click.echo(f"✗ Image error: {e}", err=True)
+        except Exception as e:
+            click.echo(f"✗ Image processing error: {e}", err=True)
             return f'<span class="image-error">[Image error: {e}]</span>'
 
-    # Replace all image directives
-    return image_pattern.sub(replace_image, content)
+    return img_pattern.sub(process_img_tag, html)
 
 
 def _parse_sections(content: str, markdown_file_path: Path | None = None) -> list[dict]:
@@ -257,7 +279,6 @@ def _parse_sections(content: str, markdown_file_path: Path | None = None) -> lis
     - <!-- landscape --> : Next section uses landscape orientation
     - <!-- portrait --> : Next section uses portrait orientation
     - <!-- addendum --> : Next section is an appendix (lettered A, B, C...)
-    - <!-- img "path" "style/class" --> : Inline image
 
     Args:
         content: Markdown content
@@ -267,31 +288,21 @@ def _parse_sections(content: str, markdown_file_path: Path | None = None) -> lis
         List of section dicts with keys: html, orientation, title, level, id, number, is_addendum
     """
     from docco.content.markdown import MarkdownConverter
-    from docco.content.images import ImageProcessor, parse_image_directive
 
     converter = MarkdownConverter()
     sections = []
-
-    # Initialize image processor if markdown file path provided
-    image_processor = ImageProcessor(markdown_file_path) if markdown_file_path else None
 
     # Find all headings (H1, H2, H3)
     heading_pattern = re.compile(r"^(#{1,3})\s+(.+)$", re.MULTILINE)
     directive_pattern = re.compile(r"<!--\s*(landscape|portrait|addendum)\s*-->", re.IGNORECASE)
 
-    # Pattern for image directives (will be processed separately)
-    image_directive_pattern = re.compile(r"<!--\s*(img\s+[^>]+)\s*-->", re.IGNORECASE)
-
     headings = list(heading_pattern.finditer(content))
 
     if not headings:
         # No headings - treat entire content as single section
-        # Process image directives
-        processed_content = content
-        if image_processor:
-            processed_content = _process_image_directives(content, image_processor, image_directive_pattern)
-
-        html = converter.convert(processed_content)
+        html = converter.convert(content)
+        # Post-process HTML images
+        html = _process_html_images(html, markdown_file_path)
         sections.append({
             "html": html,
             "orientation": "portrait",
@@ -356,12 +367,10 @@ def _parse_sections(content: str, markdown_file_path: Path | None = None) -> lis
             heading_end = heading_start + len(heading_match.group(0))
         section_content = content[heading_end + 1:content_end].strip()
 
-        # Process image directives in section content
-        if section_content and image_processor:
-            section_content = _process_image_directives(section_content, image_processor, image_directive_pattern)
-
         # Convert section content to HTML (without heading)
         content_html = converter.convert(section_content) if section_content else ""
+        # Post-process HTML images
+        content_html = _process_html_images(content_html, markdown_file_path)
 
         # Build heading with number
         h_tag = f"h{level}" if level > 0 else "h1"

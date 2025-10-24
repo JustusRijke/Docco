@@ -301,3 +301,5 @@ Run tests with `pytest` after installing dev dependencies.
 - CLI now accepts `.md` + `.css` files directly
 - No programmatic document building - pure CLI tool
 - do not add generated with / co-authored with claude section to the git commit message
+- When rewriting code, always try reduce LOC and bloat
+- When added code or documentation or examples, stick to the bare minimum, do not add more than asked. Keep it light-weight & simple.
