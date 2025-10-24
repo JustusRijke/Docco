@@ -8,6 +8,7 @@ import click
 import yaml
 from docco.rendering.pdf_renderer import PDFRenderer
 from docco.rendering.headers_footers import HeaderFooterProcessor, modify_css_for_running_elements
+from docco.content.language_filter import LanguageFilter
 
 
 @click.group()
@@ -58,6 +59,13 @@ def build(markdown_file: Path, css_file: Path, output: Path | None):
         if "title" not in metadata:
             raise click.ClickException("Markdown file must contain 'title' in YAML frontmatter")
 
+        # Parse languages from frontmatter
+        languages_str = metadata.get("languages", "")
+        if languages_str:
+            languages = [lang.strip() for lang in languages_str.split()]
+        else:
+            languages = [None]  # Single unnamed language (backward compatible)
+
         # Read CSS
         css = css_file.read_text(encoding="utf-8")
 
@@ -87,28 +95,54 @@ def build(markdown_file: Path, css_file: Path, output: Path | None):
         if date_value is not None and not isinstance(date_value, str):
             date_value = str(date_value)
 
-        html = _build_html_from_markdown(
-            content=content,
-            title=metadata.get("title", "Document"),
-            subtitle=metadata.get("subtitle"),
-            date=date_value,
-            author=metadata.get("author"),
-            markdown_file_path=markdown_file,
-        )
+        # Generate PDF for each language
+        language_filter = LanguageFilter()
+        for language in languages:
+            # Filter content for this language
+            if language:
+                filtered_content = language_filter.filter_for_language(content, language)
+            else:
+                filtered_content = content  # No filtering for single unnamed language
 
-        # Inject running elements into HTML
-        html = hf_processor.inject_running_elements(html, header_html, footer_html)
+            # Build HTML from filtered content
+            html = _build_html_from_markdown(
+                content=filtered_content,
+                title=metadata.get("title", "Document"),
+                subtitle=metadata.get("subtitle"),
+                date=date_value,
+                author=metadata.get("author"),
+                markdown_file_path=markdown_file,
+            )
 
-        # Save debug HTML
-        debug_html = output.parent / "debug.html"
-        output.parent.mkdir(parents=True, exist_ok=True)
-        debug_html.write_text(html, encoding="utf-8")
-        click.echo(f"Debug HTML saved to: {debug_html}")
+            # Inject running elements into HTML
+            html = hf_processor.inject_running_elements(html, header_html, footer_html)
 
-        # Render PDF
-        PDFRenderer.render(html, css, output)
+            # Determine output path
+            if language and len(languages) > 1:
+                # Add language suffix for multiple languages
+                output_path = output.parent / f"{output.stem}_{language}{output.suffix}"
+                debug_html_path = output.parent / f"debug_{language}.html"
+            else:
+                # No suffix for single language (backward compatible)
+                output_path = output
+                debug_html_path = output.parent / "debug.html"
 
-        click.echo(f"✓ PDF generated: {output}")
+            # Save debug HTML
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            debug_html_path.write_text(html, encoding="utf-8")
+            if language:
+                click.echo(f"[{language}] Debug HTML saved to: {debug_html_path}")
+            else:
+                click.echo(f"Debug HTML saved to: {debug_html_path}")
+
+            # Render PDF
+            PDFRenderer.render(html, css, output_path)
+
+            if language:
+                click.echo(f"✓ [{language}] PDF generated: {output_path}")
+            else:
+                click.echo(f"✓ PDF generated: {output_path}")
+
     except Exception as e:
         click.echo(f"✗ Error building document: {e}", err=True)
         raise click.Abort()

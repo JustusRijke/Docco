@@ -309,3 +309,111 @@ title: Missing Image Test
         debug_html = output_pdf.parent / "debug.html"
         html_content = debug_html.read_text(encoding="utf-8")
         assert 'image-error' in html_content or 'Image error' in html_content
+
+    def test_multilingual_document(self, tmp_path):
+        """Test multilingual document generation with language tags."""
+        md_file = tmp_path / "multilingual.md"
+        md_content = """---
+title: Multilingual Test
+languages: NL EN DE
+---
+
+# Common Section
+
+This appears in all languages.
+
+<!-- lang:NL -->
+# Nederlandse Sectie
+Nederlandse inhoud
+<!-- /lang -->
+
+<!-- lang:EN -->
+# English Section
+English content
+<!-- /lang -->
+
+<!-- lang:DE -->
+# Deutsche Sektion
+Deutsche Inhalte
+<!-- /lang -->
+"""
+        md_file.write_text(md_content, encoding="utf-8")
+
+        css_file = tmp_path / "style.css"
+        css_file.write_text("@page { size: A4; }", encoding="utf-8")
+
+        output_pdf = tmp_path / "multilingual.pdf"
+        runner = CliRunner()
+        result = runner.invoke(
+            cli, ["build", str(md_file), str(css_file), "-o", str(output_pdf)]
+        )
+
+        # Verify success
+        assert result.exit_code == 0, f"CLI failed: {result.output}"
+
+        # Verify all three PDFs were created
+        assert (tmp_path / "multilingual_NL.pdf").exists(), "Dutch PDF not created"
+        assert (tmp_path / "multilingual_EN.pdf").exists(), "English PDF not created"
+        assert (tmp_path / "multilingual_DE.pdf").exists(), "German PDF not created"
+
+        # Verify debug HTML files
+        debug_nl = tmp_path / "debug_NL.html"
+        debug_en = tmp_path / "debug_EN.html"
+        debug_de = tmp_path / "debug_DE.html"
+
+        assert debug_nl.exists(), "Dutch debug HTML not created"
+        assert debug_en.exists(), "English debug HTML not created"
+        assert debug_de.exists(), "German debug HTML not created"
+
+        # Verify content filtering
+        nl_content = debug_nl.read_text(encoding="utf-8")
+        en_content = debug_en.read_text(encoding="utf-8")
+        de_content = debug_de.read_text(encoding="utf-8")
+
+        # NL version should have common and Dutch content only
+        assert "Common Section" in nl_content
+        assert "Nederlandse inhoud" in nl_content
+        assert "English content" not in nl_content
+        assert "Deutsche Inhalte" not in nl_content
+
+        # EN version should have common and English content only
+        assert "Common Section" in en_content
+        assert "English content" in en_content
+        assert "Nederlandse inhoud" not in en_content
+        assert "Deutsche Inhalte" not in en_content
+
+        # DE version should have common and German content only
+        assert "Common Section" in de_content
+        assert "Deutsche Inhalte" in de_content
+        assert "Nederlandse inhoud" not in de_content
+        assert "English content" not in de_content
+
+    def test_single_language_no_suffix(self, tmp_path):
+        """Test that single language in frontmatter doesn't add suffix."""
+        md_file = tmp_path / "single.md"
+        md_content = """---
+title: Single Language Test
+languages: EN
+---
+
+# Content
+
+This is a single language document.
+"""
+        md_file.write_text(md_content, encoding="utf-8")
+
+        css_file = tmp_path / "style.css"
+        css_file.write_text("@page { size: A4; }", encoding="utf-8")
+
+        output_pdf = tmp_path / "single.pdf"
+        runner = CliRunner()
+        result = runner.invoke(
+            cli, ["build", str(md_file), str(css_file), "-o", str(output_pdf)]
+        )
+
+        # Verify success
+        assert result.exit_code == 0, f"CLI failed: {result.output}"
+
+        # Should create file without suffix (backward compatible)
+        assert output_pdf.exists(), "PDF not created at expected path"
+        assert not (tmp_path / "single_EN.pdf").exists(), "PDF should not have language suffix"
