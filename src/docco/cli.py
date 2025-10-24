@@ -29,7 +29,7 @@ def cli():
     "--output",
     "-o",
     type=click.Path(path_type=Path),
-    help="Output PDF path (default: output/document.pdf)",
+    help="Output PDF path (default: output/<filename>.pdf)",
 )
 def build(markdown_file: Path, css_file: Path, output: Path | None):
     """
@@ -46,9 +46,9 @@ def build(markdown_file: Path, css_file: Path, output: Path | None):
     click.echo(f"Building document from: {markdown_file}")
     click.echo(f"Using stylesheet: {css_file}")
 
-    # Default output path
+    # Default output path using input filename
     if output is None:
-        output = Path("output/document.pdf")
+        output = Path("output") / f"{markdown_file.stem}.pdf"
 
     try:
         # Parse markdown file
