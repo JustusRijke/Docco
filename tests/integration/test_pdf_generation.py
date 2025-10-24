@@ -16,11 +16,15 @@ class TestEndToEndGeneration:
         # Create markdown file with complex content
         md_file = tmp_path / "document.md"
         md_content = """---
-title: Complete Test Document
-subtitle: Integration Test
-date: 2025-10-23
-author: Test Suite
+no_headers_first_page: true
 ---
+
+<div class="title-page">
+<h1>Complete Test Document</h1>
+<p class="subtitle">Integration Test</p>
+<p class="date">2025-10-23</p>
+<p class="author">Test Suite</p>
+</div>
 
 # Introduction
 
@@ -159,14 +163,10 @@ pre {
         assert "<code>" in html_content
 
     def test_minimal_document(self, tmp_path):
-        """Test minimal document with only required fields."""
+        """Test minimal document without frontmatter."""
         md_file = tmp_path / "minimal.md"
         md_file.write_text(
-            """---
-title: Minimal Doc
----
-
-# Section
+            """# Section
 
 Content.
 """,
@@ -212,11 +212,7 @@ Content.
 
         # Create markdown with HTML img tags
         md_file = tmp_path / "document.md"
-        md_content = """---
-title: Image Test Document
----
-
-# Images
+        md_content = """# Images
 
 <img src="images/icon.svg" style="width:50px; margin:10px auto; display:block;" />
 
@@ -282,11 +278,7 @@ img.icon {
     def test_document_with_missing_image(self, tmp_path):
         """Test that missing images generate error messages."""
         md_file = tmp_path / "document.md"
-        md_content = """---
-title: Missing Image Test
----
-
-# Test
+        md_content = """# Test
 
 <img src="nonexistent.png" style="width:100px" />
 """
@@ -314,7 +306,6 @@ title: Missing Image Test
         """Test multilingual document generation with language tags."""
         md_file = tmp_path / "multilingual.md"
         md_content = """---
-title: Multilingual Test
 languages: NL EN DE
 ---
 
@@ -392,7 +383,6 @@ Deutsche Inhalte
         """Test that single language in frontmatter doesn't add suffix."""
         md_file = tmp_path / "single.md"
         md_content = """---
-title: Single Language Test
 languages: EN
 ---
 

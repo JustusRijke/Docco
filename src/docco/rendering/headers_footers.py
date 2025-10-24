@@ -34,39 +34,20 @@ class HeaderFooterProcessor:
 
         return header_html, footer_html
 
-    def replace_variables(self, template: str, metadata: dict) -> str:
+    def replace_variables(self, template: str) -> str:
         """
-        Replace {{variables}} in template with values from metadata.
+        Replace {{variables}} in template with values.
 
         Supported variables:
         - {{filename}} - markdown filename without extension
-        - {{title}} - from frontmatter
-        - {{subtitle}} - from frontmatter
-        - {{date}} - from frontmatter
-        - {{author}} - from frontmatter
 
         Args:
             template: HTML template string
-            metadata: Dictionary with frontmatter values
 
         Returns:
             Template with variables replaced
         """
-        # Build variable context
-        context = {
-            "filename": self.filename,
-            "title": str(metadata.get("title", "")),
-            "subtitle": str(metadata.get("subtitle", "")),
-            "date": str(metadata.get("date", "")),
-            "author": str(metadata.get("author", "")),
-        }
-
-        # Replace {{variable}} with values
-        result = template
-        for key, value in context.items():
-            result = result.replace(f"{{{{{key}}}}}", value)
-
-        return result
+        return template.replace("{{filename}}", self.filename)
 
     def inject_running_elements(self, html: str, header_content: str | None, footer_content: str | None) -> str:
         """
@@ -102,7 +83,7 @@ class HeaderFooterProcessor:
         return html.replace("<body>", f"<body>\n{running_html}\n", 1)
 
 
-def modify_css_for_running_elements(css: str, has_header: bool, has_footer: bool) -> tuple[str, list[str]]:
+def modify_css_for_running_elements(css: str, has_header: bool, has_footer: bool, no_headers_first_page: bool = True) -> tuple[str, list[str]]:
     """
     Modify CSS to use element(header) and element(footer) in @page rules.
 
@@ -112,6 +93,7 @@ def modify_css_for_running_elements(css: str, has_header: bool, has_footer: bool
         css: Original CSS content
         has_header: Whether header.html exists
         has_footer: Whether footer.html exists
+        no_headers_first_page: Whether to skip headers/footers on first page (default: True)
 
     Returns:
         Tuple of (modified_css, warnings_list)
@@ -129,8 +111,8 @@ def modify_css_for_running_elements(css: str, has_header: bool, has_footer: bool
     for match in reversed(page_blocks):  # Reverse to preserve positions
         page_selector = match.group(1).strip()  # e.g., "", "landscape", ":first"
 
-        # Skip @page :first - title page should have no headers/footers
-        if ":first" in page_selector:
+        # Skip @page :first if no_headers_first_page is enabled
+        if no_headers_first_page and ":first" in page_selector:
             continue
 
         block_start = match.end()

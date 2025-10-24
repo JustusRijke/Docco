@@ -1,9 +1,13 @@
 ---
-title: Docco Feature Showcase
-subtitle: Markdown & PDF Capabilities
-date: 2025-10-23
-author: Engineering Team
+no_headers_first_page: true
 ---
+
+<div class="title-page">
+<h1>Docco Feature Showcase</h1>
+<p class="subtitle">Markdown & PDF Capabilities</p>
+<p class="date">2025-10-23</p>
+<p class="author">Engineering Team</p>
+</div>
 
 # Introduction
 

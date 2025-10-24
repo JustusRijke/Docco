@@ -26,11 +26,15 @@ def sample_markdown_file(tmp_path):
     """Create a sample markdown file with frontmatter."""
     md_file = tmp_path / "test.md"
     content = """---
-title: Test Document
-subtitle: Test Subtitle
-date: 2025-10-23
-author: Test Author
+no_headers_first_page: true
 ---
+
+<div class="title-page">
+<h1>Test Document</h1>
+<p class="subtitle">Test Subtitle</p>
+<p class="date">2025-10-23</p>
+<p class="author">Test Author</p>
+</div>
 
 # Introduction
 

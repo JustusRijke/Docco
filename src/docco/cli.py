@@ -35,7 +35,7 @@ def build(markdown_file: Path, css_file: Path, output: Path | None):
     """
     Build a PDF document from Markdown and CSS files.
 
-    MARKDOWN_FILE should contain YAML frontmatter with metadata (title, subtitle, date, author).
+    MARKDOWN_FILE can contain optional YAML frontmatter with languages and no_headers_first_page.
 
     CSS_FILE should contain all styling for the PDF layout.
 
@@ -55,16 +55,15 @@ def build(markdown_file: Path, css_file: Path, output: Path | None):
         markdown_content = markdown_file.read_text(encoding="utf-8")
         metadata, content = _parse_frontmatter(markdown_content)
 
-        # Validate required metadata
-        if "title" not in metadata:
-            raise click.ClickException("Markdown file must contain 'title' in YAML frontmatter")
-
         # Parse languages from frontmatter
         languages_str = metadata.get("languages", "")
         if languages_str:
             languages = [lang.strip() for lang in languages_str.split()]
         else:
             languages = [None]  # Single unnamed language (backward compatible)
+
+        # Parse no_headers_first_page flag (default: True)
+        no_headers_first_page = metadata.get("no_headers_first_page", True)
 
         # Read CSS
         css = css_file.read_text(encoding="utf-8")
@@ -77,23 +76,19 @@ def build(markdown_file: Path, css_file: Path, output: Path | None):
         header_html = None
         footer_html = None
         if header_template:
-            header_html = hf_processor.replace_variables(header_template, metadata)
+            header_html = hf_processor.replace_variables(header_template)
             click.echo("Using header.html")
         if footer_template:
-            footer_html = hf_processor.replace_variables(footer_template, metadata)
+            footer_html = hf_processor.replace_variables(footer_template)
             click.echo("Using footer.html")
 
         # Modify CSS for running elements
         css, css_warnings = modify_css_for_running_elements(
-            css, has_header=header_html is not None, has_footer=footer_html is not None
+            css, has_header=header_html is not None, has_footer=footer_html is not None,
+            no_headers_first_page=no_headers_first_page
         )
         for warning in css_warnings:
             click.echo(warning, err=True)
-
-        # Build HTML (convert date to string if it's a datetime object)
-        date_value = metadata.get("date")
-        if date_value is not None and not isinstance(date_value, str):
-            date_value = str(date_value)
 
         # Generate PDF for each language
         language_filter = LanguageFilter()
@@ -107,10 +102,6 @@ def build(markdown_file: Path, css_file: Path, output: Path | None):
             # Build HTML from filtered content
             html = _build_html_from_markdown(
                 content=filtered_content,
-                title=metadata.get("title", "Document"),
-                subtitle=metadata.get("subtitle"),
-                date=date_value,
-                author=metadata.get("author"),
                 markdown_file_path=markdown_file,
             )
 
@@ -188,14 +179,10 @@ def _parse_frontmatter(content: str) -> tuple[dict, str]:
 
 def _build_html_from_markdown(
     content: str,
-    title: str,
-    subtitle: str | None = None,
-    date: str | None = None,
-    author: str | None = None,
     markdown_file_path: Path | None = None,
 ) -> str:
     """
-    Build complete HTML document from markdown content and metadata.
+    Build complete HTML document from markdown content.
 
     Parses markdown for:
     - Headings (for TOC generation)
@@ -204,25 +191,11 @@ def _build_html_from_markdown(
 
     Args:
         content: Markdown content
-        title: Document title
-        subtitle: Optional subtitle
-        date: Optional date
-        author: Optional author
         markdown_file_path: Path to markdown file (for resolving image paths)
 
     Returns:
         Complete HTML document string
     """
-    # Build title page
-    title_parts = ['<div class="title-page">', f"<h1>{_escape_html(title)}</h1>"]
-    if subtitle:
-        title_parts.append(f'<p class="subtitle">{_escape_html(subtitle)}</p>')
-    if date:
-        title_parts.append(f'<p class="date">{_escape_html(date)}</p>')
-    if author:
-        title_parts.append(f'<p class="author">{_escape_html(author)}</p>')
-    title_parts.append("</div>")
-    title_page = "\n".join(title_parts)
 
     # Parse content into sections with directives
     sections = _parse_sections(content, markdown_file_path)
@@ -243,10 +216,9 @@ def _build_html_from_markdown(
         '<html lang="en">',
         "<head>",
         '<meta charset="UTF-8">',
-        f"<title>{_escape_html(title)}</title>",
+        "<title>Document</title>",
         "</head>",
         "<body>",
-        title_page,
         toc_html,
         '<div class="content">',
         "\n".join(sections_html),
@@ -379,6 +351,22 @@ def _parse_sections(content: str, markdown_file_path: Path | None = None) -> lis
             "is_addendum": False
         })
         return sections
+
+    # Process content before first heading (e.g., title page)
+    if headings and headings[0].start() > 0:
+        pre_content = content[:headings[0].start()].strip()
+        if pre_content:
+            html = converter.convert(pre_content)
+            html = _process_html_images(html, markdown_file_path)
+            sections.append({
+                "html": html,
+                "orientation": "portrait",
+                "title": None,
+                "level": 0,
+                "id": None,
+                "number": None,
+                "is_addendum": False
+            })
 
     # Numbering state
     counters = [0, 0, 0]  # For levels 1, 2, 3

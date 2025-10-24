@@ -14,19 +14,16 @@ class TestParseFrontmatter:
     def test_parse_with_frontmatter(self):
         """Test parsing markdown with YAML frontmatter."""
         content = """---
-title: Test Doc
-subtitle: Subtitle
-date: 2025-10-23
+languages: en fr
+no_headers_first_page: true
 ---
 
 # Content here
 """
         metadata, markdown = _parse_frontmatter(content)
 
-        assert metadata["title"] == "Test Doc"
-        assert metadata["subtitle"] == "Subtitle"
-        # YAML parses dates as datetime.date objects
-        assert str(metadata["date"]) == "2025-10-23"
+        assert metadata["languages"] == "en fr"
+        assert metadata["no_headers_first_page"] is True
         assert markdown.strip() == "# Content here"
 
     def test_parse_without_frontmatter(self):
@@ -78,16 +75,17 @@ class TestCliBuild:
         assert output_pdf.exists()
         assert "✓ PDF generated" in result.output
 
-    def test_build_command_missing_title(self, tmp_path, sample_css_file):
-        """Test build fails when markdown has no title in frontmatter."""
-        md_file = tmp_path / "no_title.md"
+    def test_build_command_no_frontmatter(self, tmp_path, sample_css_file, tmp_output_dir):
+        """Test build succeeds even without frontmatter."""
+        md_file = tmp_path / "no_frontmatter.md"
         md_file.write_text("# Just content", encoding="utf-8")
+        output_pdf = tmp_output_dir / "test.pdf"
 
         runner = CliRunner()
-        result = runner.invoke(cli, ["build", str(md_file), str(sample_css_file)])
+        result = runner.invoke(cli, ["build", str(md_file), str(sample_css_file), "-o", str(output_pdf)])
 
-        assert result.exit_code != 0
-        assert "must contain 'title'" in result.output
+        assert result.exit_code == 0
+        assert output_pdf.exists()
 
     def test_build_command_nonexistent_markdown(self, sample_css_file):
         """Test build fails with nonexistent markdown file."""

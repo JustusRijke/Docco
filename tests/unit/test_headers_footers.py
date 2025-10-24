@@ -53,45 +53,38 @@ class TestHeaderFooterProcessor:
         assert header is None
         assert footer is None
 
-    def test_replace_variables_all_fields(self, tmp_path):
-        """Test variable replacement with all fields present."""
+    def test_replace_variables_filename(self, tmp_path):
+        """Test variable replacement with filename."""
         md_file = tmp_path / "my_document.md"
         md_file.write_text("# Test")
 
         processor = HeaderFooterProcessor(md_file)
-        template = "{{filename}} - {{title}} by {{author}} ({{date}})"
-        metadata = {
-            "title": "My Title",
-            "author": "John Doe",
-            "date": "2025-10-23"
-        }
+        template = "Document: {{filename}}"
 
-        result = processor.replace_variables(template, metadata)
-        assert result == "my_document - My Title by John Doe (2025-10-23)"
+        result = processor.replace_variables(template)
+        assert result == "Document: my_document"
 
-    def test_replace_variables_missing_fields(self, tmp_path):
-        """Test variable replacement with missing fields."""
+    def test_replace_variables_multiple_occurrences(self, tmp_path):
+        """Test variable replacement with multiple occurrences."""
         md_file = tmp_path / "test.md"
         md_file.write_text("# Test")
 
         processor = HeaderFooterProcessor(md_file)
-        template = "{{filename}} - {{title}} - {{subtitle}}"
-        metadata = {"title": "Only Title"}
+        template = "{{filename}} | {{filename}}"
 
-        result = processor.replace_variables(template, metadata)
-        assert result == "test - Only Title - "
+        result = processor.replace_variables(template)
+        assert result == "test | test"
 
-    def test_replace_variables_filename_only(self, tmp_path):
-        """Test that filename is extracted correctly."""
+    def test_replace_variables_no_variables(self, tmp_path):
+        """Test that template without variables is unchanged."""
         md_file = tmp_path / "product_manual.md"
         md_file.write_text("# Test")
 
         processor = HeaderFooterProcessor(md_file)
-        template = "File: {{filename}}"
-        metadata = {}
+        template = "Static text without variables"
 
-        result = processor.replace_variables(template, metadata)
-        assert result == "File: product_manual"
+        result = processor.replace_variables(template)
+        assert result == "Static text without variables"
 
     def test_inject_running_elements_both(self, tmp_path):
         """Test injecting both header and footer running elements."""
