@@ -279,6 +279,7 @@ def _parse_sections(content: str, markdown_file_path: Path | None = None) -> lis
     - <!-- landscape --> : Next section uses landscape orientation
     - <!-- portrait --> : Next section uses portrait orientation
     - <!-- addendum --> : Next section is an appendix (lettered A, B, C...)
+    - <!-- cmd: name args --> : Custom commands from commands/ folder
 
     Args:
         content: Markdown content
@@ -288,6 +289,12 @@ def _parse_sections(content: str, markdown_file_path: Path | None = None) -> lis
         List of section dicts with keys: html, orientation, title, level, id, number, is_addendum
     """
     from docco.content.markdown import MarkdownConverter
+    from docco.content.commands import CommandProcessor
+
+    # Process custom commands before markdown conversion
+    if markdown_file_path:
+        processor = CommandProcessor(markdown_file_path.parent)
+        content = processor.process(content)
 
     converter = MarkdownConverter()
     sections = []

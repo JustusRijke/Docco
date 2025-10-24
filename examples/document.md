@@ -111,14 +111,15 @@ Images are resolved relative to the markdown file location.
 
 ---
 
-## Borderless Table with Icon
+## Custom Commands
 
-<table style="border:none;">
-<tr>
-<td style="border:none; width:60px; vertical-align:middle; padding-right:10px;"><img src="images/idea.svg" style="width:50px;" /></td>
-<td style="border:none; vertical-align:middle;">Using borderless tables with icons creates effective callout boxes. This technique is useful for highlighting important information or warnings in your documents.</td>
-</tr>
-</table>
+Docco supports **custom commands** that let you create reusable components without writing HTML directly in your markdown.
+
+<!-- cmd: callout icon="idea.svg" -->
+Using borderless tables with icons creates effective callout boxes. This technique is useful for highlighting important information or warnings in your documents.
+<!-- /cmd -->
+
+Commands are defined as HTML templates in the `commands/` folder and invoked using HTML comment syntax.
 
 ## Horizontal Rule
 

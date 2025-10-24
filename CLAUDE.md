@@ -105,19 +105,24 @@ Docco/
 │       ├── __init__.py              # Package exports
 │       ├── cli.py                   # CLI entry point with build command
 │       ├── content/
-│       │   └── markdown.py          # Markdown to HTML conversion
+│       │   ├── markdown.py          # Markdown to HTML conversion
+│       │   └── commands.py          # Custom command processor
 │       └── rendering/
 │           └── pdf_renderer.py      # WeasyPrint wrapper
 ├── tests/
 │   ├── conftest.py                  # Pytest fixtures
 │   ├── unit/                        # Unit tests
 │   │   ├── test_cli.py              # CLI tests
-│   │   └── test_markdown.py         # Markdown conversion tests
+│   │   ├── test_markdown.py         # Markdown conversion tests
+│   │   └── test_commands.py         # Command processor tests
 │   └── integration/                 # Integration tests
 │       └── test_pdf_generation.py   # End-to-end PDF generation tests
 ├── examples/
 │   ├── document.md                  # Example markdown with frontmatter
-│   └── style.css                    # Example stylesheet
+│   ├── style.css                    # Example stylesheet
+│   ├── commands/                    # Custom command templates
+│   │   └── callout.html             # Callout box template
+│   └── images/                      # Image assets
 ├── output/                          # Generated files (gitignored)
 ├── pyproject.toml                   # Package configuration
 ├── requirements.txt                 # Production dependencies
@@ -138,6 +143,12 @@ Docco/
 - **MarkdownConverter class**: Wrapper around markdown-it-py
 - Converts Markdown to HTML with inline and block modes
 
+#### `docco.content.commands` (commands.py)
+- **CommandProcessor class**: Custom command expansion system
+- Parses `<!-- cmd: name args -->` syntax in markdown
+- Loads HTML templates from `commands/` folder
+- Substitutes `{{variables}}` with command arguments and content
+
 #### `docco.rendering.pdf_renderer` (pdf_renderer.py)
 - **PDFRenderer class**: WeasyPrint wrapper
 - Converts HTML+CSS to PDF files or bytes
@@ -154,6 +165,7 @@ Docco/
 - ✅ Unit and integration tests
 - ✅ Table of contents generation
 - ✅ Mixed portrait/landscape orientations
+- ✅ Custom commands system
 
 **Not Implemented**:
 - Image optimization/embedding
@@ -230,6 +242,37 @@ Content uses markdown-it-py for parsing. Supported features:
 - Code blocks and inline code
 - Paragraphs
 - Headings (H1, H2, H3)
+
+### Custom Commands
+
+Users can define reusable HTML components via template files in a `commands/` folder:
+
+**Syntax:**
+```markdown
+<!-- cmd: callout icon="idea.svg" -->
+Content here (can include markdown)
+<!-- /cmd -->
+```
+
+Or self-closing: `<!-- cmd: name arg="val" /-->`
+
+**Template location:** `commands/` folder relative to markdown file (e.g., `examples/commands/callout.html`)
+
+**Template format:**
+```html
+<div class="callout">
+  <img src="{{icon}}" />
+  {{content}}
+</div>
+```
+
+**Variables:**
+- `{{content}}` - body between tags
+- `{{arg_name}}` - command arguments
+- Not HTML-escaped
+- Missing variables become empty strings
+
+**Processing:** Commands are expanded before markdown conversion, so content can contain markdown.
 
 ### CSS Customization
 
