@@ -22,7 +22,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
-    "weasyprint>=66.0",
+    "weasyprint>=66.0; sys_platform != 'win32'",
     "markdown-it-py>=4.0.0",
     "pyyaml>=6.0.0",
     "pillow>=12.0.0",

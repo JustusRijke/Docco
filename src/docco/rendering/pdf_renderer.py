@@ -2,17 +2,22 @@
 PDF rendering using WeasyPrint.
 """
 
+import platform
 import shutil
 import subprocess
 import tempfile
 from pathlib import Path
 
-# Check if WeasyPrint Python library is available
-try:
-    import weasyprint  # noqa: F401
-    USE_EXECUTABLE = False
-except ImportError:
+# On Windows, always use executable (Python library causes errors)
+if platform.system() == "Windows":
     USE_EXECUTABLE = True
+else:
+    # Check if WeasyPrint Python library is available
+    try:
+        import weasyprint
+        USE_EXECUTABLE = False
+    except ImportError:
+        USE_EXECUTABLE = True
 
 
 class PDFRenderer:
