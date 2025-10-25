@@ -167,11 +167,9 @@ This section uses the `<!-- addendum -->` directive, which creates an **appendix
 <!-- addendum -->
 # Appendix: YAML Frontmatter
 
-Frontmatter fields at the top of the document:
+Supported frontmatter fields at the top of the document:
 
-| Field | Required | Example |
-|-------|----------|---------|
-| `title` | Yes | `My Document` |
-| `subtitle` | No | `Technical Guide` |
-| `date` | No | `2025-10-23` |
-| `author` | No | `Your Name` |
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `languages` | String | None | Space-separated language codes (e.g., `EN DE NL`) for multilingual PDFs |
+| `no_headers_first_page` | Boolean | `true` | Skip headers/footers on first page |
