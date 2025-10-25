@@ -441,5 +441,9 @@ Run tests with `pytest` after installing dev dependencies.
 - Use short/concise git commit messages, try to condense it in 1 or 2 lines
 - Do not add generated with / co-authored with claude section to the git commit message
 - When rewriting code, always try reduce LOC and bloat
-- When added code or documentation or examples, stick to the bare minimum, do not add more than asked. Keep it light-weight & simple. KISS & DRY all the way.
-- After code changes, always run Docco on all the example md files
+- When adding code or documentation or examples, stick to the bare minimum, do not add more than asked. Keep it light-weight & simple. KISS & DRY all the way.
+- Refer to the official [WeasyPrint API documentation](https://doc.courtbouillon.org/weasyprint/stable/api_reference.html) and [WeasyPrint common use cases](https://doc.courtbouillon.org/weasyprint/stable/common_use_cases.html)
+- See `examples/CLAUDE.md` for example-specific guidelines
+
+# IMPORTANT
+- Always update README.md and CLAUDE.md after any code change. These files always need to be up-to-date and in-sync with the project.
