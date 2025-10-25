@@ -1,285 +1,82 @@
-/* Page setup - Portrait (default) */
+/* Page setup */
 @page {
     size: A4 portrait;
-    margin: 25mm 20mm 25mm 20mm;
+    margin: 25mm;
 }
 
-/* Page setup - Landscape */
 @page landscape {
     size: A4 landscape;
-    margin: 20mm 25mm 20mm 25mm;
+    margin: 25mm;
 }
 
-/* No headers/footers on title page */
 @page :first {
     @top-center { content: none; }
     @bottom-right { content: none; }
 }
 
-/* Page number styling for footer.html */
+/* Page numbering */
 .page-number::after {
     content: counter(page);
 }
 
-/* Base typography */
-body {
-    font-family: "DejaVu Sans", Arial, sans-serif;
-    font-size: 11pt;
-    line-height: 1.6;
-    color: #333;
-}
-
-/* Title page */
-.title-page {
-    page-break-after: always;
-    text-align: center;
-    padding-top: 100mm;
-}
-
-.title-page h1 {
-    font-size: 28pt;
-    margin-bottom: 10mm;
-    color: #1a1a1a;
-}
-
-.title-page .subtitle {
-    font-size: 16pt;
-    color: #666;
-    margin-bottom: 5mm;
-}
-
-.title-page .date {
-    font-size: 12pt;
-    color: #999;
-}
-
-/* Table of Contents */
+/* Table of contents */
 .toc-page {
     page-break-after: always;
 }
 
-.toc-page h1 {
-    font-size: 20pt;
-    margin-bottom: 10mm;
-    border-bottom: 2pt solid #333;
-    padding-bottom: 3mm;
-}
-
-/* TOC entries */
-.toc > div {
-    margin: 2mm 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-}
-
-.toc a {
-    text-decoration: none;
-    color: #333;
-    flex-grow: 1;
-}
-
 .toc a::after {
     content: leader('.') target-counter(attr(href), page);
-    margin-left: 3mm;
-}
-
-/* TOC indentation levels */
-.toc-level-1 {
-    font-weight: bold;
-    margin-top: 3mm;
 }
 
 .toc-level-2 {
     margin-left: 8mm;
-    font-weight: normal;
 }
 
 .toc-level-3 {
     margin-left: 16mm;
-    font-weight: normal;
-    font-size: 10pt;
 }
 
-/* PDF Bookmarks from sections */
+/* PDF bookmarks - creates navigation outline in PDF viewers
+   page-break-after: avoid prevents orphaned headings at bottom of pages */
 h1 {
     bookmark-label: content();
     bookmark-level: 1;
+    page-break-after: avoid;
 }
 
 h2 {
     bookmark-label: content();
     bookmark-level: 2;
+    page-break-after: avoid;
 }
 
 h3 {
     bookmark-label: content();
     bookmark-level: 3;
+    page-break-after: avoid;
 }
 
-/* Content sections */
-.content {
-    margin-top: 0;
-}
-
-/* Section orientation wrappers */
+/* Section orientation */
 .section-wrapper.landscape {
     page: landscape;
     page-break-before: always;
-}
-
-.section-wrapper.portrait {
-    /* Portrait is default, but force page break when returning from landscape */
 }
 
 .section-wrapper.landscape + .section-wrapper.portrait {
     page-break-before: always;
 }
 
-h1 {
-    font-size: 18pt;
-    margin-top: 15mm;
-    margin-bottom: 5mm;
-    page-break-after: avoid;
-    color: #1a1a1a;
-    border-bottom: 1pt solid #ccc;
-    padding-bottom: 2mm;
-}
-
-h2 {
-    font-size: 14pt;
-    margin-top: 8mm;
-    margin-bottom: 4mm;
-    page-break-after: avoid;
-    color: #333;
-}
-
-h3 {
-    font-size: 12pt;
-    margin-top: 6mm;
-    margin-bottom: 3mm;
-    page-break-after: avoid;
-    color: #333;
-}
-
-/* Paragraphs */
-p {
-    margin: 0 0 5mm 0;
-    text-align: justify;
-}
-
-/* Lists */
-ul, ol {
-    margin: 5mm 0;
-    padding-left: 8mm;
-}
-
-li {
-    margin-bottom: 2mm;
-}
-
-/* Tables */
+/* Basic elements */
 table {
-    width: 100%;
     border-collapse: collapse;
-    margin: 5mm 0;
     page-break-inside: avoid;
 }
 
 th, td {
-    border: 0.5pt solid #ccc;
+    border: 1pt solid black;
     padding: 3mm;
-    text-align: left;
-}
-
-th {
-    background-color: #f5f5f5;
-    font-weight: bold;
-}
-
-/* Inline formatting */
-strong {
-    font-weight: bold;
-    color: #1a1a1a;
-}
-
-em {
-    font-style: italic;
-}
-
-code {
-    font-family: "DejaVu Sans Mono", monospace;
-    font-size: 10pt;
-    background-color: #f5f5f5;
-    padding: 1mm 2mm;
-}
-
-/* Code blocks */
-pre {
-    background-color: #f5f5f5;
-    padding: 5mm;
-    margin: 5mm 0;
-    border-left: 3pt solid #ccc;
-    overflow-x: auto;
-    page-break-inside: avoid;
-}
-
-pre code {
-    background-color: transparent;
-    padding: 0;
-}
-
-/* Images */
-img {
-    max-width: 100%;
-    height: auto;
-    display: block;
-    margin: 5mm auto;
-    page-break-inside: avoid;
-}
-
-/* Image class: icon (small decorative images) */
-img.icon {
-    width: 80px;
-    height: auto;
-    display: inline-block;
-    margin: 2mm;
-    vertical-align: middle;
-}
-
-/* Image class: diagram (medium-sized technical diagrams) */
-img.diagram {
-    width: 60%;
-    max-width: 150mm;
-    margin: 8mm auto;
-    display: block;
-}
-
-/* Image class: large (full-width images) */
-img.large {
-    width: 100%;
-    margin: 10mm auto;
-}
-
-/* Image error message styling */
-.image-error {
-    color: #d32f2f;
-    background-color: #ffebee;
-    padding: 2mm 4mm;
-    border-left: 3pt solid #d32f2f;
-    display: block;
-    margin: 5mm 0;
-    font-family: monospace;
 }
 
 figure {
-    margin: 5mm 0;
     page-break-inside: avoid;
-}
-
-figcaption {
-    text-align: center;
-    font-size: 10pt;
-    color: #666;
-    margin-top: 2mm;
 }
