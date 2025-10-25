@@ -201,7 +201,7 @@ def _build_html_from_markdown(
 
     Parses markdown for:
     - Headings (for TOC generation)
-    - HTML comment directives (<!-- landscape -->, <!-- portrait -->, <!-- addendum -->)
+    - HTML comment directives (<!-- landscape -->, <!-- portrait -->, <!-- addendum -->, <!-- TOC -->, <!-- pagebreak -->)
     - HTML img tags (for caption wrapping and path resolution)
 
     Args:
@@ -211,6 +211,17 @@ def _build_html_from_markdown(
     Returns:
         Complete HTML document string
     """
+    # Check if content has <!-- TOC --> directive
+    toc_placeholder = "___DOCCO_TOC_PLACEHOLDER___"
+    has_toc_directive = "<!-- TOC -->" in content
+
+    if has_toc_directive:
+        # Replace directive with placeholder that survives markdown conversion
+        content = content.replace("<!-- TOC -->", f"<!-- {toc_placeholder} -->")
+
+    # Replace page break directives with placeholder
+    pagebreak_placeholder = "___DOCCO_PAGEBREAK_PLACEHOLDER___"
+    content = content.replace("<!-- pagebreak -->", f"<!-- {pagebreak_placeholder} -->")
 
     # Parse content into sections with directives
     sections = _parse_sections(content, markdown_file_path)
@@ -223,6 +234,15 @@ def _build_html_from_markdown(
     for section in sections:
         orientation_class = section["orientation"]
         section_html = f'<div class="section-wrapper {orientation_class}">\n{section["html"]}\n</div>'
+
+        # Replace TOC placeholder if present in this section
+        if has_toc_directive and toc_placeholder in section_html:
+            section_html = section_html.replace(f"<!-- {toc_placeholder} -->", toc_html)
+
+        # Replace page break placeholders with actual page break elements
+        if pagebreak_placeholder in section_html:
+            section_html = section_html.replace(f"<!-- {pagebreak_placeholder} -->", '<div class="pagebreak"></div>')
+
         sections_html.append(section_html)
 
     # Build complete document
@@ -234,13 +254,19 @@ def _build_html_from_markdown(
         "<title>Document</title>",
         "</head>",
         "<body>",
-        toc_html,
+    ]
+
+    # Only add TOC at beginning if no directive was found
+    if not has_toc_directive:
+        html_parts.append(toc_html)
+
+    html_parts.extend([
         '<div class="content">',
         "\n".join(sections_html),
         "</div>",
         "</body>",
         "</html>",
-    ]
+    ])
 
     return "\n".join(html_parts)
 
@@ -325,6 +351,8 @@ def _parse_sections(content: str, markdown_file_path: Path | None = None) -> lis
     - <!-- landscape --> : Next section uses landscape orientation
     - <!-- portrait --> : Next section uses portrait orientation
     - <!-- addendum --> : Next section is an appendix (lettered A, B, C...)
+    - <!-- pagebreak --> : Insert a page break
+    - <!-- TOC --> : Insert table of contents
     - <!-- cmd: name args --> : Custom commands from commands/ folder
 
     Args:

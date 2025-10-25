@@ -28,6 +28,11 @@
     content: leader('.') target-counter(attr(href), page);
 }
 
+/* Page break directive */
+.pagebreak {
+    page-break-after: always;
+}
+
 .toc-level-2 {
     margin-left: 8mm;
 }

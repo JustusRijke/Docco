@@ -8,7 +8,7 @@ Docco converts Markdown documents into styled PDFs using WeasyPrint. Write your 
 
 - **Markdown to PDF**: Convert Markdown content to professional A4 PDFs
 - **External CSS Styling**: Complete layout control via CSS (no embedded styles)
-- **Table of Contents**: Automatically generated with section numbers
+- **Table of Contents**: Automatically generated with section numbers and `<!-- TOC -->` placement control
 - **Multilingual Support**: Generate language-specific PDFs from a single file
 - **Custom Commands**: Define reusable HTML components via templates
 - **Orientation Control**: Mix portrait and landscape pages
@@ -105,6 +105,8 @@ The `examples/` directory contains complete working examples:
 
 These examples serve as the primary documentation. Study them to learn:
 - How to structure markdown documents
+- How to position the table of contents (`<!-- TOC -->`)
+- How to insert page breaks (`<!-- pagebreak -->`)
 - How to use custom commands (`<!-- cmd: callout -->`)
 - How to control orientation (`<!-- landscape -->`, `<!-- portrait -->`)
 - How to create addendums (`<!-- addendum -->`)

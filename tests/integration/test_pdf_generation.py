@@ -194,7 +194,7 @@ Content.
         result = runner.invoke(cli, ["build", str(sample_markdown_file), str(sample_css_file)])
 
         assert result.exit_code == 0
-        assert (tmp_path / "output" / "document.pdf").exists()
+        assert (tmp_path / "output" / "test.pdf").exists()
 
     def test_document_with_images(self, tmp_path):
         """Test document generation with inline images."""

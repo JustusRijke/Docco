@@ -1,8 +1,4 @@
 ---
-title: Multilingual Document Example
-subtitle: Demonstrating Language Tags
-date: 2025-10-24
-author: Docco Team
 languages: NL EN DE
 ---
 

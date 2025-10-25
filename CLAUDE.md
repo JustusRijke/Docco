@@ -140,7 +140,7 @@ Docco/
 - Parses YAML frontmatter (languages, no_headers_first_page)
 - Orchestrates multilingual PDF generation loop
 - Builds HTML documents with TOC, section numbering, orientation wrappers
-- Processes directives: `<!-- landscape -->`, `<!-- portrait -->`, `<!-- addendum -->`
+- Processes directives: `<!-- TOC -->`, `<!-- pagebreak -->`, `<!-- landscape -->`, `<!-- portrait -->`, `<!-- addendum -->`
 - Handles image path resolution and figure/figcaption wrapping
 - Helper functions: `_parse_frontmatter()`, `_build_html_from_markdown()`, `_parse_sections()`, `_build_toc()`, `_escape_html()`
 
@@ -183,7 +183,8 @@ Docco/
 - ✅ External CSS support (no embedded CSS)
 - ✅ PDF output with WeasyPrint
 - ✅ Debug HTML generation
-- ✅ Table of contents generation with section numbers
+- ✅ Table of contents generation with section numbers and `<!-- TOC -->` placement directive
+- ✅ Manual page breaks with `<!-- pagebreak -->` directive
 - ✅ Automatic section numbering (1, 1.1, 1.2.3, etc.)
 - ✅ Addendum sections with letter numbering (A, B, C)
 - ✅ Mixed portrait/landscape orientations (`<!-- landscape -->`, `<!-- portrait -->`)
@@ -256,7 +257,35 @@ Content uses markdown-it-py for parsing. Supported features:
 
 - All H1, H2, H3 headings are automatically numbered (1, 1.1, 1.2.3, etc.)
 - Table of Contents is automatically generated from headings
+- Use `<!-- TOC -->` directive to control where the TOC appears in the document
+- If `<!-- TOC -->` is not specified, TOC is automatically inserted at the beginning
 - Use `<!-- addendum -->` before a heading to create appendix sections (A, B, C)
+
+**Example TOC placement:**
+
+```markdown
+<div class="title-page">
+<h1>Document Title</h1>
+</div>
+
+<!-- TOC -->
+
+# Introduction
+```
+
+### Page Breaks
+
+Insert manual page breaks anywhere in the document:
+
+```markdown
+Some content here.
+
+<!-- pagebreak -->
+
+This content starts on a new page.
+```
+
+The `<!-- pagebreak -->` directive inserts a page break at that exact location.
 
 ### Orientation Control
 

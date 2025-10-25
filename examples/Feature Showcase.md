@@ -9,6 +9,10 @@ no_headers_first_page: true
 <p class="author">Engineering Team</p>
 </div>
 
+<!-- pagebreak -->
+
+<!-- TOC -->
+
 # Introduction
 
 This document showcases Docco's **formatting capabilities** and **Markdown syntax**.
@@ -160,9 +164,13 @@ This section uses the `<!-- addendum -->` directive, which creates an **appendix
 
 | Directive | Effect |
 |-----------|--------|
-| `<!-- landscape -->` | Landscape orientation |
-| `<!-- portrait -->` | Portrait orientation |
-| `<!-- addendum -->` | Appendix numbering |
+| `<!-- TOC -->` | Insert table of contents at this location |
+| `<!-- pagebreak -->` | Insert a page break |
+| `<!-- landscape -->` | Next section uses landscape orientation |
+| `<!-- portrait -->` | Next section uses portrait orientation |
+| `<!-- addendum -->` | Next section uses appendix numbering (A, B, C...) |
+| `<!-- cmd: name args -->...<!-- /cmd -->` | Insert custom command with arguments |
+| `<!-- lang:XX -->...<!-- /lang -->` | Content only appears in language XX |
 
 <!-- addendum -->
 # Appendix: YAML Frontmatter
