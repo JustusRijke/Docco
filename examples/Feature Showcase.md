@@ -119,15 +119,15 @@ Images are resolved relative to the markdown file location.
 
 ---
 
-## Custom Commands
+## Inline Directives
 
-Docco supports **custom commands** that let you create reusable components without writing HTML directly in your markdown.
+Docco supports **inline directives** that let you create reusable components without writing HTML directly in your markdown.
 
-<!-- cmd: callout icon="idea.svg" -->
-Using borderless tables with icons creates effective callout boxes. This technique is useful for highlighting important information or warnings in your documents.
-<!-- /cmd -->
+<!-- inline: callout icon="idea.svg" -->
+Using tables with icons creates effective callout boxes. This technique is useful for highlighting important information or warnings in your documents.
+<!-- /inline -->
 
-Commands are defined as HTML templates in the `commands/` folder and invoked using HTML comment syntax.
+Inlines are defined as markdown templates in the `inlines/` folder and invoked using HTML comment syntax.
 
 ## Horizontal Rule
 
@@ -169,7 +169,7 @@ This section uses the `<!-- addendum -->` directive, which creates an **appendix
 | `<!-- landscape -->` | Next section uses landscape orientation |
 | `<!-- portrait -->` | Next section uses portrait orientation |
 | `<!-- addendum -->` | Next section uses appendix numbering (A, B, C...) |
-| `<!-- cmd: name args -->...<!-- /cmd -->` | Insert custom command with arguments |
+| `<!-- inline: name args -->...<!-- /inline -->` | Insert inline directive with arguments |
 | `<!-- lang:XX -->...<!-- /lang -->` | Content only appears in language XX |
 
 <!-- addendum -->

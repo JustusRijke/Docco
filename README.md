@@ -100,14 +100,14 @@ The `examples/` directory contains complete working examples:
 - **Feature Showcase.md** - Demonstrates all features (TOC, numbering, orientation control, images)
 - **Multilingual Example.md** - Shows language filtering and multilingual PDF generation
 - **style.css** - Production-ready stylesheet with A4 layout, headers, footers
-- **commands/** - Custom command templates (callout boxes, etc.)
+- **inlines/** - Inline directive templates (callout boxes, etc.)
 - **header.html / footer.html** - Header/footer templates with language variants
 
 These examples serve as the primary documentation. Study them to learn:
 - How to structure markdown documents
 - How to position the table of contents (`<!-- TOC -->`)
 - How to insert page breaks (`<!-- pagebreak -->`)
-- How to use custom commands (`<!-- cmd: callout -->`)
+- How to use inline directives (`<!-- inline: callout -->`)
 - How to control orientation (`<!-- landscape -->`, `<!-- portrait -->`)
 - How to create addendums (`<!-- addendum -->`)
 - How to filter content by language (`<!-- lang:EN -->`)

@@ -100,7 +100,7 @@ Docco/
 │       ├── cli.py                   # CLI entry point with build command
 │       ├── content/
 │       │   ├── markdown.py          # Markdown to HTML conversion
-│       │   ├── commands.py          # Custom command processor
+│       │   ├── commands.py          # Inline directive processor
 │       │   └── language_filter.py   # Language filtering for multilingual docs
 │       └── rendering/
 │           ├── pdf_renderer.py      # WeasyPrint wrapper
@@ -110,7 +110,7 @@ Docco/
 │   ├── unit/                        # Unit tests
 │   │   ├── test_cli.py              # CLI tests
 │   │   ├── test_markdown.py         # Markdown conversion tests
-│   │   ├── test_commands.py         # Command processor tests
+│   │   ├── test_commands.py         # Inline directive processor tests
 │   │   ├── test_language_filter.py  # Language filter tests
 │   │   └── test_headers_footers.py  # Header/footer tests
 │   └── integration/                 # Integration tests
@@ -119,8 +119,8 @@ Docco/
 │   ├── Feature Showcase.md          # Example with all features
 │   ├── Multilingual Example.md      # Multilingual example
 │   ├── style.css                    # Example stylesheet
-│   ├── commands/                    # Custom command templates
-│   │   └── callout.html             # Callout box template
+│   ├── inlines/                     # Inline directive templates
+│   │   └── callout.md               # Callout box template
 │   ├── header.html                  # Default header template
 │   ├── footer.html                  # Default footer template
 │   ├── header.EN.html, etc.         # Language-specific headers
@@ -149,10 +149,11 @@ Docco/
 - Converts Markdown to HTML with inline and block modes
 
 #### `docco.content.commands` (commands.py)
-- **CommandProcessor class**: Custom command expansion system
-- Parses `<!-- cmd: name args -->` syntax in markdown
-- Loads HTML templates from `commands/` folder
-- Substitutes `{{variables}}` with command arguments and content
+- **InlineProcessor class**: Inline directive expansion system
+- Parses `<!-- inline: name args -->` syntax in markdown
+- Loads markdown templates from `inlines/` folder
+- Substitutes `{{variables}}` with inline arguments and content
+- Supports recursive inlining with depth limit to prevent infinite loops
 
 #### `docco.content.language_filter` (language_filter.py)
 - **LanguageFilter class**: Filters markdown by language tags
@@ -188,7 +189,7 @@ Docco/
 - ✅ Automatic section numbering (1, 1.1, 1.2.3, etc.)
 - ✅ Addendum sections with letter numbering (A, B, C)
 - ✅ Mixed portrait/landscape orientations (`<!-- landscape -->`, `<!-- portrait -->`)
-- ✅ Custom commands system (`<!-- cmd: name args -->...<!-- /cmd -->`)
+- ✅ Inline directives system (`<!-- inline: name args -->...<!-- /inline -->`) with recursive expansion
 - ✅ Headers and footers system with variable substitution
 - ✅ Language-specific headers/footers (header.EN.html, footer.DE.html, etc.)
 - ✅ Multilingual document support (`languages: EN DE NL` in frontmatter)
@@ -303,36 +304,31 @@ This content appears in landscape orientation.
 Back to portrait orientation.
 ```
 
-### Custom Commands
+### Inline Directives
 
-Users can define reusable HTML components via template files in a `commands/` folder:
+Users can define reusable content blocks via markdown template files in an `inlines/` folder:
 
 **Syntax:**
 ```markdown
-<!-- cmd: callout icon="idea.svg" -->
+<!-- inline: callout icon="idea.svg" -->
 Content here (can include markdown)
-<!-- /cmd -->
+<!-- /inline -->
 ```
 
-Or self-closing: `<!-- cmd: name arg="val" /-->`
+Or self-closing: `<!-- inline: name arg="val" /-->`
 
-**Template location:** `commands/` folder relative to markdown file (e.g., `examples/commands/callout.html`)
+**Template location:** `inlines/` folder relative to markdown file (e.g., `examples/inlines/callout.md`)
 
-**Template format:**
-```html
-<div class="callout">
-  <img src="{{icon}}" />
-  {{content}}
-</div>
-```
 
 **Variables:**
 - `{{content}}` - body between tags
-- `{{arg_name}}` - command arguments
-- Not HTML-escaped
+- `{{arg_name}}` - inline arguments
+- Not escaped
 - Missing variables become empty strings
 
-**Processing:** Commands are expanded before markdown conversion, so content can contain markdown.
+**Recursive inlining:** Inline templates can contain other inline directives, enabling composition of reusable components.
+
+**Processing:** Inlines are expanded before markdown conversion, so content can contain markdown and other inlines.
 
 ### Multilingual Documents
 

@@ -1,96 +1,92 @@
 """
-Unit tests for custom command processing.
+Unit tests for inline directive processing.
 """
 
 import pytest
 from pathlib import Path
-from docco.content.commands import CommandProcessor
+from docco.content.commands import InlineProcessor
 
 
 @pytest.fixture
-def temp_commands_dir(tmp_path):
-    """Create a temporary commands directory with sample templates."""
-    commands_dir = tmp_path / "commands"
-    commands_dir.mkdir()
+def temp_inlines_dir(tmp_path):
+    """Create a temporary inlines directory with sample templates."""
+    inlines_dir = tmp_path / "inlines"
+    inlines_dir.mkdir()
 
-    # Simple template
-    (commands_dir / "callout.html").write_text(
-        '<div class="callout"><img src="{{icon}}" />{{content}}</div>'
+    # Simple template (markdown)
+    (inlines_dir / "callout.md").write_text(
+        "| | |\n|---|---|\n| ![]({{icon}}) | {{content}} |"
     )
 
     # Template with multiple variables
-    (commands_dir / "alert.html").write_text(
-        '<div class="alert alert-{{type}}">{{title}}: {{message}}</div>'
+    (inlines_dir / "alert.md").write_text(
+        "**{{type}} - {{title}}:** {{message}}"
     )
 
     return tmp_path
 
 
-class TestCommandProcessor:
-    """Tests for CommandProcessor class."""
+class TestInlineProcessor:
+    """Tests for InlineProcessor class."""
 
-    def test_block_command_basic(self, temp_commands_dir):
-        """Test basic block command expansion."""
-        processor = CommandProcessor(temp_commands_dir)
-        content = '<!-- cmd: callout icon="test.svg" -->Hello World<!-- /cmd -->'
+    def test_block_inline_basic(self, temp_inlines_dir):
+        """Test basic block inline expansion."""
+        processor = InlineProcessor(temp_inlines_dir)
+        content = '<!-- inline: callout icon="test.svg" -->Hello World<!-- /inline -->'
 
         result = processor.process(content)
 
-        assert '<div class="callout">' in result
-        assert '<img src="test.svg" />' in result
+        assert '![](test.svg)' in result
         assert 'Hello World' in result
-        assert '<!-- cmd:' not in result
+        assert '<!-- inline:' not in result
 
-    def test_self_closing_command(self, temp_commands_dir):
-        """Test self-closing command syntax."""
-        processor = CommandProcessor(temp_commands_dir)
-        content = '<!-- cmd: alert type="warning" title="Note" message="Test" /-->'
-
-        result = processor.process(content)
-
-        assert '<div class="alert alert-warning">' in result
-        assert 'Note: Test' in result
-        assert '<!-- cmd:' not in result
-
-    def test_multiple_arguments(self, temp_commands_dir):
-        """Test command with multiple arguments."""
-        processor = CommandProcessor(temp_commands_dir)
-        content = '<!-- cmd: alert type="info" title="Info" message="Details here" /-->'
+    def test_self_closing_inline(self, temp_inlines_dir):
+        """Test self-closing inline syntax."""
+        processor = InlineProcessor(temp_inlines_dir)
+        content = '<!-- inline: alert type="warning" title="Note" message="Test" /-->'
 
         result = processor.process(content)
 
-        assert 'alert-info' in result
-        assert 'Info: Details here' in result
+        assert '**warning - Note:** Test' in result
+        assert '<!-- inline:' not in result
 
-    def test_missing_template(self, temp_commands_dir):
-        """Test command with non-existent template leaves content unchanged."""
-        processor = CommandProcessor(temp_commands_dir)
-        original = '<!-- cmd: nonexistent arg="val" -->content<!-- /cmd -->'
+    def test_multiple_arguments(self, temp_inlines_dir):
+        """Test inline with multiple arguments."""
+        processor = InlineProcessor(temp_inlines_dir)
+        content = '<!-- inline: alert type="info" title="Info" message="Details here" /-->'
+
+        result = processor.process(content)
+
+        assert '**info - Info:** Details here' in result
+
+    def test_missing_template(self, temp_inlines_dir):
+        """Test inline with non-existent template leaves content unchanged."""
+        processor = InlineProcessor(temp_inlines_dir)
+        original = '<!-- inline: nonexistent arg="val" -->content<!-- /inline -->'
 
         result = processor.process(original)
 
         assert result == original
 
-    def test_missing_variable(self, temp_commands_dir):
+    def test_missing_variable(self, temp_inlines_dir):
         """Test that missing variables are replaced with empty strings."""
-        processor = CommandProcessor(temp_commands_dir)
-        content = '<!-- cmd: callout -->No icon specified<!-- /cmd -->'
+        processor = InlineProcessor(temp_inlines_dir)
+        content = '<!-- inline: callout -->No icon specified<!-- /inline -->'
 
         result = processor.process(content)
 
-        assert '<div class="callout">' in result
         assert 'No icon specified' in result
         # Icon variable should be empty string
-        assert '<img src="" />' in result
+        assert '![](' in result
 
-    def test_multiline_content(self, temp_commands_dir):
-        """Test command with multiline content."""
-        processor = CommandProcessor(temp_commands_dir)
-        content = '''<!-- cmd: callout icon="test.svg" -->
+    def test_multiline_content(self, temp_inlines_dir):
+        """Test inline with multiline content."""
+        processor = InlineProcessor(temp_inlines_dir)
+        content = '''<!-- inline: callout icon="test.svg" -->
 Line 1
 Line 2
 Line 3
-<!-- /cmd -->'''
+<!-- /inline -->'''
 
         result = processor.process(content)
 
@@ -98,66 +94,97 @@ Line 3
         assert 'Line 2' in result
         assert 'Line 3' in result
 
-    def test_multiple_commands(self, temp_commands_dir):
-        """Test processing multiple commands in one document."""
-        processor = CommandProcessor(temp_commands_dir)
+    def test_multiple_inlines(self, temp_inlines_dir):
+        """Test processing multiple inlines in one document."""
+        processor = InlineProcessor(temp_inlines_dir)
         content = '''
 Text before
-<!-- cmd: callout icon="a.svg" -->First callout<!-- /cmd -->
+<!-- inline: callout icon="a.svg" -->First callout<!-- /inline -->
 Text between
-<!-- cmd: callout icon="b.svg" -->Second callout<!-- /cmd -->
+<!-- inline: callout icon="b.svg" -->Second callout<!-- /inline -->
 Text after
 '''
 
         result = processor.process(content)
 
-        assert result.count('<div class="callout">') == 2
         assert 'a.svg' in result
         assert 'b.svg' in result
         assert 'First callout' in result
         assert 'Second callout' in result
 
-    def test_single_quotes_in_args(self, temp_commands_dir):
+    def test_single_quotes_in_args(self, temp_inlines_dir):
         """Test arguments with single quotes."""
-        processor = CommandProcessor(temp_commands_dir)
-        content = "<!-- cmd: callout icon='test.svg' -->Content<!-- /cmd -->"
+        processor = InlineProcessor(temp_inlines_dir)
+        content = "<!-- inline: callout icon='test.svg' -->Content<!-- /inline -->"
 
         result = processor.process(content)
 
         assert 'test.svg' in result
 
-    def test_template_caching(self, temp_commands_dir):
+    def test_template_caching(self, temp_inlines_dir):
         """Test that templates are cached after first load."""
-        processor = CommandProcessor(temp_commands_dir)
+        processor = InlineProcessor(temp_inlines_dir)
 
         # First call loads template
-        processor.process('<!-- cmd: callout icon="a.svg" -->Test<!-- /cmd -->')
+        processor.process('<!-- inline: callout icon="a.svg" -->Test<!-- /inline -->')
 
         # Check cache
         assert 'callout' in processor._template_cache
 
         # Second call should use cache
-        result = processor.process('<!-- cmd: callout icon="b.svg" -->Test 2<!-- /cmd -->')
+        result = processor.process('<!-- inline: callout icon="b.svg" -->Test 2<!-- /inline -->')
         assert 'b.svg' in result
 
-    def test_no_commands_dir(self, tmp_path):
-        """Test behavior when commands directory doesn't exist."""
-        processor = CommandProcessor(tmp_path)
-        original = '<!-- cmd: test arg="val" -->content<!-- /cmd -->'
+    def test_no_inlines_dir(self, tmp_path):
+        """Test behavior when inlines directory doesn't exist."""
+        processor = InlineProcessor(tmp_path)
+        original = '<!-- inline: test arg="val" -->content<!-- /inline -->'
 
         result = processor.process(original)
 
         # Should leave content unchanged
         assert result == original
 
-    def test_whitespace_handling(self, temp_commands_dir):
-        """Test that whitespace in command syntax is handled correctly."""
-        processor = CommandProcessor(temp_commands_dir)
+    def test_whitespace_handling(self, temp_inlines_dir):
+        """Test that whitespace in inline syntax is handled correctly."""
+        processor = InlineProcessor(temp_inlines_dir)
 
         # Extra whitespace
-        content = '<!--   cmd:   callout   icon="test.svg"   -->Content<!--   /cmd   -->'
+        content = '<!--   inline:   callout   icon="test.svg"   -->Content<!--   /inline   -->'
 
         result = processor.process(content)
 
         assert 'test.svg' in result
         assert 'Content' in result
+
+    def test_recursive_inlines(self, temp_inlines_dir):
+        """Test recursive inline expansion."""
+        # Create a template that uses another inline
+        inlines_dir = temp_inlines_dir / "inlines"
+        (inlines_dir / "wrapper.md").write_text(
+            "**Wrapped:** <!-- inline: alert type=\"info\" title=\"Inner\" message=\"{{content}}\" /-->"
+        )
+
+        processor = InlineProcessor(temp_inlines_dir)
+        content = '<!-- inline: wrapper content="Test content" /-->'
+
+        result = processor.process(content)
+
+        assert '**Wrapped:**' in result
+        assert '**info - Inner:** Test content' in result
+
+    def test_recursion_depth_limit(self, temp_inlines_dir):
+        """Test that recursion depth limit prevents infinite loops."""
+        # Create a self-referencing template
+        inlines_dir = temp_inlines_dir / "inlines"
+        (inlines_dir / "recursive.md").write_text(
+            "Recursive: <!-- inline: recursive /-->"
+        )
+
+        processor = InlineProcessor(temp_inlines_dir, max_depth=3)
+        content = '<!-- inline: recursive /-->'
+
+        result = processor.process(content)
+
+        # Should stop at max_depth without infinite loop
+        assert 'Recursive:' in result
