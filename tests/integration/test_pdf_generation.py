@@ -407,3 +407,71 @@ This is a single language document.
         # Should create file without suffix (backward compatible)
         assert output_pdf.exists(), "PDF not created at expected path"
         assert not (tmp_path / "single_EN.pdf").exists(), "PDF should not have language suffix"
+
+    def test_markdown_blocks_in_html(self, tmp_path):
+        """Test markdown content inside HTML tags with markdown attribute."""
+        md_file = tmp_path / "markdown_blocks.md"
+        md_content = """# Document
+
+Regular markdown content here.
+
+<div class="custom-box" markdown>
+
+## Boxed Heading
+
+This is **bold** and this is *italic* inside a div with markdown attribute.
+
+- List item 1
+- List item 2
+- List item 3
+
+More content here.
+
+</div>
+
+After the box.
+"""
+        md_file.write_text(md_content, encoding="utf-8")
+
+        css_file = tmp_path / "style.css"
+        css_content = """
+@page {
+    size: A4 portrait;
+    margin: 25mm;
+}
+
+body {
+    font-family: Arial, sans-serif;
+}
+
+.custom-box {
+    border: 1pt solid #333;
+    padding: 10mm;
+    margin: 10mm 0;
+}
+"""
+        css_file.write_text(css_content, encoding="utf-8")
+
+        output_pdf = tmp_path / "output.pdf"
+        runner = CliRunner()
+        result = runner.invoke(
+            cli, ["build", str(md_file), str(css_file), "-o", str(output_pdf)]
+        )
+
+        # Verify success
+        assert result.exit_code == 0, f"CLI failed: {result.output}"
+        assert output_pdf.exists(), "PDF file was not created"
+        assert output_pdf.stat().st_size > 1000, "PDF file is too small"
+
+        # Verify debug HTML
+        debug_html = output_pdf.parent / "debug.html"
+        assert debug_html.exists(), "Debug HTML was not created"
+
+        html_content = debug_html.read_text(encoding="utf-8")
+        # Check that markdown was converted to HTML
+        assert "<strong>bold</strong>" in html_content, "Bold text not converted"
+        assert "<em>italic</em>" in html_content, "Italic text not converted"
+        assert "<ul>" in html_content, "List not converted"
+        assert "Boxed Heading" in html_content, "Content not in HTML"
+        # Check that markdown attribute was removed
+        assert 'markdown' not in html_content or 'class="custom-box"' in html_content, "markdown attribute should be removed or box class preserved"

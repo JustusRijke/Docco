@@ -141,8 +141,9 @@ Docco/
 - Orchestrates multilingual PDF generation loop
 - Builds HTML documents with TOC, section numbering, orientation wrappers
 - Processes directives: `<!-- TOC -->`, `<!-- pagebreak -->`, `<!-- landscape -->`, `<!-- portrait -->`, `<!-- addendum -->`
+- Processes markdown blocks: `<div markdown>...content...</div>`
 - Handles image path resolution and figure/figcaption wrapping
-- Helper functions: `_parse_frontmatter()`, `_build_html_from_markdown()`, `_parse_sections()`, `_build_toc()`, `_escape_html()`
+- Helper functions: `_parse_frontmatter()`, `_build_html_from_markdown()`, `_parse_sections()`, `_build_toc()`, `_process_markdown_blocks()`, `_escape_html()`
 
 #### `docco.content.markdown` (markdown.py)
 - **MarkdownConverter class**: Wrapper around markdown-it-py
@@ -190,6 +191,7 @@ Docco/
 - ✅ Addendum sections with letter numbering (A, B, C)
 - ✅ Mixed portrait/landscape orientations (`<!-- landscape -->`, `<!-- portrait -->`)
 - ✅ Inline directives system (`<!-- inline: name args -->...<!-- /inline -->`) with recursive expansion
+- ✅ Markdown blocks in HTML (`<div markdown>...content...</div>`) with heading detection
 - ✅ Headers and footers system with variable substitution
 - ✅ Language-specific headers/footers (header.EN.html, footer.DE.html, etc.)
 - ✅ Multilingual document support (`languages: EN DE NL` in frontmatter)
@@ -329,6 +331,38 @@ Or self-closing: `<!-- inline: name arg="val" /-->`
 **Recursive inlining:** Inline templates can contain other inline directives, enabling composition of reusable components.
 
 **Processing:** Inlines are expanded before markdown conversion, so content can contain markdown and other inlines.
+
+### Markdown Blocks in HTML
+
+Docco supports embedding markdown content directly inside HTML elements using the `markdown` attribute. This allows combining HTML structure with markdown formatting while maintaining full heading detection for TOC inclusion.
+
+**Syntax:**
+```markdown
+<div class="my-container" markdown>
+
+## Heading Inside Container
+
+This is **bold** and this is *italic*.
+
+- List item 1
+- List item 2
+
+More content here.
+
+</div>
+```
+
+**Supported:**
+- `<div markdown>content</div>` - Any HTML tag with `markdown` attribute
+- `<div markdown="1">content</div>` - Also supports explicit value
+- All markdown features: bold, italic, lists, tables, code blocks, etc.
+- All directives work: inlines, language tags, etc.
+- The `markdown` attribute is automatically removed from final output
+- **Headings inside markdown blocks ARE included in the Table of Contents** ✅
+
+**Processing:** Markdown blocks are unwrapped before section parsing (so headings are detected), then re-wrapped after HTML conversion (preserving HTML structure).
+
+**Use case:** Creating styled containers (boxes, panels, sidebars) with fully functional markdown content inside, where headings are part of the document structure and TOC.
 
 ### Multilingual Documents
 
@@ -471,4 +505,5 @@ Run tests with `pytest` after installing dev dependencies.
 - See `examples/CLAUDE.md` for example-specific guidelines
 
 # IMPORTANT
-- Always update README.md and CLAUDE.md after any code change. These files always need to be up-to-date and in-sync with the project.
+- After code changes, always run the regression test.
+- If a feature is added, removed or changed, make sure to update all examples, README.md and CLAUDE.md. These files always need to be up-to-date and in-sync with the project.

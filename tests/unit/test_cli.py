@@ -123,7 +123,7 @@ Landscape content here.
 
 Back to portrait.
 """
-        sections = _parse_sections(content)
+        sections, _ = _parse_sections(content)
 
         assert len(sections) == 3
         assert sections[0]["title"] == "First Section"
@@ -145,7 +145,7 @@ No directive, should be portrait.
 
 Still portrait.
 """
-        sections = _parse_sections(content)
+        sections, _ = _parse_sections(content)
 
         assert all(s["orientation"] == "portrait" for s in sections)
 
@@ -161,7 +161,7 @@ Content here.
 
 More content.
 """
-        sections = _parse_sections(content)
+        sections, _ = _parse_sections(content)
 
         assert sections[0]["id"] == "section-1"
         assert sections[1]["id"] == "section-2"
@@ -194,7 +194,7 @@ Another subsection.
 
 New chapter.
 """
-        sections = _parse_sections(content)
+        sections, _ = _parse_sections(content)
 
         assert sections[0]["number"] == "1"
         assert sections[0]["level"] == 1
@@ -227,7 +227,7 @@ Appendix content.
 
 More appendix content.
 """
-        sections = _parse_sections(content)
+        sections, _ = _parse_sections(content)
 
         assert len(sections) == 3
         assert sections[0]["number"] == "1"
@@ -264,7 +264,7 @@ Appendix.
 
 Another appendix (H2 but still lettered).
 """
-        sections = _parse_sections(content)
+        sections, _ = _parse_sections(content)
 
         assert sections[0]["number"] == "1"
         assert sections[1]["number"] == "1.1"
@@ -285,7 +285,7 @@ Content here.
 
 More content.
 """
-        sections = _parse_sections(content)
+        sections, _ = _parse_sections(content)
 
         assert "1 Introduction" in sections[0]["html"]
         assert "1.1 Subsection" in sections[1]["html"]

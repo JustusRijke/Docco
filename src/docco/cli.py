@@ -224,7 +224,7 @@ def _build_html_from_markdown(
     content = content.replace("<!-- pagebreak -->", f"<!-- {pagebreak_placeholder} -->")
 
     # Parse content into sections with directives
-    sections = _parse_sections(content, markdown_file_path)
+    sections, blocks_info = _parse_sections(content, markdown_file_path)
 
     # Build TOC
     toc_html = _build_toc(sections)
@@ -268,7 +268,12 @@ def _build_html_from_markdown(
         "</html>",
     ])
 
-    return "\n".join(html_parts)
+    html = "\n".join(html_parts)
+
+    # Re-wrap markdown blocks
+    html = _rewrap_markdown_blocks(html, blocks_info)
+
+    return html
 
 
 def _process_html_images(html: str, markdown_file_path: Path | None = None) -> str:
@@ -343,7 +348,100 @@ def _process_html_images(html: str, markdown_file_path: Path | None = None) -> s
     return img_pattern.sub(process_img_tag, html)
 
 
-def _parse_sections(content: str, markdown_file_path: Path | None = None) -> list[dict]:
+def _unwrap_markdown_blocks(content: str) -> tuple[str, list[dict]]:
+    """
+    Extract markdown blocks and unwrap them for section parsing.
+
+    Supports: <div markdown>markdown content</div>
+
+    This extracts the wrapper tag/attributes and stores them, then replaces the block
+    with unwrapped content surrounded by HTML comment markers. This allows heading
+    detection to work on markdown inside blocks.
+
+    Args:
+        content: Markdown content potentially containing markdown blocks
+
+    Returns:
+        Tuple of (unwrapped_content, blocks_info_list)
+        blocks_info contains: {tag, attrs, start_marker, end_marker}
+    """
+    blocks_info = []
+    markdown_block_pattern = re.compile(
+        r'<(\w+)(\s+[^>]*?)?\s+markdown(?:="[^"]*")?\s*>(.+?)</\1>',
+        re.DOTALL | re.IGNORECASE
+    )
+
+    def unwrap_block(match):
+        tag = match.group(1)
+        attrs = match.group(2) or ""
+        markdown_content = match.group(3)
+
+        # Remove the markdown attribute from attrs
+        attrs_clean = re.sub(
+            r'\s*markdown(?:="[^"]*")?\s*',
+            " ",
+            attrs,
+            flags=re.IGNORECASE
+        ).strip()
+
+        block_id = len(blocks_info)
+        start_marker = f"<!--MDBLOCK_START_{block_id}-->"
+        end_marker = f"<!--MDBLOCK_END_{block_id}-->"
+
+        blocks_info.append({
+            "tag": tag,
+            "attrs": attrs_clean,
+            "start_marker": start_marker,
+            "end_marker": end_marker
+        })
+
+        # Return unwrapped content with markers
+        return f"{start_marker}\n{markdown_content}\n{end_marker}"
+
+    unwrapped_content = markdown_block_pattern.sub(unwrap_block, content)
+    return unwrapped_content, blocks_info
+
+
+def _rewrap_markdown_blocks(html: str, blocks_info: list[dict]) -> str:
+    """
+    Re-wrap markdown blocks after HTML conversion.
+
+    Finds content between markers and wraps it with the original HTML tags.
+
+    Args:
+        html: HTML string with markers from _unwrap_markdown_blocks
+        blocks_info: List of block info dicts from _unwrap_markdown_blocks
+
+    Returns:
+        HTML string with markdown blocks re-wrapped
+    """
+    result = html
+
+    for block_info in blocks_info:
+        start_marker = block_info["start_marker"]
+        end_marker = block_info["end_marker"]
+        tag = block_info["tag"]
+        attrs = block_info["attrs"]
+
+        # Pattern to find content between markers
+        pattern = re.escape(start_marker) + r"(.*?)" + re.escape(end_marker)
+
+        def rewrap_content(match):
+            content = match.group(1)
+            if attrs:
+                return f"<{tag} {attrs}>{content}</{tag}>"
+            else:
+                return f"<{tag}>{content}</{tag}>"
+
+        result = re.sub(pattern, rewrap_content, result, flags=re.DOTALL)
+
+    # Remove any remaining markers (shouldn't happen, but just in case)
+    result = re.sub(r'<!--MDBLOCK_(?:START|END)_\d+-->\n?', '', result)
+
+    return result
+
+
+def _parse_sections(content: str, markdown_file_path: Path | None = None) -> tuple[list[dict], list[dict]]:
     """
     Parse markdown content into sections with orientation and addendum directives.
 
@@ -355,12 +453,18 @@ def _parse_sections(content: str, markdown_file_path: Path | None = None) -> lis
     - <!-- TOC --> : Insert table of contents
     - <!-- inline: name args --> : Inline directives from inlines/ folder
 
+    Supports markdown blocks in HTML:
+    - <div markdown>...content...</div> : Markdown inside HTML containers
+    (Headings inside are included in TOC)
+
     Args:
         content: Markdown content
         markdown_file_path: Path to markdown file (for resolving image paths)
 
     Returns:
-        List of section dicts with keys: html, orientation, title, level, id, number, is_addendum
+        Tuple of (sections_list, blocks_info_list)
+        sections_list: List of section dicts with keys: html, orientation, title, level, id, number, is_addendum
+        blocks_info_list: Block information for later re-wrapping
     """
     from docco.content.markdown import MarkdownConverter
     from docco.content.commands import InlineProcessor
@@ -373,15 +477,18 @@ def _parse_sections(content: str, markdown_file_path: Path | None = None) -> lis
     converter = MarkdownConverter()
     sections = []
 
-    # Find all headings (H1, H2, H3)
+    # Unwrap markdown blocks to expose headings for TOC detection
+    unwrapped_content, blocks_info = _unwrap_markdown_blocks(content)
+
+    # Find all headings (H1, H2, H3) - now includes headings inside markdown blocks
     heading_pattern = re.compile(r"^(#{1,3})\s+(.+)$", re.MULTILINE)
     directive_pattern = re.compile(r"<!--\s*(landscape|portrait|addendum)\s*-->", re.IGNORECASE)
 
-    headings = list(heading_pattern.finditer(content))
+    headings = list(heading_pattern.finditer(unwrapped_content))
 
     if not headings:
         # No headings - treat entire content as single section
-        html = converter.convert(content)
+        html = converter.convert(unwrapped_content)
         # Post-process HTML images
         html = _process_html_images(html, markdown_file_path)
         sections.append({
@@ -393,11 +500,11 @@ def _parse_sections(content: str, markdown_file_path: Path | None = None) -> lis
             "number": None,
             "is_addendum": False
         })
-        return sections
+        return sections, blocks_info
 
     # Process content before first heading (e.g., title page)
     if headings and headings[0].start() > 0:
-        pre_content = content[:headings[0].start()].strip()
+        pre_content = unwrapped_content[:headings[0].start()].strip()
         if pre_content:
             html = converter.convert(pre_content)
             html = _process_html_images(html, markdown_file_path)
@@ -425,11 +532,11 @@ def _parse_sections(content: str, markdown_file_path: Path | None = None) -> lis
         if i < len(headings) - 1:
             content_end = headings[i + 1].start()
         else:
-            content_end = len(content)
+            content_end = len(unwrapped_content)
 
         # Look for directives BEFORE this heading
         directives_start = headings[i - 1].end() if i > 0 else 0
-        directives_text = content[directives_start:heading_start]
+        directives_text = unwrapped_content[directives_start:heading_start]
 
         # Parse directives
         orientation = "portrait"  # default
@@ -459,10 +566,10 @@ def _parse_sections(content: str, markdown_file_path: Path | None = None) -> lis
             section_number = ".".join(str(counters[k]) for k in range(level) if counters[k] > 0)
 
         # Extract content AFTER heading (not including heading line)
-        heading_end = content.find("\n", heading_start)
+        heading_end = unwrapped_content.find("\n", heading_start)
         if heading_end == -1:
             heading_end = heading_start + len(heading_match.group(0))
-        section_content = content[heading_end + 1:content_end].strip()
+        section_content = unwrapped_content[heading_end + 1:content_end].strip()
 
         # Convert section content to HTML (without heading)
         content_html = converter.convert(section_content) if section_content else ""
@@ -487,7 +594,7 @@ def _parse_sections(content: str, markdown_file_path: Path | None = None) -> lis
             "is_addendum": is_addendum
         })
 
-    return sections
+    return sections, blocks_info
 
 
 def _make_section_id(number: str) -> str:

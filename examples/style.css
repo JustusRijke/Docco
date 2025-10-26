@@ -85,3 +85,41 @@ th, td {
 figure {
     page-break-inside: avoid;
 }
+
+/* Full-page box styling
+   Height calculation for A4 portrait (210mm × 297mm):
+   - Page size: 210mm × 297mm
+   - Page margins: 25mm all sides
+   - Available height after margins: 297 - 50 = 247mm
+   - Header running element: ~7mm
+   - Footer running element: ~7mm
+   - Content space after header/footer: 247 - 14 = 233mm
+   - H1 heading with margins: ~12mm (24px + margins)
+   - Remaining space for box: 233 - 12 = 221mm
+   - Reduce slightly for safety margins: 220mm
+*/
+.full-page-box {
+    width: 100%;
+    height: 220mm;
+    border: 2pt solid #333;
+    padding: 10mm;
+    page-break-inside: avoid;
+    box-sizing: border-box;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.full-page-box h2 {
+    margin: 0 0 8mm 0;
+    font-size: 16pt;
+    padding-bottom: 5mm;
+    border-bottom: 1pt solid #ddd;
+}
+
+.full-page-box p {
+    margin: 0 0 5mm 0;
+    font-size: 10pt;
+    line-height: 1.5;
+    flex: 1;
+}
