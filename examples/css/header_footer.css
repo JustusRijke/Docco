@@ -1,0 +1,22 @@
+/* Header and Footer CSS using Paged Media */
+
+@page {
+    /* Adjust margins to make room for header/footer */
+    margin-top: 2.5cm;
+    margin-bottom: 2.5cm;
+
+    /* Position header at top center of page */
+    @top-center {
+        content: element(header);
+    }
+
+    /* Position footer at bottom center of page */
+    @bottom-center {
+        content: element(footer);
+    }
+}
+
+/* Page number styling for use in footer */
+.page-number::before {
+    content: "Page " counter(page);
+}

@@ -1,57 +1,41 @@
 [build-system]
-requires = ["setuptools>=68.0.0", "wheel"]
+requires = ["setuptools>=65.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "docco"
-version = "0.2.0"
-description = "PDF documentation generator using HTML/CSS"
+version = "0.1.0"
+description = "Convert Markdown files with YAML frontmatter and CSS stylesheets to professional A4 PDFs"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
     {name = "Justus Rijke", email = "justusrijke@gmail.com"}
 ]
-classifiers = [
-    "Development Status :: 3 - Alpha",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-]
 dependencies = [
-    "weasyprint>=66.0; sys_platform != 'win32'",
     "markdown-it-py>=4.0.0",
-    "pyyaml>=6.0.0",
-    "pillow>=12.0.0",
-    "click>=8.0.0",
+    "pyyaml>=6.0",
+    "weasyprint>=66.0; sys_platform != 'win32'",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8.0.0",
-    "pytest-cov>=4.1.0",
     "black>=24.0.0",
     "ruff>=0.3.0",
+    "pytest>=8.0",
+    "pytest-cov>=4.0",
+    "radon>=6.0",
 ]
 
 [project.scripts]
 docco = "docco.cli:main"
 
-[tool.setuptools]
-package-dir = {"" = "src"}
-
-[tool.setuptools.packages.find]
-where = ["src"]
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-python_files = ["test_*.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
-addopts = "-v --tb=short"
+addopts = "--cov=src/docco --cov-report=term-missing --cov-report=html"
+
+[tool.coverage.run]
+omit = ["src/docco/cli.py"]
 
 [tool.black]
 line-length = 100

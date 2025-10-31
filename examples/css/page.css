@@ -1,0 +1,23 @@
+/* Page setup */
+@page {
+    size: A4 portrait;
+}
+
+@page landscape {
+    size: A4 landscape;
+}
+
+/* Section orientation */
+.section-wrapper.landscape {
+    page: landscape;
+    page-break-before: always;
+}
+
+.section-wrapper.landscape+.section-wrapper.portrait {
+    page-break-before: always;
+}
+
+/* Page break directive */
+.pagebreak {
+    page-break-after: always;
+}

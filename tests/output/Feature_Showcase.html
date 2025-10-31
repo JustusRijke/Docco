@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+<div id="header-running" style="position: running(header);"><div style="font-size: 10pt; text-align: center; color: #666; padding: 0.5em 0; border-bottom: 1px solid #ddd;">
+    Docco Feature Showcase - Docco Team
+</div>
+</div>
+<div id="footer-running" style="position: running(footer);"><div
+    style="font-size: 9pt; color: #666; display: flex; justify-content: space-between; padding: 0.5em 0; border-top: 1px solid #ddd;">
+    <span>
+2025-10-31
+
+    </span>
+    &nbsp;
+    <span class="page-number"></span>
+</div></div>
+<div class="section-wrapper portrait">
+<h1 id="docco-feature-showcase">Docco: Feature Showcase</h1>
+<p>Welcome to this demonstration of Docco's capabilities.</p>
+<nav class="toc">
+<ul class="toc-level-1">
+<li><a href="#key-features">1 Key Features</a>
+<ul class="toc-level-2">
+<li><a href="#frontmatter">1.1 Frontmatter</a>
+<ul class="toc-level-3">
+<li><a href="#supported-fields">1.1.1 Supported Fields</a>
+</li>
+</ul>
+<li><a href="#general-directive-rule">1.2 General Directive Rule</a>
+</li>
+<li><a href="#inlined-content">1.3 Inlined Content</a>
+<ul class="toc-level-3">
+<li><a href="#arguments">1.3.1 Arguments</a>
+</li>
+<li><a href="#recursive-inlining">1.3.2 Recursive Inlining</a>
+</li>
+</ul>
+<li><a href="#table-of-contents">1.4 Table of Contents</a>
+</li>
+<li><a href="#page-layout-directives">1.5 Page Layout Directives</a>
+<ul class="toc-level-3">
+<li><a href="#page-breaks">1.5.1 Page Breaks</a>
+</li>
+<li><a href="#landscape-orientation">1.5.2 Landscape Orientation</a>
+</li>
+<li><a href="#back-to-portrait">1.5.3 Back to Portrait</a>
+</li>
+</ul>
+</ul>
+<li><a href="#headers-amp-footers">2 Headers &amp; Footers</a>
+<ul class="toc-level-2">
+<li><a href="#configuration">2.1 Configuration</a>
+</li>
+<li><a href="#css-requirements">2.2 CSS Requirements</a>
+</li>
+<li><a href="#example-files">2.3 Example Files</a>
+</li>
+</ul>
+<li><a href="#python-code-execution">3 Python Code Execution</a>
+</li>
+<li><a href="#conclusion">4 Conclusion</a>
+</li>
+</ul>
+</nav>
+<h1 id="key-features">1 Key Features</h1>
+<p>This document demonstrates Docco's core capabilities:</p>
+<ul>
+<li>Inline file inclusion with placeholder substitution</li>
+<li>Table of contents generation</li>
+<li>Page layout directives (page breaks and orientation changes)</li>
+<li>Headers and footers with directive support</li>
+<li>Multi-language support</li>
+<li>Python code execution</li>
+</ul>
+<h2 id="frontmatter">1.1 Frontmatter</h2>
+<p>YAML frontmatter at the beginning of the document (between <code>---</code> delimiters) configures document processing:</p>
+<pre><code class="language-yaml">---
+css:
+  - &quot;css/page.css&quot;
+  - &quot;css/toc.css&quot;
+languages: EN DE FR
+---
+</code></pre>
+<h3 id="supported-fields">1.1.1 Supported Fields</h3>
+<p><strong><code>css</code></strong> - CSS stylesheet(s) for PDF styling. Can be:</p>
+<ul>
+<li>Single file (string): <code>css: &quot;style.css&quot;</code></li>
+<li>Multiple files (inline array): <code>css: [&quot;page.css&quot;, &quot;theme.css&quot;]</code></li>
+<li>Multiple files (multiline list):<pre><code class="language-yaml">css:
+  - &quot;css/page.css&quot;
+  - &quot;css/toc.css&quot;
+</code></pre>
+</li>
+</ul>
+<p>Paths are relative to the markdown file. Additional CSS can also be provided via the CLI <code>--css</code> argument, which overrides frontmatter styles.</p>
+<p><strong><code>languages</code></strong> - Space-separated language codes for multi-language document generation. When specified, Docco generates separate PDFs for each language, filtering content by <code>&lt;!-- lang:CODE --&gt;</code> tags.</p>
+<p>Example:</p>
+<pre><code class="language-yaml">languages: &quot;EN DE&quot;
+</code></pre>
+<p>See the <a href="Multilingual_Document_Example.md">Multilingual Document Example</a> for a complete demonstration.</p>
+<p><strong><code>header</code></strong> and <strong><code>footer</code></strong> - HTML files for page headers and footers with placeholder and directive support:</p>
+<pre><code class="language-yaml">header:
+  file: &quot;header.html&quot;
+  title: &quot;My Document&quot;
+  author: &quot;John Doe&quot;
+footer:
+  file: &quot;footer.html&quot;
+  title: &quot;My Document&quot;
+</code></pre>
+<p>The <code>file</code> key is required and specifies the HTML file path (relative to the markdown file). All other keys are placeholders that replace <code>{{key}}</code> in the HTML file. Header/footer files support all directives (lang, inline, python), enabling dynamic content like dates and language-specific text. See the <a href="#headers--footers">Headers &amp; Footers</a> section for details.</p>
+<h2 id="general-directive-rule">1.2 General Directive Rule</h2>
+<p><strong>Directives can appear anywhere in the document</strong>, including in the middle of lines. However, directives inside code blocks (both inline <code>`code`</code> and fenced <code> </code> blocks) are <strong>protected</strong> and will not be processed. This allows you to show directive syntax as examples in documentation without triggering them.</p>
+<h2 id="inlined-content">1.3 Inlined Content</h2>
+<p>The <code>inline</code> directive embeds external markdown files with placeholder substitution.</p>
+<p>Syntax: <code>&lt;!-- inline:&quot;foobar.md&quot; key1=&quot;value1&quot; key2=&quot;value2&quot; --&gt;</code></p>
+<h3 id="arguments">1.3.1 Arguments</h3>
+<p>All attributes after the path are placeholders. For example, <code>author=&quot;Docco Team&quot;</code> replaces <code>{{author}}</code> in the inlined file. Arguments are optional. Spaces around the <code>inline</code> keyword and colon are accepted. See example below:</p>
+<p>This content is inlined, with arguments.</p>
+<p>Author: Docco Team
+Date: 2025-10-26</p>
+<h3 id="recursive-inlining">1.3.2 Recursive Inlining</h3>
+<p>Inlined markdown files can themselves contain inline directives, allowing for multi-level composition (up to a maximum depth of 10 levels to prevent infinite recursion). This enables modular document structures where content can be composed from multiple nested files.</p>
+<h2 id="table-of-contents">1.4 Table of Contents</h2>
+<p>The <code>&lt;!-- TOC --&gt;</code> directive generates a hierarchical table of contents with automatic numbering (1, 1.1, 1.2, etc.).</p>
+<p>Use <code>&lt;!-- toc:exclude --&gt;</code> before a heading to exclude it from the TOC and remove its numbering.</p>
+<h2 id="page-layout-directives">1.5 Page Layout Directives</h2>
+<div class="pagebreak"></div>
+<h3 id="page-breaks">1.5.1 Page Breaks</h3>
+<p>This section starts on a <strong>new page</strong> using the <code>&lt;!-- page break --&gt;</code> directive.</p>
+</div>
+<div class="section-wrapper landscape">
+<h3 id="landscape-orientation">1.5.2 Landscape Orientation</h3>
+<p>This section uses <strong>landscape orientation</strong> with the <code>&lt;!-- landscape --&gt;</code> directive, providing more horizontal space for wide content.</p>
+</div>
+<div class="section-wrapper portrait">
+<h3 id="back-to-portrait">1.5.3 Back to Portrait</h3>
+<p>This section returns to <strong>portrait orientation</strong> using the <code>&lt;!-- portrait --&gt;</code> directive.</p>
+<h1 id="headers-amp-footers">2 Headers &amp; Footers</h1>
+<p>Docco supports page headers and footers using HTML files with full directive support. Headers and footers are processed through the same pipeline as the main document, allowing for:</p>
+<ul>
+<li>Placeholder substitution</li>
+<li>Language-specific content with <code>&lt;!-- lang:CODE --&gt;</code> directives</li>
+<li>Dynamic content with <code>&lt;!-- python --&gt;</code> directives</li>
+<li>File inclusion with <code>&lt;!-- inline --&gt;</code> directives</li>
+</ul>
+<h2 id="configuration">2.1 Configuration</h2>
+<p>Headers and footers are configured in the frontmatter:</p>
+<pre><code class="language-yaml">header:
+  file: &quot;header.html&quot;
+  title: &quot;Docco Feature Showcase&quot;
+  author: &quot;Docco Team&quot;
+footer:
+  file: &quot;footer.html&quot;
+  title: &quot;Docco&quot;
+</code></pre>
+<p>The <code>file</code> key specifies the HTML file path. All other keys are placeholders that replace <code>{{key}}</code> in the HTML file.</p>
+<h2 id="css-requirements">2.2 CSS Requirements</h2>
+<p>Headers and footers require CSS to position them on the page using CSS Paged Media. Example:</p>
+<pre><code class="language-css">@page {
+    margin-top: 2.5cm;
+    margin-bottom: 2.5cm;
+    @top-center {
+        content: element(header);
+    }
+    @bottom-center {
+        content: element(footer);
+    }
+}
+</code></pre>
+<p>See <code>examples/css/header_footer.css</code> for a complete example.</p>
+<h2 id="example-files">2.3 Example Files</h2>
+<p><strong>Header (<code>header_showcase.html</code>):</strong></p>
+<pre><code class="language-html">&lt;div style=&quot;text-align: center; color: #666;&quot;&gt;
+    {{title}} - {{author}}
+&lt;/div&gt;
+</code></pre>
+<p><strong>Footer (<code>footer_showcase.html</code>):</strong></p>
+<pre><code class="language-html">&lt;div style=&quot;display: flex; justify-content: space-between;&quot;&gt;
+    &lt;span&gt;{{title}} - Generated: &lt;!-- python --&gt;
+import datetime
+print(datetime.datetime.now().strftime(&quot;%Y-%m-%d&quot;))
+    &lt;!-- /python --&gt;&lt;/span&gt;
+    &lt;span class=&quot;page-number&quot;&gt;&lt;/span&gt;
+&lt;/div&gt;
+</code></pre>
+<p>For language-aware headers and footers with <code>&lt;!-- lang:CODE --&gt;</code> directives, see the <a href="Multilingual_Document_Example.md">Multilingual Document Example</a>.</p>
+<h1 id="python-code-execution">3 Python Code Execution</h1>
+<p>The <code>&lt;!-- python --&gt;</code> directive executes Python code and inserts the stdout output into the markdown. This is useful for generating dynamic content.</p>
+<p>The output can contain other directives (markdown, inline files, etc.).</p>
+<p><strong>Important</strong>: Python code execution is disabled by default for security reasons. Use the <code>--allow-python</code> flag to enable it.</p>
+<p>Syntax: <code>&lt;!-- python --&gt;code&lt;!-- /python --&gt;</code></p>
+<p><strong>Example - a loop that outputs digits</strong></p>
+<p>This code:</p>
+<pre><code>print(&quot;_&quot;, end='')
+for i in range(10):
+    print(i, end='')
+print(&quot;_&quot;, end='')
+</code></pre>
+<p>Returns:
+<em>0123456789</em></p>
+<h1 id="conclusion">4 Conclusion</h1>
+<p>This document demonstrates all Docco's capabilities.</p>
+</div>
+</body>
+</html>

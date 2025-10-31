@@ -1,15 +1,3 @@
-"""
-Docco - PDF documentation generator using HTML/CSS.
+"""Docco: Convert Markdown to PDF with YAML frontmatter support."""
 
-Pure CLI tool for converting Markdown + CSS to PDF.
-"""
-
-from docco.content.markdown import MarkdownConverter
-from docco.rendering.pdf_renderer import PDFRenderer
-
-__version__ = "0.3.0"
-
-__all__ = [
-    "MarkdownConverter",
-    "PDFRenderer",
-]
+__version__ = "0.1.0"
