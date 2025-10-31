@@ -1,6 +1,5 @@
 """Parse YAML frontmatter from markdown files."""
 
-import re
 import yaml
 
 

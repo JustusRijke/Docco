@@ -1,6 +1,5 @@
 """Tests for HTML conversion."""
 
-import pytest
 from docco.html import markdown_to_html, wrap_html
 
 

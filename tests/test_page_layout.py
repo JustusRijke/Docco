@@ -1,6 +1,5 @@
 """Tests for page layout directive processing."""
 
-import pytest
 from docco.page_layout import process_page_layout
 
 

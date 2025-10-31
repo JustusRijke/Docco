@@ -1,6 +1,5 @@
 """Tests for language splitting and filtering."""
 
-import pytest
 from docco.language import split_by_language
 
 

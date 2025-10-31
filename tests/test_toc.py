@@ -1,6 +1,5 @@
 """Tests for TOC (Table of Contents) processing."""
 
-import pytest
 from docco.toc import process_toc, _generate_id, _extract_headings, _build_toc_html
 
 

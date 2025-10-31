@@ -97,7 +97,7 @@ def test_keep_intermediate_false(fixture_dir):
     """Test that intermediate files are removed by default."""
     input_file = os.path.join(fixture_dir, "simple.md")
     with tempfile.TemporaryDirectory() as tmpdir:
-        outputs = parse_markdown(input_file, tmpdir, keep_intermediate=False)
+        parse_markdown(input_file, tmpdir, keep_intermediate=False)
         # Should only have PDF files
         all_files = os.listdir(tmpdir)
         assert any(f.endswith(".pdf") for f in all_files)
@@ -109,7 +109,7 @@ def test_keep_intermediate_true(fixture_dir):
     """Test that intermediate files are kept when flag is True."""
     input_file = os.path.join(fixture_dir, "simple.md")
     with tempfile.TemporaryDirectory() as tmpdir:
-        outputs = parse_markdown(input_file, tmpdir, keep_intermediate=True)
+        parse_markdown(input_file, tmpdir, keep_intermediate=True)
         all_files = os.listdir(tmpdir)
         # Should have PDF, HTML, and intermediate MD files
         assert any(f.endswith(".pdf") for f in all_files)

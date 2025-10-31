@@ -47,6 +47,9 @@ docco input.md -o output_dir --keep-intermediate  # Debug: keep intermediate fil
 ### Testing
 
 ```bash
+# Ruff check 
+ruff check .
+
 # Run all tests
 pytest
 

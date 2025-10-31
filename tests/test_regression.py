@@ -3,7 +3,6 @@
 import hashlib
 import os
 import glob
-import tempfile
 from docco.parser import parse_markdown
 
 
