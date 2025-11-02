@@ -82,3 +82,4 @@ docco examples/Feature_Showcase.md --allow-python
 - References: [markdown-it docs](https://markdown-it-py.readthedocs.io/) and [weasyprint docs](https://doc.courtbouillon.org/weasyprint/stable/)
 - Any feature change/addition/removal must be kept in sync with the Feature Showcase document.
 - Before committing any code, do a sanity check by running the Docco CLI on all examples and update the regression test baseline pdf files.
+ - Prefer fail-fast behavior: avoid over-defensive exception handling, let errors surface.

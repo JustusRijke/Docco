@@ -14,33 +14,30 @@ def main():
     parser = argparse.ArgumentParser(
         description="Convert Markdown to PDF with YAML frontmatter support"
     )
+    parser.add_argument("input_file", help="Input markdown file")
     parser.add_argument(
-        "input_file",
-        help="Input markdown file"
-    )
-    parser.add_argument(
-        "-o", "--output",
+        "-o",
+        "--output",
         default=".",
-        help="Output directory (default: current directory)"
+        help="Output directory (default: current directory)",
     )
     parser.add_argument(
-        "-c", "--css",
-        help="CSS file for PDF styling (or auto-detect from markdown filename)"
+        "-c",
+        "--css",
+        help="CSS file for PDF styling (or auto-detect from markdown filename)",
     )
     parser.add_argument(
         "--keep-intermediate",
         action="store_true",
-        help="Keep intermediate markdown and HTML files (for debugging)"
+        help="Keep intermediate markdown and HTML files (for debugging)",
     )
     parser.add_argument(
-        "-v", "--verbose",
-        action="store_true",
-        help="Enable verbose logging"
+        "-v", "--verbose", action="store_true", help="Enable verbose logging"
     )
     parser.add_argument(
         "--allow-python",
         action="store_true",
-        help="Allow execution of Python code in directives (security risk)"
+        help="Allow execution of Python code in directives (security risk)",
     )
 
     args = parser.parse_args()
@@ -65,7 +62,7 @@ def main():
             args.output,
             css_file=args.css,
             keep_intermediate=args.keep_intermediate,
-            allow_python=args.allow_python
+            allow_python=args.allow_python,
         )
 
         logger.info(f"Generated {len(output_files)} output file(s)")
