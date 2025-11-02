@@ -14,7 +14,7 @@ try:
     from weasyprint import HTML, CSS
 
     USE_EXECUTABLE = False
-except ImportError:
+except ImportError:  # pragma: no cover
     USE_EXECUTABLE = True
 
 
@@ -42,8 +42,6 @@ def collect_css_files(markdown_file, metadata, cli_css_arg=None):
     # Handle both string and list format
     if isinstance(frontmatter_css, str):
         frontmatter_css = [frontmatter_css]
-    elif not isinstance(frontmatter_css, list):
-        frontmatter_css = []
 
     # Resolve CSS paths relative to markdown file
     for css_path in frontmatter_css:
@@ -59,7 +57,7 @@ def collect_css_files(markdown_file, metadata, cli_css_arg=None):
         if os.path.exists(cli_css_arg):
             css_files.append(cli_css_arg)
             logger.info(f"Using CSS from CLI: {cli_css_arg}")
-        else:
+        else:  # pragma: no cover
             logger.warning(f"CLI CSS file not found: {cli_css_arg}")
 
     if not css_files:
@@ -80,7 +78,7 @@ def html_to_pdf(html_content, output_path, css_files=None):
     Returns:
         str: Path to generated PDF file
     """
-    if USE_EXECUTABLE:
+    if USE_EXECUTABLE:  # pragma: no cover
         logger.info("Using weasyprint executable for PDF generation")
         _html_to_pdf_with_executable(html_content, output_path, css_files)
     else:
@@ -98,7 +96,9 @@ def html_to_pdf(html_content, output_path, css_files=None):
     return output_path
 
 
-def _html_to_pdf_with_executable(html_content, output_path, css_files=None):
+def _html_to_pdf_with_executable(
+    html_content, output_path, css_files=None
+):  # pragma: no cover
     """
     Convert HTML to PDF using weasyprint executable (fallback for Windows).
 

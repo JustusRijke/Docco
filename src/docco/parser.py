@@ -22,9 +22,9 @@ def has_directives(content):
     # Protect code blocks before checking for directives
     protected_content, _ = extract_code_blocks(content)
     return bool(
-        re.search(r'<!--\s*lang:\w+\s*-->', protected_content) or
-        re.search(r'<!--\s*inline\s*:', protected_content) or
-        re.search(r'<!--\s*python\s*-->', protected_content)
+        re.search(r"<!--\s*lang:\w+\s*-->", protected_content)
+        or re.search(r"<!--\s*inline\s*:", protected_content)
+        or re.search(r"<!--\s*python\s*-->", protected_content)
     )
 
 
@@ -64,13 +64,17 @@ def process_directives_iteratively(content, base_dir, target_lang, allow_python)
         # Step 3: Python is handled within process_inlines
 
     if iteration >= MAX_ITERATIONS and has_directives(content):
-        raise ValueError(f"Max iterations ({MAX_ITERATIONS}) exceeded in directive processing")
+        raise ValueError(
+            f"Max iterations ({MAX_ITERATIONS}) exceeded in directive processing"
+        )
 
     logger.info(f"Directive processing completed in {iteration} iteration(s)")
     return content
 
 
-def parse_markdown(input_file, output_dir, css_file=None, keep_intermediate=False, allow_python=False):
+def parse_markdown(
+    input_file, output_dir, css_file=None, keep_intermediate=False, allow_python=False
+):
     """
     Convert markdown file to PDF through full pipeline.
 
@@ -106,8 +110,6 @@ def parse_markdown(input_file, output_dir, css_file=None, keep_intermediate=Fals
 
     # Determine base directory for inline resolution
     base_dir = os.path.dirname(os.path.abspath(input_file))
-    if not base_dir:
-        base_dir = "."
 
     # Step 2: Split by language (create in-memory versions)
     languages_str = metadata.get("languages", "")
@@ -129,20 +131,28 @@ def parse_markdown(input_file, output_dir, css_file=None, keep_intermediate=Fals
 
     for lang_code, lang_content in outputs.items():
         # Step 4: Iteratively process directives
-        lang_content = process_directives_iteratively(lang_content, base_dir, lang_code, allow_python)
+        lang_content = process_directives_iteratively(
+            lang_content, base_dir, lang_code, allow_python
+        )
 
         # Step 4b: Process header and footer (if specified)
         header_html = None
         footer_html = None
-        if 'header' in metadata:
+        if "header" in metadata:
             header_html = process_header_footer(
-                metadata['header'], base_dir, lang_code, allow_python,
-                directive_processor=process_directives_iteratively
+                metadata["header"],
+                base_dir,
+                lang_code,
+                allow_python,
+                directive_processor=process_directives_iteratively,
             )
-        if 'footer' in metadata:
+        if "footer" in metadata:
             footer_html = process_header_footer(
-                metadata['footer'], base_dir, lang_code, allow_python,
-                directive_processor=process_directives_iteratively
+                metadata["footer"],
+                base_dir,
+                lang_code,
+                allow_python,
+                directive_processor=process_directives_iteratively,
             )
 
         if lang_code is None:

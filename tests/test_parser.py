@@ -3,7 +3,7 @@
 import os
 import tempfile
 import pytest
-from docco.parser import parse_markdown
+from docco.parser import parse_markdown, process_directives_iteratively, MAX_ITERATIONS
 
 
 @pytest.fixture
@@ -115,3 +115,18 @@ def test_keep_intermediate_true(fixture_dir):
         assert any(f.endswith(".pdf") for f in all_files)
         assert any(f.endswith("_intermediate.md") for f in all_files)
         assert any(f.endswith(".html") for f in all_files)
+
+
+def test_max_iterations_exceeded_self_referencing():
+    """Test that ValueError is raised when inline creates infinite recursion."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Create a markdown file that references itself
+        self_ref_file = os.path.join(tmpdir, "self_ref.md")
+        with open(self_ref_file, "w") as f:
+            f.write("# Self Reference\n<!-- inline:\"self_ref.md\" -->")
+
+        # Create content that inlines the self-referencing file
+        content = "# Main\n<!-- inline:\"self_ref.md\" -->"
+
+        with pytest.raises(ValueError, match=f"Max iterations \\({MAX_ITERATIONS}\\) exceeded"):
+            process_directives_iteratively(content, tmpdir, None, False)
