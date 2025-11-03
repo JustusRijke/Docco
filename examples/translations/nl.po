@@ -1,0 +1,79 @@
+# Dutch translation for Multilingual Document Example
+# Copyright (C) 2025
+# This file is distributed under the same license as the Docco package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Docco 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: nl\n"
+"Language-Team: Dutch\n"
+
+msgid "css:"
+msgstr "css:"
+
+msgid "\"css/page.css\""
+msgstr "\"css/page.css\""
+
+msgid ""
+"\"css/header_footer.css\" header: file: \"header.html\" title: \"Document "
+"Example\" author: \"Docco Team\" footer: file: \"footer_multilingual.html\" "
+"title: \"Docco\""
+msgstr ""
+"\"css/header_footer.css\" header: file: \"header.html\" title: \"Document "
+"Voorbeeld\" author: \"Docco Team\" footer: file: \"footer_multilingual.html\" "
+"title: \"Docco\""
+
+msgid "Document Example"
+msgstr "Documentvoorbeeld"
+
+msgid ""
+"This document demonstrates Docco's capabilities for creating professional "
+"documents."
+msgstr ""
+"Dit document demonstreert Docco's mogelijkheden voor het maken van professionele "
+"documenten."
+
+msgid "Shared Content"
+msgstr "Gedeelde Inhoud"
+
+msgid ""
+"This section is available in all versions and serves as common content "
+"throughout the document."
+msgstr ""
+"Dit gedeelte is in alle versies beschikbaar en dient als gemeenschappelijke inhoud "
+"in het hele document."
+
+msgid "Features"
+msgstr "Functies"
+
+msgid "This document showcases various Docco features:"
+msgstr "Dit document toont verschillende Docco-functies:"
+
+msgid "Support for YAML frontmatter metadata"
+msgstr "Ondersteuning voor YAML frontmatter metagegevens"
+
+msgid "Professional PDF generation"
+msgstr "Professionele PDF-generatie"
+
+msgid "Inline file embedding"
+msgstr "Inline bestand insluiten"
+
+msgid "Custom CSS styling"
+msgstr "Aangepaste CSS-stijlen"
+
+msgid "Header and footer support"
+msgstr "Ondersteuning voor koptekst en voettekst"
+
+msgid "Table of Contents generation"
+msgstr "Inhoudsopgave genereren"
+
+msgid "Conclusion"
+msgstr "Conclusie"
+
+msgid ""
+"This document demonstrates how Docco enables creation of professional PDFs "
+"from Markdown source files."
+msgstr ""
+"Dit document toont hoe Docco het maken van professionele PDF's uit Markdown "
+"bronbestanden mogelijk maakt."

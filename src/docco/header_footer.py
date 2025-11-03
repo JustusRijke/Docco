@@ -6,7 +6,7 @@ from docco.utils import setup_logger
 logger = setup_logger(__name__)
 
 
-def process_header_footer(config, base_dir, target_lang=None, allow_python=False, directive_processor=None):
+def process_header_footer(config, base_dir, allow_python=False, directive_processor=None):
     """
     Process header or footer HTML file with placeholder and directive support.
 
@@ -14,7 +14,6 @@ def process_header_footer(config, base_dir, target_lang=None, allow_python=False
         config: Dict with 'file' key and optional placeholder arguments
                 Example: {file: "footer.html", title: "My Doc", author: "Jane"}
         base_dir: Base directory for resolving file path
-        target_lang: Language code for filtering (None = no filtering)
         allow_python: Allow python directive execution
         directive_processor: Function to process directives (for DRY with main content)
 
@@ -51,6 +50,6 @@ def process_header_footer(config, base_dir, target_lang=None, allow_python=False
 
     # Process directives using the same pipeline as main content
     if directive_processor:
-        content = directive_processor(content, base_dir, target_lang, allow_python)
+        content = directive_processor(content, base_dir, allow_python)
 
     return content

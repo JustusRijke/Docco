@@ -70,7 +70,7 @@ def test_with_directive_processor(fixture_dir):
     }
 
     # Mock directive processor that adds suffix
-    def mock_processor(content, base_dir, target_lang, allow_python):
+    def mock_processor(content, base_dir, allow_python):
         return content + " [processed]"
 
     result = process_header_footer(config, ".", directive_processor=mock_processor)

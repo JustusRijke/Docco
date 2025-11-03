@@ -57,14 +57,20 @@ languages: EN DE FR
 
 Paths are relative to the markdown file. Additional CSS can also be provided via the CLI `--css` argument, which overrides frontmatter styles.
 
-**`languages`** - Space-separated language codes for multi-language document generation. When specified, Docco generates separate PDFs for each language, filtering content by `<!-- lang:CODE -->` tags.
+## Translation Support with POT/PO Files
+Docco supports professional translation workflows using POT (Portable Object Template) and PO (Portable Object) files. Extract translatable strings from your markdown with:
 
-Example:
-```yaml
-languages: "EN DE"
+```bash
+docco extract myfile.md -o translations/
 ```
 
-See the [Multilingual Document Example](Multilingual_Document_Example.md) for a complete demonstration.
+This generates a `myfile.pot` file containing all translatable strings. Translators can then create language-specific `.po` files and build translated PDFs with:
+
+```bash
+docco myfile.md --po translations/de.po -o output/
+```
+
+This approach provides integration with professional translation tools and services. See the [POT/PO Translation Workflow](#) for complete details.
 
 **`header`** and **`footer`** - HTML files for page headers and footers with placeholder and directive support:
 ```yaml
@@ -130,7 +136,6 @@ This section returns to **portrait orientation** using the `<!-- portrait -->` d
 
 Docco supports page headers and footers using HTML files with full directive support. Headers and footers are processed through the same pipeline as the main document, allowing for:
 - Placeholder substitution
-- Language-specific content with `<!-- lang:CODE -->` directives
 - Dynamic content with `<!-- python -->` directives
 - File inclusion with `<!-- inline -->` directives
 
@@ -187,7 +192,6 @@ print(datetime.datetime.now().strftime("%Y-%m-%d"))
 </div>
 ```
 
-For language-aware headers and footers with `<!-- lang:CODE -->` directives, see the [Multilingual Document Example](Multilingual_Document_Example.md).
 
 # Python Code Execution
 

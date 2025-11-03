@@ -4,14 +4,14 @@ import pytest
 from docco.frontmatter import parse_frontmatter
 
 
-def test_parse_languages_tag():
-    """Test parsing languages tag from frontmatter."""
+def test_parse_basic_frontmatter():
+    """Test parsing basic frontmatter from content."""
     content = """---
-languages: EN DE NL
+title: My Document
 ---
 # Content"""
     metadata, body = parse_frontmatter(content)
-    assert metadata["languages"] == "EN DE NL"
+    assert metadata["title"] == "My Document"
     assert body == "# Content"
 
 
@@ -23,25 +23,25 @@ def test_no_frontmatter():
     assert body == content
 
 
-def test_unknown_tags_preserved():
-    """Test that unknown tags are stored for future use."""
+def test_multiple_metadata_fields():
+    """Test parsing multiple metadata fields."""
     content = """---
-languages: EN DE
 title: My Document
 author: John Doe
+css: style.css
 ---
 # Content"""
     metadata, body = parse_frontmatter(content)
-    assert metadata["languages"] == "EN DE"
     assert metadata["title"] == "My Document"
     assert metadata["author"] == "John Doe"
+    assert metadata["css"] == "style.css"
     assert body == "# Content"
 
 
 def test_invalid_yaml():
     """Test that invalid YAML raises error."""
     content = """---
-languages: EN DE
+title: My Document
   invalid: [unclosed
 ---
 # Content"""
@@ -62,7 +62,7 @@ def test_empty_frontmatter():
 def test_multiline_content_after_frontmatter():
     """Test that multiline content is preserved after frontmatter."""
     content = """---
-languages: EN
+title: My Document
 ---
 # Title
 
@@ -71,7 +71,7 @@ of content here.
 
 With paragraphs."""
     metadata, body = parse_frontmatter(content)
-    assert metadata["languages"] == "EN"
+    assert metadata["title"] == "My Document"
     assert "Multiple lines" in body
     assert "With paragraphs" in body
 
@@ -79,7 +79,7 @@ With paragraphs."""
 def test_frontmatter_starts_but_no_closing():
     """Test content that starts with --- but has no closing ---."""
     content = """---
-languages: EN
+title: My Document
 # Title
 Some content"""
     metadata, body = parse_frontmatter(content)

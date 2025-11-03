@@ -1,11 +1,10 @@
 ---
-languages: EN DE NL
-title: Multilingual Document
+title: Document with Frontmatter
 ---
 
 # Document with Frontmatter
 
-This document has languages in frontmatter.
+This document has metadata in frontmatter.
 
 ## Content
 Main content here.

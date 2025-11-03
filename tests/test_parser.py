@@ -23,29 +23,13 @@ def test_end_to_end_simple(fixture_dir):
 
 
 def test_end_to_end_with_frontmatter(fixture_dir):
-    """Test parsing with frontmatter and languages."""
+    """Test parsing with frontmatter."""
     input_file = os.path.join(fixture_dir, "with_frontmatter.md")
     with tempfile.TemporaryDirectory() as tmpdir:
         outputs = parse_markdown(input_file, tmpdir)
-        assert len(outputs) == 3
-        assert any("_EN.pdf" in o for o in outputs)
-        assert any("_DE.pdf" in o for o in outputs)
-        assert any("_NL.pdf" in o for o in outputs)
-        for output in outputs:
-            assert os.path.exists(output)
-
-
-def test_end_to_end_multilingual(fixture_dir):
-    """Test multilingual document parsing."""
-    input_file = os.path.join(fixture_dir, "multilingual.md")
-    with tempfile.TemporaryDirectory() as tmpdir:
-        outputs = parse_markdown(input_file, tmpdir)
-        assert len(outputs) == 3
-        assert any("_EN.pdf" in o for o in outputs)
-        assert any("_DE.pdf" in o for o in outputs)
-        assert any("_NL.pdf" in o for o in outputs)
-        for output in outputs:
-            assert os.path.exists(output)
+        assert len(outputs) == 1
+        assert outputs[0].endswith(".pdf")
+        assert os.path.exists(outputs[0])
 
 
 def test_end_to_end_with_inline(fixture_dir):
@@ -73,15 +57,6 @@ After""")
         assert os.path.exists(outputs[0])
 
 
-def test_output_file_naming_multilingual(fixture_dir):
-    """Test that output files are named correctly for multilingual."""
-    input_file = os.path.join(fixture_dir, "multilingual.md")
-    with tempfile.TemporaryDirectory() as tmpdir:
-        outputs = parse_markdown(input_file, tmpdir)
-        basenames = [os.path.basename(o) for o in outputs]
-        assert "multilingual_EN.pdf" in basenames
-        assert "multilingual_DE.pdf" in basenames
-        assert "multilingual_NL.pdf" in basenames
 
 
 def test_output_file_naming_simple(fixture_dir):
@@ -129,4 +104,4 @@ def test_max_iterations_exceeded_self_referencing():
         content = "# Main\n<!-- inline:\"self_ref.md\" -->"
 
         with pytest.raises(ValueError, match=f"Max iterations \\({MAX_ITERATIONS}\\) exceeded"):
-            process_directives_iteratively(content, tmpdir, None, False)
+            process_directives_iteratively(content, tmpdir, False)
