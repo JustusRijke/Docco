@@ -64,6 +64,8 @@
 <ul class="toc-level-2">
 <li><a href="#images-with-styling">4.1 Images with styling</a>
 </li>
+<li><a href="#tables">4.2 Tables</a>
+</li>
 </ul>
 <li><a href="#conclusion">5 Conclusion</a>
 </li>
@@ -138,6 +140,38 @@ Date: 2025-10-26</p>
 <div class="section-wrapper landscape">
 <h3 id="landscape-orientation">1.5.2 Landscape Orientation</h3>
 <p>This section uses <strong>landscape orientation</strong> with the <code>&lt;!-- landscape --&gt;</code> directive, providing more horizontal space for wide content.</p>
+<table>
+<thead>
+<tr>
+<th>Q1 Revenue</th>
+<th>Q1 Expenses</th>
+<th>Q1 Profit</th>
+<th>Q2 Revenue</th>
+<th>Q2 Expenses</th>
+<th>Q2 Profit</th>
+<th>Q3 Revenue</th>
+<th>Q3 Expenses</th>
+<th>Q3 Profit</th>
+<th>Q4 Revenue</th>
+<th>Q4 Expenses</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>$50,000</td>
+<td>$35,000</td>
+<td>$15,000</td>
+<td>$55,000</td>
+<td>$37,000</td>
+<td>$18,000</td>
+<td>$62,000</td>
+<td>$40,000</td>
+<td>$22,000</td>
+<td>$71,000</td>
+<td>$45,000</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="section-wrapper portrait">
 <h3 id="back-to-portrait">1.5.3 Back to Portrait</h3>
@@ -213,6 +247,49 @@ print(&quot;_&quot;, end='')
 <p>Defines an image with CSS class <code>icon</code>. The style is defined in <code>css/fancy.css</code>.
 The result:</p>
 <p><img src="images/idea.svg" alt="" class="icon" /></p>
+<h2 id="tables">4.2 Tables</h2>
+<p>Markdown tables are supported for organizing tabular data:</p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Status</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Inline embedding</td>
+<td>✓</td>
+<td>With placeholder substitution</td>
+</tr>
+<tr>
+<td>Table of contents</td>
+<td>✓</td>
+<td>Automatic numbering</td>
+</tr>
+<tr>
+<td>Language support</td>
+<td>✓</td>
+<td>Multiple language PDFs</td>
+</tr>
+<tr>
+<td>Headers &amp; footers</td>
+<td>✓</td>
+<td>Full directive support</td>
+</tr>
+<tr>
+<td>Python execution</td>
+<td>✓</td>
+<td>Disabled by default</td>
+</tr>
+<tr>
+<td>CSS styling</td>
+<td>✓</td>
+<td>Custom stylesheets</td>
+</tr>
+</tbody>
+</table>
 <h1 id="conclusion">5 Conclusion</h1>
 <p>This document demonstrates all Docco's capabilities.</p>
 </div>

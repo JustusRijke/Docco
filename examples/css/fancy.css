@@ -1,5 +1,17 @@
+/* Example image style */
 .icon {
   width: 2cm;
   height: 2cm;
   object-fit: cover; /* ensures the image keeps aspect ratio and fills the box */
+}
+
+/* Tables */
+table {
+    border-collapse: collapse; /* Merge borders */
+    page-break-inside: avoid; /* Prevent table from breaking across pages */
+}
+
+th, td {
+    border: 1pt solid black;
+    padding: 2mm;
 }

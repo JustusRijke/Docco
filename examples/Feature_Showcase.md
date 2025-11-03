@@ -116,6 +116,10 @@ This section starts on a **new page** using the `<!-- page break -->` directive.
 
 This section uses **landscape orientation** with the `<!-- landscape -->` directive, providing more horizontal space for wide content.
 
+| Q1 Revenue | Q1 Expenses | Q1 Profit | Q2 Revenue | Q2 Expenses | Q2 Profit | Q3 Revenue | Q3 Expenses | Q3 Profit | Q4 Revenue | Q4 Expenses |
+|-----------|------------|----------|-----------|------------|----------|-----------|------------|----------|-----------|------------|
+| $50,000 | $35,000 | $15,000 | $55,000 | $37,000 | $18,000 | $62,000 | $40,000 | $22,000 | $71,000 | $45,000 | 
+
 <!-- portrait -->
 ### Back to Portrait
 
@@ -226,6 +230,18 @@ The result:
 
 ![](images/idea.svg){.icon}
 
+## Tables
+
+Markdown tables are supported for organizing tabular data:
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Inline embedding | ✓ | With placeholder substitution |
+| Table of contents | ✓ | Automatic numbering |
+| Language support | ✓ | Multiple language PDFs |
+| Headers & footers | ✓ | Full directive support |
+| Python execution | ✓ | Disabled by default |
+| CSS styling | ✓ | Custom stylesheets |
 
 # Conclusion
 
