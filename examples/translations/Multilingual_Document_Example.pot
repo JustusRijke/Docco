@@ -1,0 +1,63 @@
+#
+msgid ""
+msgstr ""
+
+msgid "css:"
+msgstr ""
+
+msgid "\"css/page.css\""
+msgstr ""
+
+msgid ""
+"\"css/header_footer.css\" header: file: \"header.html\" title: \"Document "
+"Example\" author: \"Docco Team\" footer: file: \"footer_multilingual.html\" "
+"title: \"Docco\""
+msgstr ""
+
+msgid "Document Example"
+msgstr ""
+
+msgid ""
+"This document demonstrates Docco's capabilities for creating professional "
+"documents."
+msgstr ""
+
+msgid "Shared Content"
+msgstr ""
+
+msgid ""
+"This section is available in all versions and serves as common content "
+"throughout the document."
+msgstr ""
+
+msgid "Features"
+msgstr ""
+
+msgid "This document showcases various Docco features:"
+msgstr ""
+
+msgid "Support for YAML frontmatter metadata"
+msgstr ""
+
+msgid "Professional PDF generation"
+msgstr ""
+
+msgid "Inline file embedding"
+msgstr ""
+
+msgid "Custom CSS styling"
+msgstr ""
+
+msgid "Header and footer support"
+msgstr ""
+
+msgid "Table of Contents generation"
+msgstr ""
+
+msgid "Conclusion"
+msgstr ""
+
+msgid ""
+"This document demonstrates how Docco enables creation of professional PDFs "
+"from Markdown source files."
+msgstr ""

@@ -37,6 +37,30 @@ def test_extract_to_pot_contains_strings():
         assert "This is a paragraph" in pot_content
 
 
+def test_extract_to_pot_strips_frontmatter():
+    """Test that frontmatter is not included in POT extraction."""
+    content = """---
+title: Document Title
+author: John Doe
+---
+# My Title
+
+This is a paragraph."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        pot_path = os.path.join(tmpdir, "test.pot")
+        extract_to_pot(content, pot_path)
+
+        with open(pot_path, "r") as f:
+            pot_content = f.read()
+
+        # Should contain body content
+        assert "My Title" in pot_content
+        assert "This is a paragraph" in pot_content
+        # Should NOT contain frontmatter
+        assert "Document Title" not in pot_content
+        assert "John Doe" not in pot_content
+
+
 def test_build_from_po_with_translations():
     """Test that build_from_po applies translations to markdown."""
     # Create a simple markdown
@@ -59,6 +83,36 @@ msgstr "Welt"
 
         # Result should contain translated strings
         assert "Hallo" in result
+
+
+def test_build_from_po_with_frontmatter():
+    """Test that build_from_po handles content with frontmatter (strips it)."""
+    # Create markdown with frontmatter
+    md_content = """---
+title: Document Title
+author: John Doe
+---
+# Hello
+
+World"""
+
+    # Create a PO file with translations
+    with tempfile.TemporaryDirectory() as tmpdir:
+        po_path = os.path.join(tmpdir, "test.po")
+        with open(po_path, "w") as f:
+            f.write("""msgid "Hello"
+msgstr "Hola"
+
+msgid "World"
+msgstr "Mundo"
+""")
+
+        # Apply translations (content includes frontmatter, which gets stripped)
+        result = build_from_po(md_content, po_path)
+
+        # Result should contain translated strings
+        assert "Hola" in result
+        assert "Mundo" in result
 
 
 def test_build_from_po_file_not_found():
