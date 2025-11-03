@@ -11,7 +11,22 @@ table {
     page-break-inside: avoid; /* Prevent table from breaking across pages */
 }
 
-th, td {
+th {
+    background-color: #cacaca;
+    font-weight: bold;
+}
+
+/* Table with borders everywhere */
+.table-borders,
+.table-borders tr,
+.table-borders th,
+.table-borders td {
+    border: 1pt solid black;
+    padding: 2mm;
+}
+
+/* Table with only borders outside */
+.table-borders-outside {
     border: 1pt solid black;
     padding: 2mm;
 }
