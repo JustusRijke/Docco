@@ -25,10 +25,16 @@ def translation_files():
         "..",
         "examples"
     )
+    output_dir = os.path.join(
+        os.path.dirname(__file__),
+        "output"
+    )
+    os.makedirs(output_dir, exist_ok=True)
     return {
         "source": os.path.join(examples_dir, "Multilingual_Document_Example.md"),
         "de_po": os.path.join(examples_dir, "translations", "de.po"),
         "nl_po": os.path.join(examples_dir, "translations", "nl.po"),
+        "pot": os.path.join(output_dir, "Multilingual_Document_Example.pot"),
     }
 
 
@@ -42,45 +48,44 @@ def baselines_dir():
 
 
 def test_extract_pot_file(translation_files):
-    """Test that POT file can be extracted from source markdown."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        # Read source markdown
-        with open(translation_files["source"], "r") as f:
-            content = f.read()
+    """Test that POT file can be extracted from source markdown to examples/translations."""
+    # Read source markdown
+    with open(translation_files["source"], "r") as f:
+        content = f.read()
 
-        # Extract to POT
-        pot_path = os.path.join(tmpdir, "test.pot")
-        result = extract_to_pot(content, pot_path)
+    # Extract to POT in examples/translations
+    pot_path = translation_files["pot"]
+    result = extract_to_pot(content, pot_path)
 
-        # Verify POT file was created
-        assert os.path.exists(result)
-        assert result == pot_path
+    # Verify POT file was created
+    assert os.path.exists(result)
+    assert result == pot_path
 
-        # Verify POT file has content
-        with open(pot_path, "r") as f:
-            pot_content = f.read()
+    # Verify POT file has content
+    with open(pot_path, "r") as f:
+        pot_content = f.read()
 
-        assert "msgid" in pot_content
-        assert "Document Example" in pot_content
-        assert len(pot_content) > 100
+    assert "msgid" in pot_content
+    assert "Document Example" in pot_content
+    assert len(pot_content) > 100
 
 
 def test_translation_workflow_all_languages(translation_files, baselines_dir):
     """Test complete translation workflow: extract POT and build all language PDFs.
 
     This test covers:
-    - POT extraction from source markdown
+    - POT extraction from source markdown (output to examples/translations)
     - PDF generation for English (source)
     - PDF generation with German translation
     - PDF generation with Dutch translation
     - Baseline validation for all languages
     """
     with tempfile.TemporaryDirectory() as tmpdir:
-        # Step 1: Extract POT from source
+        # Step 1: Extract POT from source to examples/translations
         with open(translation_files["source"], "r") as f:
             source_content = f.read()
 
-        pot_path = os.path.join(tmpdir, "document.pot")
+        pot_path = translation_files["pot"]
         extract_to_pot(source_content, pot_path)
 
         assert os.path.exists(pot_path), "POT file not created"

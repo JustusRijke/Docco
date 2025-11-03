@@ -28,24 +28,26 @@
 <li><a href="#supported-fields">1.1.1 Supported Fields</a>
 </li>
 </ul>
-<li><a href="#general-directive-rule">1.2 General Directive Rule</a>
+<li><a href="#translation-support-with-potpo-files">1.2 Translation Support with POT/PO Files</a>
 </li>
-<li><a href="#inlined-content">1.3 Inlined Content</a>
+<li><a href="#general-directive-rule">1.3 General Directive Rule</a>
+</li>
+<li><a href="#inlined-content">1.4 Inlined Content</a>
 <ul class="toc-level-3">
-<li><a href="#arguments">1.3.1 Arguments</a>
+<li><a href="#arguments">1.4.1 Arguments</a>
 </li>
-<li><a href="#recursive-inlining">1.3.2 Recursive Inlining</a>
+<li><a href="#recursive-inlining">1.4.2 Recursive Inlining</a>
 </li>
 </ul>
-<li><a href="#table-of-contents">1.4 Table of Contents</a>
+<li><a href="#table-of-contents">1.5 Table of Contents</a>
 </li>
-<li><a href="#page-layout-directives">1.5 Page Layout Directives</a>
+<li><a href="#page-layout-directives">1.6 Page Layout Directives</a>
 <ul class="toc-level-3">
-<li><a href="#page-breaks">1.5.1 Page Breaks</a>
+<li><a href="#page-breaks">1.6.1 Page Breaks</a>
 </li>
-<li><a href="#landscape-orientation">1.5.2 Landscape Orientation</a>
+<li><a href="#landscape-orientation">1.6.2 Landscape Orientation</a>
 </li>
-<li><a href="#back-to-portrait">1.5.3 Back to Portrait</a>
+<li><a href="#back-to-portrait">1.6.3 Back to Portrait</a>
 </li>
 </ul>
 </ul>
@@ -65,6 +67,8 @@
 <li><a href="#images-with-styling">4.1 Images with styling</a>
 </li>
 <li><a href="#tables">4.2 Tables</a>
+</li>
+<li><a href="#more-markdown-examples">4.3 More Markdown Examples</a>
 </li>
 </ul>
 <li><a href="#conclusion">5 Conclusion</a>
@@ -102,11 +106,14 @@ languages: EN DE FR
 </li>
 </ul>
 <p>Paths are relative to the markdown file. Additional CSS can also be provided via the CLI <code>--css</code> argument, which overrides frontmatter styles.</p>
-<p><strong><code>languages</code></strong> - Space-separated language codes for multi-language document generation. When specified, Docco generates separate PDFs for each language, filtering content by <code>&lt;!-- lang:CODE --&gt;</code> tags.</p>
-<p>Example:</p>
-<pre><code class="language-yaml">languages: &quot;EN DE&quot;
+<h2 id="translation-support-with-potpo-files">1.2 Translation Support with POT/PO Files</h2>
+<p>Docco supports professional translation workflows using POT (Portable Object Template) and PO (Portable Object) files. Extract translatable strings from your markdown with:</p>
+<pre><code class="language-bash">docco extract myfile.md -o translations/
 </code></pre>
-<p>See the <a href="Multilingual_Document_Example.md">Multilingual Document Example</a> for a complete demonstration.</p>
+<p>This generates a <code>myfile.pot</code> file containing all translatable strings. Translators can then create language-specific <code>.po</code> files and build translated PDFs with:</p>
+<pre><code class="language-bash">docco myfile.md --po translations/de.po -o output/
+</code></pre>
+<p>This approach provides integration with professional translation tools and services. See the <a href="#">POT/PO Translation Workflow</a> for complete details.</p>
 <p><strong><code>header</code></strong> and <strong><code>footer</code></strong> - HTML files for page headers and footers with placeholder and directive support:</p>
 <pre><code class="language-yaml">header:
   file: &quot;header.html&quot;
@@ -117,30 +124,30 @@ footer:
   title: &quot;My Document&quot;
 </code></pre>
 <p>The <code>file</code> key is required and specifies the HTML file path (relative to the markdown file). All other keys are placeholders that replace <code>{{key}}</code> in the HTML file. Header/footer files support all directives (lang, inline, python), enabling dynamic content like dates and language-specific text. See the <a href="#headers--footers">Headers &amp; Footers</a> section for details.</p>
-<h2 id="general-directive-rule">1.2 General Directive Rule</h2>
+<h2 id="general-directive-rule">1.3 General Directive Rule</h2>
 <p><strong>Directives can appear anywhere in the document</strong>, including in the middle of lines. However, directives inside code blocks (both inline <code>`code`</code> and fenced <code> </code> blocks) are <strong>protected</strong> and will not be processed. This allows you to show directive syntax as examples in documentation without triggering them.</p>
-<h2 id="inlined-content">1.3 Inlined Content</h2>
+<h2 id="inlined-content">1.4 Inlined Content</h2>
 <p>The <code>inline</code> directive embeds external markdown files with placeholder substitution.</p>
 <p>Syntax: <code>&lt;!-- inline:&quot;foobar.md&quot; key1=&quot;value1&quot; key2=&quot;value2&quot; --&gt;</code></p>
-<h3 id="arguments">1.3.1 Arguments</h3>
+<h3 id="arguments">1.4.1 Arguments</h3>
 <p>All attributes after the path are placeholders. For example, <code>author=&quot;Docco Team&quot;</code> replaces <code>{{author}}</code> in the inlined file. Arguments are optional. Spaces around the <code>inline</code> keyword and colon are accepted. See example below:</p>
 <p>This content is inlined, with arguments.</p>
 <p>Author: Docco Team
 Date: 2025-10-26</p>
-<h3 id="recursive-inlining">1.3.2 Recursive Inlining</h3>
+<h3 id="recursive-inlining">1.4.2 Recursive Inlining</h3>
 <p>Inlined markdown files can themselves contain inline directives, allowing for multi-level composition (up to a maximum depth of 10 levels to prevent infinite recursion). This enables modular document structures where content can be composed from multiple nested files.</p>
-<h2 id="table-of-contents">1.4 Table of Contents</h2>
+<h2 id="table-of-contents">1.5 Table of Contents</h2>
 <p>The <code>&lt;!-- TOC --&gt;</code> directive generates a hierarchical table of contents with automatic numbering (1, 1.1, 1.2, etc.).</p>
 <p>Use <code>&lt;!-- toc:exclude --&gt;</code> before a heading to exclude it from the TOC and remove its numbering.</p>
-<h2 id="page-layout-directives">1.5 Page Layout Directives</h2>
+<h2 id="page-layout-directives">1.6 Page Layout Directives</h2>
 <div class="pagebreak"></div>
-<h3 id="page-breaks">1.5.1 Page Breaks</h3>
+<h3 id="page-breaks">1.6.1 Page Breaks</h3>
 <p>This section starts on a <strong>new page</strong> using the <code>&lt;!-- page break --&gt;</code> directive.</p>
 </div>
 <div class="section-wrapper landscape">
-<h3 id="landscape-orientation">1.5.2 Landscape Orientation</h3>
+<h3 id="landscape-orientation">1.6.2 Landscape Orientation</h3>
 <p>This section uses <strong>landscape orientation</strong> with the <code>&lt;!-- landscape --&gt;</code> directive, providing more horizontal space for wide content.</p>
-<table>
+<table class="table-borders">
 <thead>
 <tr>
 <th>Q1 Revenue</th>
@@ -174,13 +181,12 @@ Date: 2025-10-26</p>
 </table>
 </div>
 <div class="section-wrapper portrait">
-<h3 id="back-to-portrait">1.5.3 Back to Portrait</h3>
+<h3 id="back-to-portrait">1.6.3 Back to Portrait</h3>
 <p>This section returns to <strong>portrait orientation</strong> using the <code>&lt;!-- portrait --&gt;</code> directive.</p>
 <h1 id="headers-amp-footers">2 Headers &amp; Footers</h1>
 <p>Docco supports page headers and footers using HTML files with full directive support. Headers and footers are processed through the same pipeline as the main document, allowing for:</p>
 <ul>
 <li>Placeholder substitution</li>
-<li>Language-specific content with <code>&lt;!-- lang:CODE --&gt;</code> directives</li>
 <li>Dynamic content with <code>&lt;!-- python --&gt;</code> directives</li>
 <li>File inclusion with <code>&lt;!-- inline --&gt;</code> directives</li>
 </ul>
@@ -224,7 +230,6 @@ print(datetime.datetime.now().strftime(&quot;%Y-%m-%d&quot;))
     &lt;span class=&quot;page-number&quot;&gt;&lt;/span&gt;
 &lt;/div&gt;
 </code></pre>
-<p>For language-aware headers and footers with <code>&lt;!-- lang:CODE --&gt;</code> directives, see the <a href="Multilingual_Document_Example.md">Multilingual Document Example</a>.</p>
 <h1 id="python-code-execution">3 Python Code Execution</h1>
 <p>The <code>&lt;!-- python --&gt;</code> directive executes Python code and inserts the stdout output into the markdown. This is useful for generating dynamic content.</p>
 <p>The output can contain other directives (markdown, inline files, etc.).</p>
@@ -243,53 +248,68 @@ print(&quot;_&quot;, end='')
 <p>Docco relies on <a href="https://markdown-it-py.readthedocs.io/en/latest/">MarkdownIt</a> for rendering markdown to HTML. It fully supports the <a href="https://spec.commonmark.org">Commonmark specs</a> extend with table support. In addition, the <a href="https://mdit-py-plugins.readthedocs.io/en/latest/#attributes">(block) attributes</a> plugin is installed.</p>
 <h2 id="images-with-styling">4.1 Images with styling</h2>
 <p>Add images using the normal Markdown way, and use <code>{}</code> add style(s) to the images. For example:</p>
-<p><code>[](images/idea.svg){.icon}</code></p>
+<p><code>![](images/idea.svg){.icon}</code></p>
 <p>Defines an image with CSS class <code>icon</code>. The style is defined in <code>css/fancy.css</code>.
 The result:</p>
 <p><img src="images/idea.svg" alt="" class="icon" /></p>
+<p>Or define the style directly: <code>![](images/idea.svg){style=&quot;width:2cm&quot;}</code></p>
+<p><img src="images/idea.svg" alt="" style="width:2cm" /></p>
 <h2 id="tables">4.2 Tables</h2>
 <p>Markdown tables are supported for organizing tabular data:</p>
-<table>
+<hr />
+<table class="table-borders">
 <thead>
 <tr>
-<th>Feature</th>
-<th>Status</th>
-<th>Notes</th>
+<th>A</th>
+<th>B</th>
+<th>C</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Inline embedding</td>
-<td>✓</td>
-<td>With placeholder substitution</td>
-</tr>
-<tr>
-<td>Table of contents</td>
-<td>✓</td>
-<td>Automatic numbering</td>
-</tr>
-<tr>
-<td>Language support</td>
-<td>✓</td>
-<td>Multiple language PDFs</td>
-</tr>
-<tr>
-<td>Headers &amp; footers</td>
-<td>✓</td>
-<td>Full directive support</td>
-</tr>
-<tr>
-<td>Python execution</td>
-<td>✓</td>
-<td>Disabled by default</td>
-</tr>
-<tr>
-<td>CSS styling</td>
-<td>✓</td>
-<td>Custom stylesheets</td>
+<td>Table</td>
+<td>with borders</td>
+<td>inside</td>
 </tr>
 </tbody>
 </table>
+<hr />
+<table class="table-borders-outside">
+<thead>
+<tr>
+<th>A</th>
+<th>B</th>
+<th>C</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Table</td>
+<td>with borders</td>
+<td>outside</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<table>
+<thead>
+<tr>
+<th>A</th>
+<th>B</th>
+<th>C</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Table</td>
+<td>without</td>
+<td>borders</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="more-markdown-examples">4.3 More Markdown Examples</h2>
+<p>Check 'm out: https://markdown-it.github.io/</p>
 <h1 id="conclusion">5 Conclusion</h1>
 <p>This document demonstrates all Docco's capabilities.</p>
 </div>
