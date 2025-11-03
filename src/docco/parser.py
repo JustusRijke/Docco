@@ -188,7 +188,7 @@ def parse_markdown(
 
         # Step 7: Convert to PDF
         pdf_path = os.path.join(output_dir, pdf_filename)
-        html_to_pdf(html_wrapped, pdf_path, css_files)
+        html_to_pdf(html_wrapped, pdf_path, css_files, base_url=base_dir)
         pdf_files.append(pdf_path)
 
     # Clean up intermediate files if not keeping them

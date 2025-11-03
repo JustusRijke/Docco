@@ -212,6 +212,12 @@ print("_", end='')
 <!-- /python -->
 
 
+# Markdown examples
+Docco relies on [MarkdownIt](https://markdown-it-py.readthedocs.io/en/latest/) for rendering markdown to HTML. It fully supports the [Commonmark specs](https://spec.commonmark.org).
+
+## Images
+`[](images/idea.svg)`
+![](images/idea.svg)
 
 
 # Conclusion

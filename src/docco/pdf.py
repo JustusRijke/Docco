@@ -66,7 +66,7 @@ def collect_css_files(markdown_file, metadata, cli_css_arg=None):
     return css_files
 
 
-def html_to_pdf(html_content, output_path, css_files=None):
+def html_to_pdf(html_content, output_path, css_files=None, base_url=None):
     """
     Convert HTML to PDF with optional CSS styling.
 
@@ -74,16 +74,17 @@ def html_to_pdf(html_content, output_path, css_files=None):
         html_content: HTML content string
         output_path: Path for output PDF file
         css_files: List of CSS file paths (optional)
+        base_url: Base URL for resolving relative paths in HTML (optional)
 
     Returns:
         str: Path to generated PDF file
     """
     if USE_EXECUTABLE:  # pragma: no cover
         logger.info("Using weasyprint executable for PDF generation")
-        _html_to_pdf_with_executable(html_content, output_path, css_files)
+        _html_to_pdf_with_executable(html_content, output_path, css_files, base_url)
     else:
         logger.info("Using WeasyPrint Python module for PDF generation")
-        html_obj = HTML(string=html_content)
+        html_obj = HTML(string=html_content, base_url=base_url)
 
         stylesheets = []
         if css_files:
@@ -97,7 +98,7 @@ def html_to_pdf(html_content, output_path, css_files=None):
 
 
 def _html_to_pdf_with_executable(
-    html_content, output_path, css_files=None
+    html_content, output_path, css_files=None, base_url=None
 ):  # pragma: no cover
     """
     Convert HTML to PDF using weasyprint executable (fallback for Windows).
@@ -106,6 +107,7 @@ def _html_to_pdf_with_executable(
         html_content: HTML content string
         output_path: Path for output PDF file
         css_files: List of CSS file paths (optional)
+        base_url: Base URL for resolving relative paths (optional)
 
     Raises:
         RuntimeError: If weasyprint executable not found in PATH
@@ -128,7 +130,13 @@ def _html_to_pdf_with_executable(
 
     try:
         # Build command
-        cmd = [weasyprint_cmd, html_tmp_path, str(output_path)]
+        cmd = [weasyprint_cmd]
+
+        # Add base URL if provided
+        if base_url:
+            cmd.extend(["-u", base_url])
+
+        cmd.extend([html_tmp_path, str(output_path)])
 
         # Add CSS stylesheets if provided
         if css_files:

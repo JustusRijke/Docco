@@ -138,3 +138,35 @@ def test_html_to_pdf_without_css(tmp_path):
 
     assert os.path.exists(str(output_path))
     assert result == str(output_path)
+
+
+def test_html_to_pdf_with_base_url(tmp_path):
+    """Test PDF generation with base_url for relative image paths."""
+    try:
+        from PIL import Image
+        # Create a valid image file
+        img = Image.new("RGB", (10, 10), color="red")
+        img_file = tmp_path / "test.png"
+        img.save(str(img_file))
+    except ImportError:
+        # Skip test if PIL not available
+        pytest.skip("PIL/Pillow not available")
+
+    # HTML with relative image path
+    html_content = "<!DOCTYPE html><html><body><img src='test.png'/></body></html>"
+    output_path_with_base = tmp_path / "with_base.pdf"
+    output_path_without_base = tmp_path / "without_base.pdf"
+
+    # Generate PDF with base_url - should succeed and include the image
+    result_with_base = html_to_pdf(html_content, str(output_path_with_base), base_url=str(tmp_path))
+    assert os.path.exists(str(output_path_with_base))
+    assert result_with_base == str(output_path_with_base)
+    size_with_base = os.path.getsize(str(output_path_with_base))
+
+    # Generate PDF without base_url - image won't resolve but PDF should still be created
+    html_to_pdf(html_content, str(output_path_without_base))
+    assert os.path.exists(str(output_path_without_base))
+    size_without_base = os.path.getsize(str(output_path_without_base))
+
+    # PDF with base_url should be larger (contains embedded image)
+    assert size_with_base > size_without_base
