@@ -224,12 +224,16 @@ Docco relies on [MarkdownIt](https://markdown-it-py.readthedocs.io/en/latest/) f
 ## Images with styling
 Add images using the normal Markdown way, and use `{}` add style(s) to the images. For example:
 
-`[](images/idea.svg){.icon}` 
+`![](images/idea.svg){.icon}` 
 
 Defines an image with CSS class `icon`. The style is defined in `css/fancy.css`.
 The result:
 
 ![](images/idea.svg){.icon}
+
+Or define the style directly: `![](images/idea.svg){style="width:2cm"}`
+
+![](images/idea.svg){style="width:2cm"}
 
 ## Tables
 
