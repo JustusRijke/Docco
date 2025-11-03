@@ -1,6 +1,7 @@
 """Convert markdown to HTML using markdown-it-py."""
 
 from markdown_it import MarkdownIt
+from mdit_py_plugins.attrs import attrs_block_plugin, attrs_plugin
 from docco.utils import setup_logger
 
 logger = setup_logger(__name__)
@@ -16,7 +17,8 @@ def markdown_to_html(markdown_content):
     Returns:
         str: HTML content
     """
-    md = MarkdownIt()
+    md = MarkdownIt().use(attrs_plugin).use(attrs_block_plugin).enable("table")
+
     html = md.render(markdown_content)
     logger.info("Converted markdown to HTML")
     return html

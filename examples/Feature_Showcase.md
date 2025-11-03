@@ -3,6 +3,7 @@ css:
   - "css/page.css"
   - "css/toc.css"
   - "css/header_footer.css"
+  - "css/fancy.css"
 header:
   file: "header.html"
   title: "Docco Feature Showcase"
@@ -213,11 +214,17 @@ print("_", end='')
 
 
 # Markdown examples
-Docco relies on [MarkdownIt](https://markdown-it-py.readthedocs.io/en/latest/) for rendering markdown to HTML. It fully supports the [Commonmark specs](https://spec.commonmark.org).
+Docco relies on [MarkdownIt](https://markdown-it-py.readthedocs.io/en/latest/) for rendering markdown to HTML. It fully supports the [Commonmark specs](https://spec.commonmark.org) extend with table support. In addition, the [(block) attributes](https://mdit-py-plugins.readthedocs.io/en/latest/#attributes) plugin is installed.
 
-## Images
-`[](images/idea.svg)`
-![](images/idea.svg)
+## Images with styling
+Add images using the normal Markdown way, and use `{}` add style(s) to the images. For example:
+
+`[](images/idea.svg){.icon}` 
+
+Defines an image with CSS class `icon`. The style is defined in `css/fancy.css`.
+The result:
+
+![](images/idea.svg){.icon}
 
 
 # Conclusion

@@ -1,0 +1,5 @@
+.icon {
+  width: 2cm;
+  height: 2cm;
+  object-fit: cover; /* ensures the image keeps aspect ratio and fills the box */
+}

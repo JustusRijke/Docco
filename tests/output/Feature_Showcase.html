@@ -62,7 +62,7 @@
 </li>
 <li><a href="#markdown-examples">4 Markdown examples</a>
 <ul class="toc-level-2">
-<li><a href="#images">4.1 Images</a>
+<li><a href="#images-with-styling">4.1 Images with styling</a>
 </li>
 </ul>
 <li><a href="#conclusion">5 Conclusion</a>
@@ -206,10 +206,13 @@ print(&quot;_&quot;, end='')
 <p>Returns:
 <em>0123456789</em></p>
 <h1 id="markdown-examples">4 Markdown examples</h1>
-<p>Docco relies on <a href="https://markdown-it-py.readthedocs.io/en/latest/">MarkdownIt</a> for rendering markdown to HTML. It fully supports the <a href="https://spec.commonmark.org">Commonmark specs</a>.</p>
-<h2 id="images">4.1 Images</h2>
-<p><code>[](images/idea.svg)</code>
-<img src="images/idea.svg" alt="" /></p>
+<p>Docco relies on <a href="https://markdown-it-py.readthedocs.io/en/latest/">MarkdownIt</a> for rendering markdown to HTML. It fully supports the <a href="https://spec.commonmark.org">Commonmark specs</a> extend with table support. In addition, the <a href="https://mdit-py-plugins.readthedocs.io/en/latest/#attributes">(block) attributes</a> plugin is installed.</p>
+<h2 id="images-with-styling">4.1 Images with styling</h2>
+<p>Add images using the normal Markdown way, and use <code>{}</code> add style(s) to the images. For example:</p>
+<p><code>[](images/idea.svg){.icon}</code></p>
+<p>Defines an image with CSS class <code>icon</code>. The style is defined in <code>css/fancy.css</code>.
+The result:</p>
+<p><img src="images/idea.svg" alt="" class="icon" /></p>
 <h1 id="conclusion">5 Conclusion</h1>
 <p>This document demonstrates all Docco's capabilities.</p>
 </div>
