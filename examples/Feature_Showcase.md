@@ -9,7 +9,7 @@ header:
   title: "Docco Feature Showcase"
   author: "Docco Team"
 footer:
-  file: "footer_showcase.html"
+  file: "footer.html"
   title: "Docco"
 ---
 

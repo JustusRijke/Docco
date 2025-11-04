@@ -1,9 +1,0 @@
-#
-msgid ""
-msgstr ""
-
-msgid "Hello World"
-msgstr ""
-
-msgid "This is a simple multilingual document example."
-msgstr ""
