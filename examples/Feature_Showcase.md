@@ -39,7 +39,8 @@ YAML frontmatter at the beginning of the document (between `---` delimiters) con
 css:
   - "css/page.css"
   - "css/toc.css"
-languages: EN DE FR
+multilingual: true
+base_language: en
 ---
 ```
 
@@ -57,33 +58,97 @@ languages: EN DE FR
 
 Paths are relative to the markdown file. Additional CSS can also be provided via the CLI `--css` argument, which overrides frontmatter styles.
 
-## Translation Support with POT/PO Files
-Docco supports professional translation workflows using POT (Portable Object Template) and PO (Portable Object) files. Extract translatable strings from your markdown with:
+**`multilingual`** - Enable multilingual mode (boolean, default: `false`). When set to `true`, Docco automatically extracts translatable strings to a POT file and generates PDFs for the base language plus all discovered translations.
 
-```bash
-docco extract myfile.md -o translations/
+**`base_language`** - The language code of the source document (required when `multilingual: true`). Example: `base_language: en`. This will be used as the suffix for the base language PDF (e.g., `Document_EN.pdf`).
+
+**`header`** and **`footer`** - HTML files for page headers and footers with placeholder and directive support. See the [Headers & Footers](#headers--footers) section for details.
+
+## Multilingual Support
+
+Docco supports creating professional multilingual documents with automatic language-specific PDF generation. There are two approaches:
+
+### Approach 1: Multilingual Mode (Recommended)
+
+Use the `multilingual: true` flag in frontmatter along with `base_language` to automatically generate PDFs for the base language plus all available translations:
+
+```yaml
+---
+multilingual: true
+base_language: en
+---
 ```
 
-This generates a `myfile.pot` file containing all translatable strings. Translators can then create language-specific `.po` files and build translated PDFs with:
+When enabled, Docco will:
+1. Extract a POT file to a `{document_name}/` subfolder
+2. Discover all `.po` translation files in that subfolder
+3. Generate a PDF for the base language (e.g., `Document_EN.pdf`)
+4. Generate translated PDFs for each `.po` file (e.g., `Document_DE.pdf`, `Document_FR.pdf`)
+
+**Example:** See `Multilingual_Document_Example.md` which generates `Multilingual_Document_Example_EN.pdf`, `Multilingual_Document_Example_DE.pdf`, and `Multilingual_Document_Example_NL.pdf`.
+
+### Approach 2: Manual Translation Workflow
+
+For single-language builds with specific translations, use the `--po` flag:
 
 ```bash
 docco myfile.md --po translations/de.po -o output/
 ```
 
-This approach provides integration with professional translation tools and services. See the [POT/PO Translation Workflow](#) for complete details.
+## Professional Translation Workflow with POT/PO Files
 
-**`header`** and **`footer`** - HTML files for page headers and footers with placeholder and directive support:
-```yaml
-header:
-  file: "header.html"
-  title: "My Document"
-  author: "John Doe"
-footer:
-  file: "footer.html"
-  title: "My Document"
+Docco integrates with professional translation tools and services:
+
+### Step 1: Extract Translatable Strings
+```bash
+docco extract myfile.md -o translations/
 ```
 
-The `file` key is required and specifies the HTML file path (relative to the markdown file). All other keys are placeholders that replace `{{key}}` in the HTML file. Header/footer files support all directives (lang, inline, python), enabling dynamic content like dates and language-specific text. See the [Headers & Footers](#headers--footers) section for details.
+This generates a `myfile.pot` file containing all translatable strings from your markdown.
+
+### Step 2: Create Language-Specific Translations
+Translators create `.po` files for each language using professional tools:
+- **poedit** (desktop application)
+- **Weblate** (web-based, collaborative)
+- **Crowdin, Lokalise, POEditor** (professional translation platforms)
+- Any gettext-compatible tool
+
+File structure:
+```
+myfile.md
+myfile/
+  ├── myfile.pot        (template)
+  ├── de.po             (German translation)
+  ├── fr.po             (French translation)
+  └── nl.po             (Dutch translation)
+```
+
+### Step 3: Generate Multilingual PDFs
+
+With `multilingual: true` in frontmatter:
+```bash
+docco myfile.md -o output/
+```
+
+This generates one PDF per language automatically.
+
+Or manually for specific translations:
+```bash
+docco myfile.md --po translations/de.po -o output/de/
+```
+
+### Translation Maintenance
+
+When the source document changes:
+```bash
+# Re-extract POT
+docco extract myfile.md -o translations/
+
+# Merge with existing translations (updates only new/changed strings)
+msgmerge -U translations/de.po translations/myfile.pot
+```
+
+This allows translators to focus on new content rather than re-translating the entire document.
 
 ## General Directive Rule
 

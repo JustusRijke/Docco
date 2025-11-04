@@ -28,26 +28,42 @@
 <li><a href="#supported-fields">1.1.1 Supported Fields</a>
 </li>
 </ul>
-<li><a href="#translation-support-with-potpo-files">1.2 Translation Support with POT/PO Files</a>
-</li>
-<li><a href="#general-directive-rule">1.3 General Directive Rule</a>
-</li>
-<li><a href="#inlined-content">1.4 Inlined Content</a>
+<li><a href="#multilingual-support">1.2 Multilingual Support</a>
 <ul class="toc-level-3">
-<li><a href="#arguments">1.4.1 Arguments</a>
+<li><a href="#approach-1-multilingual-mode-recommended">1.2.1 Approach 1: Multilingual Mode (Recommended)</a>
 </li>
-<li><a href="#recursive-inlining">1.4.2 Recursive Inlining</a>
+<li><a href="#approach-2-manual-translation-workflow">1.2.2 Approach 2: Manual Translation Workflow</a>
 </li>
 </ul>
-<li><a href="#table-of-contents">1.5 Table of Contents</a>
-</li>
-<li><a href="#page-layout-directives">1.6 Page Layout Directives</a>
+<li><a href="#professional-translation-workflow-with-potpo-files">1.3 Professional Translation Workflow with POT/PO Files</a>
 <ul class="toc-level-3">
-<li><a href="#page-breaks">1.6.1 Page Breaks</a>
+<li><a href="#step-1-extract-translatable-strings">1.3.1 Step 1: Extract Translatable Strings</a>
 </li>
-<li><a href="#landscape-orientation">1.6.2 Landscape Orientation</a>
+<li><a href="#step-2-create-language-specific-translations">1.3.2 Step 2: Create Language-Specific Translations</a>
 </li>
-<li><a href="#back-to-portrait">1.6.3 Back to Portrait</a>
+<li><a href="#step-3-generate-multilingual-pdfs">1.3.3 Step 3: Generate Multilingual PDFs</a>
+</li>
+<li><a href="#translation-maintenance">1.3.4 Translation Maintenance</a>
+</li>
+</ul>
+<li><a href="#general-directive-rule">1.4 General Directive Rule</a>
+</li>
+<li><a href="#inlined-content">1.5 Inlined Content</a>
+<ul class="toc-level-3">
+<li><a href="#arguments">1.5.1 Arguments</a>
+</li>
+<li><a href="#recursive-inlining">1.5.2 Recursive Inlining</a>
+</li>
+</ul>
+<li><a href="#table-of-contents">1.6 Table of Contents</a>
+</li>
+<li><a href="#page-layout-directives">1.7 Page Layout Directives</a>
+<ul class="toc-level-3">
+<li><a href="#page-breaks">1.7.1 Page Breaks</a>
+</li>
+<li><a href="#landscape-orientation">1.7.2 Landscape Orientation</a>
+</li>
+<li><a href="#back-to-portrait">1.7.3 Back to Portrait</a>
 </li>
 </ul>
 </ul>
@@ -91,7 +107,8 @@
 css:
   - &quot;css/page.css&quot;
   - &quot;css/toc.css&quot;
-languages: EN DE FR
+multilingual: true
+base_language: en
 ---
 </code></pre>
 <h3 id="supported-fields">1.1.1 Supported Fields</h3>
@@ -106,46 +123,91 @@ languages: EN DE FR
 </li>
 </ul>
 <p>Paths are relative to the markdown file. Additional CSS can also be provided via the CLI <code>--css</code> argument, which overrides frontmatter styles.</p>
-<h2 id="translation-support-with-potpo-files">1.2 Translation Support with POT/PO Files</h2>
-<p>Docco supports professional translation workflows using POT (Portable Object Template) and PO (Portable Object) files. Extract translatable strings from your markdown with:</p>
-<pre><code class="language-bash">docco extract myfile.md -o translations/
+<p><strong><code>multilingual</code></strong> - Enable multilingual mode (boolean, default: <code>false</code>). When set to <code>true</code>, Docco automatically extracts translatable strings to a POT file and generates PDFs for the base language plus all discovered translations.</p>
+<p><strong><code>base_language</code></strong> - The language code of the source document (required when <code>multilingual: true</code>). Example: <code>base_language: en</code>. This will be used as the suffix for the base language PDF (e.g., <code>Document_EN.pdf</code>).</p>
+<p><strong><code>header</code></strong> and <strong><code>footer</code></strong> - HTML files for page headers and footers with placeholder and directive support. See the <a href="#headers--footers">Headers &amp; Footers</a> section for details.</p>
+<h2 id="multilingual-support">1.2 Multilingual Support</h2>
+<p>Docco supports creating professional multilingual documents with automatic language-specific PDF generation. There are two approaches:</p>
+<h3 id="approach-1-multilingual-mode-recommended">1.2.1 Approach 1: Multilingual Mode (Recommended)</h3>
+<p>Use the <code>multilingual: true</code> flag in frontmatter along with <code>base_language</code> to automatically generate PDFs for the base language plus all available translations:</p>
+<pre><code class="language-yaml">---
+multilingual: true
+base_language: en
+---
 </code></pre>
-<p>This generates a <code>myfile.pot</code> file containing all translatable strings. Translators can then create language-specific <code>.po</code> files and build translated PDFs with:</p>
+<p>When enabled, Docco will:</p>
+<ol>
+<li>Extract a POT file to a <code>{document_name}/</code> subfolder</li>
+<li>Discover all <code>.po</code> translation files in that subfolder</li>
+<li>Generate a PDF for the base language (e.g., <code>Document_EN.pdf</code>)</li>
+<li>Generate translated PDFs for each <code>.po</code> file (e.g., <code>Document_DE.pdf</code>, <code>Document_FR.pdf</code>)</li>
+</ol>
+<p><strong>Example:</strong> See <code>Multilingual_Document_Example.md</code> which generates <code>Multilingual_Document_Example_EN.pdf</code>, <code>Multilingual_Document_Example_DE.pdf</code>, and <code>Multilingual_Document_Example_NL.pdf</code>.</p>
+<h3 id="approach-2-manual-translation-workflow">1.2.2 Approach 2: Manual Translation Workflow</h3>
+<p>For single-language builds with specific translations, use the <code>--po</code> flag:</p>
 <pre><code class="language-bash">docco myfile.md --po translations/de.po -o output/
 </code></pre>
-<p>This approach provides integration with professional translation tools and services. See the <a href="#">POT/PO Translation Workflow</a> for complete details.</p>
-<p><strong><code>header</code></strong> and <strong><code>footer</code></strong> - HTML files for page headers and footers with placeholder and directive support:</p>
-<pre><code class="language-yaml">header:
-  file: &quot;header.html&quot;
-  title: &quot;My Document&quot;
-  author: &quot;John Doe&quot;
-footer:
-  file: &quot;footer.html&quot;
-  title: &quot;My Document&quot;
+<h2 id="professional-translation-workflow-with-potpo-files">1.3 Professional Translation Workflow with POT/PO Files</h2>
+<p>Docco integrates with professional translation tools and services:</p>
+<h3 id="step-1-extract-translatable-strings">1.3.1 Step 1: Extract Translatable Strings</h3>
+<pre><code class="language-bash">docco extract myfile.md -o translations/
 </code></pre>
-<p>The <code>file</code> key is required and specifies the HTML file path (relative to the markdown file). All other keys are placeholders that replace <code>{{key}}</code> in the HTML file. Header/footer files support all directives (lang, inline, python), enabling dynamic content like dates and language-specific text. See the <a href="#headers--footers">Headers &amp; Footers</a> section for details.</p>
-<h2 id="general-directive-rule">1.3 General Directive Rule</h2>
+<p>This generates a <code>myfile.pot</code> file containing all translatable strings from your markdown.</p>
+<h3 id="step-2-create-language-specific-translations">1.3.2 Step 2: Create Language-Specific Translations</h3>
+<p>Translators create <code>.po</code> files for each language using professional tools:</p>
+<ul>
+<li><strong>poedit</strong> (desktop application)</li>
+<li><strong>Weblate</strong> (web-based, collaborative)</li>
+<li><strong>Crowdin, Lokalise, POEditor</strong> (professional translation platforms)</li>
+<li>Any gettext-compatible tool</li>
+</ul>
+<p>File structure:</p>
+<pre><code>myfile.md
+myfile/
+  ├── myfile.pot        (template)
+  ├── de.po             (German translation)
+  ├── fr.po             (French translation)
+  └── nl.po             (Dutch translation)
+</code></pre>
+<h3 id="step-3-generate-multilingual-pdfs">1.3.3 Step 3: Generate Multilingual PDFs</h3>
+<p>With <code>multilingual: true</code> in frontmatter:</p>
+<pre><code class="language-bash">docco myfile.md -o output/
+</code></pre>
+<p>This generates one PDF per language automatically.</p>
+<p>Or manually for specific translations:</p>
+<pre><code class="language-bash">docco myfile.md --po translations/de.po -o output/de/
+</code></pre>
+<h3 id="translation-maintenance">1.3.4 Translation Maintenance</h3>
+<p>When the source document changes:</p>
+<pre><code class="language-bash"># Re-extract POT
+docco extract myfile.md -o translations/
+
+# Merge with existing translations (updates only new/changed strings)
+msgmerge -U translations/de.po translations/myfile.pot
+</code></pre>
+<p>This allows translators to focus on new content rather than re-translating the entire document.</p>
+<h2 id="general-directive-rule">1.4 General Directive Rule</h2>
 <p><strong>Directives can appear anywhere in the document</strong>, including in the middle of lines. However, directives inside code blocks (both inline <code>`code`</code> and fenced <code> </code> blocks) are <strong>protected</strong> and will not be processed. This allows you to show directive syntax as examples in documentation without triggering them.</p>
-<h2 id="inlined-content">1.4 Inlined Content</h2>
+<h2 id="inlined-content">1.5 Inlined Content</h2>
 <p>The <code>inline</code> directive embeds external markdown files with placeholder substitution.</p>
 <p>Syntax: <code>&lt;!-- inline:&quot;foobar.md&quot; key1=&quot;value1&quot; key2=&quot;value2&quot; --&gt;</code></p>
-<h3 id="arguments">1.4.1 Arguments</h3>
+<h3 id="arguments">1.5.1 Arguments</h3>
 <p>All attributes after the path are placeholders. For example, <code>author=&quot;Docco Team&quot;</code> replaces <code>{{author}}</code> in the inlined file. Arguments are optional. Spaces around the <code>inline</code> keyword and colon are accepted. See example below:</p>
 <p>This content is inlined, with arguments.</p>
 <p>Author: Docco Team
 Date: 2025-10-26</p>
-<h3 id="recursive-inlining">1.4.2 Recursive Inlining</h3>
+<h3 id="recursive-inlining">1.5.2 Recursive Inlining</h3>
 <p>Inlined markdown files can themselves contain inline directives, allowing for multi-level composition (up to a maximum depth of 10 levels to prevent infinite recursion). This enables modular document structures where content can be composed from multiple nested files.</p>
-<h2 id="table-of-contents">1.5 Table of Contents</h2>
+<h2 id="table-of-contents">1.6 Table of Contents</h2>
 <p>The <code>&lt;!-- TOC --&gt;</code> directive generates a hierarchical table of contents with automatic numbering (1, 1.1, 1.2, etc.).</p>
 <p>Use <code>&lt;!-- toc:exclude --&gt;</code> before a heading to exclude it from the TOC and remove its numbering.</p>
-<h2 id="page-layout-directives">1.6 Page Layout Directives</h2>
+<h2 id="page-layout-directives">1.7 Page Layout Directives</h2>
 <div class="pagebreak"></div>
-<h3 id="page-breaks">1.6.1 Page Breaks</h3>
+<h3 id="page-breaks">1.7.1 Page Breaks</h3>
 <p>This section starts on a <strong>new page</strong> using the <code>&lt;!-- page break --&gt;</code> directive.</p>
 </div>
 <div class="section-wrapper landscape">
-<h3 id="landscape-orientation">1.6.2 Landscape Orientation</h3>
+<h3 id="landscape-orientation">1.7.2 Landscape Orientation</h3>
 <p>This section uses <strong>landscape orientation</strong> with the <code>&lt;!-- landscape --&gt;</code> directive, providing more horizontal space for wide content.</p>
 <table class="table-borders">
 <thead>
@@ -181,7 +243,7 @@ Date: 2025-10-26</p>
 </table>
 </div>
 <div class="section-wrapper portrait">
-<h3 id="back-to-portrait">1.6.3 Back to Portrait</h3>
+<h3 id="back-to-portrait">1.7.3 Back to Portrait</h3>
 <p>This section returns to <strong>portrait orientation</strong> using the <code>&lt;!-- portrait --&gt;</code> directive.</p>
 <h1 id="headers-amp-footers">2 Headers &amp; Footers</h1>
 <p>Docco supports page headers and footers using HTML files with full directive support. Headers and footers are processed through the same pipeline as the main document, allowing for:</p>

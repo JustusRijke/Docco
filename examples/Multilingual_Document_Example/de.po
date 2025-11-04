@@ -1,0 +1,16 @@
+# German translation for Multilingual Document Example
+# Copyright (C) 2025
+# This file is distributed under the same license as the Docco package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Docco 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: de\n"
+"Language-Team: German\n"
+
+msgid "Hello World"
+msgstr "Hallo Welt"
+
+msgid "This is a simple multilingual document example."
+msgstr "Dies ist ein einfaches mehrsprachiges Dokumentbeispiel."

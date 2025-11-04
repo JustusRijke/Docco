@@ -12,3 +12,4 @@
 - laat Claude inspireren door [GitHub - ljpengelen/markdown-to-pdf: A script to convert Markdown to PDF](https://github.com/ljpengelen/markdown-to-pdf)
 - path var
 - coverage: GitHub dependabot/actions (win&deb)
+- mdit-py-plugins/mdit_py_plugins/attrs at master · executablebooks/mdit-py-plugins docco classes via markdown-it plugin attr, parsing met frontmatter plugin, header id's plugin

@@ -2,9 +2,10 @@
 
 import os
 import re
+import glob
 from docco.frontmatter import parse_frontmatter
 from docco.inline import process_inlines
-from docco.translation import build_from_po
+from docco.translation import build_from_po, extract_to_pot
 from docco.toc import process_toc
 from docco.page_layout import process_page_layout
 from docco.html import markdown_to_html, wrap_html
@@ -63,55 +64,29 @@ def process_directives_iteratively(content, base_dir, allow_python):
     return content
 
 
-def parse_markdown(
-    input_file, output_dir, css_file=None, keep_intermediate=False, allow_python=False, po_file=None
-):
+def _generate_single_pdf(body, metadata, input_file, input_basename, output_dir, base_dir,
+                         css_file, keep_intermediate, allow_python, lang_suffix=None):
     """
-    Convert markdown file to PDF through full pipeline.
-
-    Pipeline flow:
-    1. Read markdown file
-    2. Parse frontmatter
-    3. Iteratively process inline/python directives
-    4. Apply PO translations if provided
-    5. Convert markdown to HTML
-    6. Process TOC and page layout directives
-    7. Convert HTML to PDF
-    8. Clean up intermediate files (unless keep_intermediate=True)
+    Generate a single PDF from processed markdown body.
 
     Args:
-        input_file: Path to input markdown file
+        body: Processed markdown body (after directives and translations)
+        metadata: Frontmatter metadata
+        input_file: Path to input markdown file (for CSS resolution)
+        input_basename: Base filename without extension
         output_dir: Directory for output files
-        css_file: CSS file for PDF styling (optional)
+        base_dir: Base directory for resource resolution
+        css_file: Optional CSS file for PDF styling
         keep_intermediate: Keep intermediate HTML/MD files if True
         allow_python: Allow python code execution in directives
-        po_file: Path to PO file for translations (optional)
+        lang_suffix: Optional language suffix for filenames (e.g., "_de")
 
     Returns:
-        list: Paths to generated PDF files
+        str: Path to generated PDF file
     """
-    logger.info(f"Processing markdown: {input_file}")
+    suffix = lang_suffix or ""
 
-    # Read file
-    with open(input_file, "r") as f:
-        content = f.read()
-
-    # Step 1: Parse frontmatter
-    metadata, body = parse_frontmatter(content)
-    logger.info(f"Parsed frontmatter: {metadata}")
-
-    # Determine base directory for inline resolution
-    base_dir = os.path.dirname(os.path.abspath(input_file))
-
-    # Step 2: Iteratively process directives
-    body = process_directives_iteratively(body, base_dir, allow_python)
-
-    # Step 3: Apply translations if PO file provided
-    if po_file:
-        logger.info(f"Applying translations from {po_file}")
-        body = build_from_po(body, po_file)
-
-    # Step 4: Process header and footer (if specified)
+    # Process header and footer (if specified)
     header_html = None
     footer_html = None
     if "header" in metadata:
@@ -129,11 +104,10 @@ def parse_markdown(
             directive_processor=process_directives_iteratively,
         )
 
-    # Generate filenames
-    input_basename = os.path.splitext(os.path.basename(input_file))[0]
-    md_filename = f"{input_basename}_intermediate.md"
-    html_filename = f"{input_basename}.html"
-    pdf_filename = f"{input_basename}.pdf"
+    # Generate filenames with optional language suffix
+    md_filename = f"{input_basename}{suffix}_intermediate.md"
+    html_filename = f"{input_basename}{suffix}.html"
+    pdf_filename = f"{input_basename}{suffix}.pdf"
 
     # Collect CSS files from frontmatter and CLI argument
     css_files = collect_css_files(input_file, metadata, css_file)
@@ -144,10 +118,10 @@ def parse_markdown(
         f.write(body)
     logger.info(f"Wrote intermediate: {md_filename}")
 
-    # Step 5: Convert to HTML
+    # Convert to HTML
     html_content = markdown_to_html(body)
 
-    # Step 6: Process TOC and page layout directives
+    # Process TOC and page layout directives
     html_content = process_toc(html_content)
     html_content = process_page_layout(html_content)
     html_wrapped = wrap_html(html_content, header_html, footer_html)
@@ -157,7 +131,7 @@ def parse_markdown(
         f.write(html_wrapped)
     logger.info(f"Wrote HTML: {html_filename}")
 
-    # Step 7: Convert to PDF
+    # Convert to PDF
     pdf_path = os.path.join(output_dir, pdf_filename)
     html_to_pdf(html_wrapped, pdf_path, css_files, base_url=base_dir)
 
@@ -169,5 +143,156 @@ def parse_markdown(
         if os.path.exists(html_path):
             os.remove(html_path)
             logger.info(f"Removed intermediate: {os.path.basename(html_path)}")
+
+    return pdf_path
+
+
+def _generate_multilingual_pdfs(body, metadata, input_file, output_dir, base_dir,
+                                css_file, keep_intermediate, allow_python):
+    """
+    Generate PDFs for all languages in multilingual mode.
+
+    Args:
+        body: Processed markdown body (after directives)
+        metadata: Frontmatter metadata (must include base_language)
+        input_file: Path to input markdown file
+        output_dir: Directory for output files
+        base_dir: Base directory for resource resolution
+        css_file: Optional CSS file for PDF styling
+        keep_intermediate: Keep intermediate HTML/MD files if True
+        allow_python: Allow python code execution in directives
+
+    Returns:
+        list: Paths to generated PDF files
+
+    Raises:
+        ValueError: If base_language not specified in frontmatter
+    """
+    # Check for required base_language in multilingual mode
+    base_language = metadata.get("base_language")
+    if not base_language:
+        raise ValueError(
+            "Multilingual mode requires 'base_language' in frontmatter"
+        )
+
+    input_basename = os.path.splitext(os.path.basename(input_file))[0]
+    translations_dir = os.path.join(base_dir, input_basename)
+
+    # Step 1: Extract POT file to translations subfolder
+    os.makedirs(translations_dir, exist_ok=True)
+    pot_path = os.path.join(translations_dir, f"{input_basename}.pot")
+    extract_to_pot(body, pot_path)
+    logger.info(f"Extracted POT for multilingual: {pot_path}")
+
+    pdf_paths = []
+
+    # Step 2: Generate PDF for base language
+    base_lang_code = base_language.upper()
+    logger.info(f"Processing base language: {base_lang_code}")
+    pdf_path = _generate_single_pdf(
+        body,
+        metadata,
+        input_file,
+        input_basename,
+        output_dir,
+        base_dir,
+        css_file,
+        keep_intermediate,
+        allow_python,
+        lang_suffix=f"_{base_lang_code}",
+    )
+    pdf_paths.append(pdf_path)
+
+    # Step 3: Find and process .po files in translations subfolder
+    po_files = sorted(glob.glob(os.path.join(translations_dir, "*.po")))
+    for po_file in po_files:
+        lang_code = os.path.splitext(os.path.basename(po_file))[0].upper()
+        logger.info(f"Processing language: {lang_code}")
+
+        # Apply translation
+        translated_body = build_from_po(body, po_file)
+
+        # Generate PDF with language suffix
+        pdf_path = _generate_single_pdf(
+            translated_body,
+            metadata,
+            input_file,
+            input_basename,
+            output_dir,
+            base_dir,
+            css_file,
+            keep_intermediate,
+            allow_python,
+            lang_suffix=f"_{lang_code}",
+        )
+        pdf_paths.append(pdf_path)
+
+    return pdf_paths
+
+
+def parse_markdown(
+    input_file, output_dir, css_file=None, keep_intermediate=False, allow_python=False, po_file=None
+):
+    """
+    Convert markdown file to PDF through full pipeline.
+
+    Pipeline flow:
+    1. Read markdown file
+    2. Parse frontmatter
+    3. Iteratively process inline/python directives
+    4. If multilingual mode: extract POT and generate PDFs for each language
+       Else if PO file provided: apply translations and generate single PDF
+       Else: generate single PDF
+    5. Convert markdown to HTML
+    6. Process TOC and page layout directives
+    7. Convert HTML to PDF
+    8. Clean up intermediate files (unless keep_intermediate=True)
+
+    Args:
+        input_file: Path to input markdown file
+        output_dir: Directory for output files
+        css_file: CSS file for PDF styling (optional)
+        keep_intermediate: Keep intermediate HTML/MD files if True
+        allow_python: Allow python code execution in directives
+        po_file: Path to PO file for translations (optional, ignored in multilingual mode)
+
+    Returns:
+        list: Paths to generated PDF files
+    """
+    logger.info(f"Processing markdown: {input_file}")
+
+    # Read file
+    with open(input_file, "r") as f:
+        content = f.read()
+
+    # Step 1: Parse frontmatter
+    metadata, body = parse_frontmatter(content)
+    logger.info(f"Parsed frontmatter: {metadata}")
+
+    # Determine base directory for inline resolution
+    base_dir = os.path.dirname(os.path.abspath(input_file))
+    input_basename = os.path.splitext(os.path.basename(input_file))[0]
+
+    # Step 2: Iteratively process directives (common to all workflows)
+    body = process_directives_iteratively(body, base_dir, allow_python)
+
+    # Step 3: Route to appropriate workflow based on multilingual flag
+    if metadata.get("multilingual", False):
+        # Multilingual mode: ignore po_file parameter
+        return _generate_multilingual_pdfs(
+            body, metadata, input_file, output_dir, base_dir,
+            css_file, keep_intermediate, allow_python
+        )
+
+    # Step 4: Apply translations if PO file provided (single-language mode)
+    if po_file:
+        logger.info(f"Applying translations from {po_file}")
+        body = build_from_po(body, po_file)
+
+    # Step 5: Generate single PDF
+    pdf_path = _generate_single_pdf(
+        body, metadata, input_file, input_basename, output_dir, base_dir,
+        css_file, keep_intermediate, allow_python
+    )
 
     return [pdf_path]
