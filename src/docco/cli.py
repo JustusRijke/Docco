@@ -3,11 +3,56 @@
 import argparse
 import os
 import sys
-from docco.parser import parse_markdown
-from docco.translation import extract_to_pot
+from docco.parser import parse_markdown, process_directives_iteratively
+from docco.frontmatter import parse_frontmatter
+from docco.header_footer import process_header_footer
+from docco.html import markdown_to_html, wrap_html
+from docco.toc import process_toc
+from docco.page_layout import process_page_layout
+from docco.translation import extract_html_to_pot
 from docco.utils import setup_logger
 
 logger = setup_logger(__name__)
+
+
+def extract_pot(input_file, output_dir, allow_python):
+    """Extract translatable strings from markdown to POT file."""
+    with open(input_file, "r") as f:
+        content = f.read()
+
+    metadata, body = parse_frontmatter(content)
+    base_dir = os.path.dirname(os.path.abspath(input_file))
+    body = process_directives_iteratively(body, base_dir, allow_python=allow_python)
+
+    body_html = markdown_to_html(body)
+    body_html = process_toc(body_html)
+    body_html = process_page_layout(body_html)
+
+    header_html = None
+    footer_html = None
+    if "header" in metadata:
+        header_html = process_header_footer(
+            metadata["header"],
+            base_dir,
+            allow_python=allow_python,
+            directive_processor=process_directives_iteratively,
+        )
+    if "footer" in metadata:
+        footer_html = process_header_footer(
+            metadata["footer"],
+            base_dir,
+            allow_python=allow_python,
+            directive_processor=process_directives_iteratively,
+        )
+
+    wrapped_html = wrap_html(body_html, header_html, footer_html)
+
+    input_basename = os.path.splitext(os.path.basename(input_file))[0]
+    pot_path = os.path.join(output_dir, f"{input_basename}.pot")
+
+    extract_html_to_pot(wrapped_html, pot_path)
+    logger.info(f"Generated {pot_path}")
+    return pot_path
 
 
 def main():
@@ -65,6 +110,11 @@ def main():
         extract_parser.add_argument(
             "-v", "--verbose", action="store_true", help="Enable verbose logging"
         )
+        extract_parser.add_argument(
+            "--allow-python",
+            action="store_true",
+            help="Allow execution of Python code in directives (security risk)",
+        )
 
         args = parser.parse_args()
 
@@ -83,15 +133,7 @@ def main():
                 os.makedirs(args.output)
 
             if args.command == "extract":
-                # Extract translatable strings to POT
-                with open(input_file, "r") as f:
-                    content = f.read()
-
-                input_basename = os.path.splitext(os.path.basename(input_file))[0]
-                pot_path = os.path.join(args.output, f"{input_basename}.pot")
-
-                extract_to_pot(content, pot_path)
-                logger.info(f"Generated {pot_path}")
+                pot_path = extract_pot(input_file, args.output, args.allow_python)
                 print(pot_path)
             else:
                 # Build: markdown to PDF

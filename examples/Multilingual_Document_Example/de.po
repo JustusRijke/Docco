@@ -9,6 +9,12 @@ msgstr ""
 "Language: de\n"
 "Language-Team: German\n"
 
+msgid "Docco Multilingual Document Example - Docco Team"
+msgstr "Docco Mehrsprachiges Dokumentbeispiel - Docco Team"
+
+msgid "Date 2025-10-31"
+msgstr "Datum 2025-10-31"
+
 msgid "Hello World"
 msgstr "Hallo Welt"
 

@@ -23,10 +23,11 @@ Processing pipeline:
 1. **Frontmatter Parsing** (`frontmatter.py`): Extracts YAML metadata and document body
 2. **Inline Processing** (`inline.py`): Embeds external markdown via `<!-- inline:"path" -->` directives (recursive, max depth 10)
 3. **Directive Processing** (`parser.py`): Iteratively processes inline and python directives
-4. **Translation Application** (`translation.py`): Optionally applies PO file translations to markdown
-5. **TOC Generation** (`toc.py`): Generates table of contents with automatic heading numbering
-6. **HTML Conversion** (`html.py`): Converts markdown to HTML with styling
-7. **PDF Generation** (`pdf.py`, `page_layout.py`): Renders HTML to PDF with CSS support
+4. **HTML Conversion** (`html.py`): Converts markdown to HTML with styling
+5. **Translation Application** (`translation.py`): Optionally applies PO file translations to HTML (before TOC/layout)
+6. **TOC Generation** (`toc.py`): Generates table of contents with automatic heading numbering (applied after translation, so headings are numbered in target language)
+7. **Page Layout** (`page_layout.py`): Applies page layout formatting
+8. **PDF Generation** (`pdf.py`): Renders HTML to PDF with CSS support
 
 Main entry point: `parse_markdown()` in `parser.py`. CLI orchestration in `cli.py`.
 
@@ -34,11 +35,16 @@ Main entry point: `parse_markdown()` in `parser.py`. CLI orchestration in `cli.p
 
 For professional translations using POT/PO files:
 
-1. **Extraction**: Use `docco extract input.md -o translations/` to generate a POT file with all translatable strings
-2. **Translation**: Translators create language-specific PO files (e.g., `de.po`, `fr.po`) using tools like poedit or web-based platforms
+1. **Extraction**: Use `docco extract input.md -o translations/` to generate a POT file from HTML (markdown is first converted to HTML, then POT is extracted from the HTML)
+2. **Translation**: Translators create language-specific PO files (e.g., `de.po`, `fr.po`) using tools like poedit or web-based platforms. **Note**: msgids contain HTML tags (e.g., `"Text with <strong>bold</strong>"`), not markdown syntax. Translators must preserve HTML tags in translations.
 3. **Build**: Generate translated PDFs with `docco input.md --po translations/de.po -o output/`
 
-This workflow integrates with professional CAT tools and translation management systems.
+This workflow:
+- Extracts strings from final HTML, enabling translation of dynamically-generated content (TOC numbers, page layout elements)
+- Applies translations before TOC generation, so headings are numbered in the target language
+- Integrates with professional CAT tools and translation management systems that support HTML
+
+**Breaking change**: Existing POT/PO files from the markdown-based workflow (mdpo) are incompatible with the new HTML-based workflow. msgids differ because markdown formatting is converted to HTML tags.
 
 ## Development Commands
 
@@ -83,7 +89,7 @@ docco examples/Feature_Showcase.md --allow-python
 - **pyyaml**: YAML frontmatter parsing
 - **markdown-it-py**: Markdown parsing for HTML generation
 - **weasyprint**: HTML to PDF conversion with CSS support
-- **mdpo**: POT/PO file support for translations
+- **translate-toolkit**: HTML to POT/PO file conversion for translations
 - **pytest**: Testing framework
 - **pytest-cov**: Coverage measurement
 
@@ -95,7 +101,7 @@ docco examples/Feature_Showcase.md --allow-python
 - Achieve 100% test coverage
 - Short, concise git commits (1-2 lines, no "Generated with Claude" messages)
 - No edge case tests unless critical
-- References: [markdown-it docs](https://markdown-it-py.readthedocs.io/), [weasyprint docs](https://doc.courtbouillon.org/weasyprint/stable/) and [mdpo docs](https://mondeja.github.io/mdpo/latest/).
+- References: [markdown-it docs](https://markdown-it-py.readthedocs.io/), [weasyprint docs](https://doc.courtbouillon.org/weasyprint/stable/) and [translate-toolkit docs](https://docs.translatehouse.org/projects/translate-toolkit/en/latest/).
 - Any feature change/addition/removal must be kept in sync with the Feature Showcase document.
 - Before committing any code, do a sanity check by running the Docco CLI on all examples and update the regression test baseline pdf files.
  - Prefer fail-fast behavior: avoid over-defensive exception handling, let errors surface.

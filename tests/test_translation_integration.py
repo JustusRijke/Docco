@@ -1,11 +1,13 @@
-"""Integration tests for POT/PO translation workflow."""
+"""Integration tests for POT/PO translation workflow (HTML-based)."""
 
 import hashlib
 import os
 import tempfile
 import pytest
 from docco.parser import parse_markdown
-from docco.translation import extract_to_pot
+from docco.translation import extract_html_to_pot
+from docco.frontmatter import parse_frontmatter
+from docco.html import markdown_to_html
 
 
 def get_file_checksum(filepath):
@@ -47,15 +49,19 @@ def baselines_dir():
     )
 
 
-def test_extract_pot_file(translation_files):
-    """Test that POT file can be extracted from source markdown to examples/translations."""
+def test_extract_pot_file_from_html(translation_files):
+    """Test that POT file can be extracted from HTML generated from markdown."""
     # Read source markdown
     with open(translation_files["source"], "r") as f:
         content = f.read()
 
-    # Extract to POT in examples/translations
+    # Parse frontmatter and convert to HTML
+    _, body = parse_frontmatter(content)
+    html_content = markdown_to_html(body)
+
+    # Extract POT from HTML
     pot_path = translation_files["pot"]
-    result = extract_to_pot(content, pot_path)
+    result = extract_html_to_pot(html_content, pot_path)
 
     # Verify POT file was created
     assert os.path.exists(result)
@@ -76,7 +82,7 @@ def test_translation_workflow_all_languages(translation_files, baselines_dir):
     This test covers:
     - Multilingual mode activation via frontmatter flag
     - base_language requirement in frontmatter
-    - POT extraction from processed markdown (to translations subfolder)
+    - POT extraction from HTML (generated from processed markdown)
     - Automatic PDF generation for base language (en) + all available translations (de, nl)
     """
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -105,8 +111,6 @@ def test_single_language_mode_with_po_file():
 
     This tests the po_file parameter when multilingual: false (or not set).
     """
-    import tempfile
-
     # Create a simple markdown without multilingual flag
     md_content = """---
 title: Test
@@ -120,7 +124,7 @@ Hello world"""
         with open(md_path, "w") as f:
             f.write(md_content)
 
-        # Create a simple PO file
+        # Create a simple PO file with HTML-style msgids
         po_path = os.path.join(tmpdir, "test.po")
         with open(po_path, "w") as f:
             f.write("""
@@ -151,8 +155,6 @@ msgstr "Hola mundo"
 
 def test_multilingual_without_base_language():
     """Test that multilingual mode fails without base_language in frontmatter."""
-    import tempfile
-
     # Create a markdown file with multilingual: true but no base_language
     md_content = """---
 multilingual: true
@@ -182,8 +184,6 @@ Hello world"""
 
 def test_multilingual_without_translations():
     """Test that multilingual mode generates base language PDF even without .po files."""
-    import tempfile
-
     # Create a markdown file with multilingual: true and base_language, but no .po files
     md_content = """---
 multilingual: true
