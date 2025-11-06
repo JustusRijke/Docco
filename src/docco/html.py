@@ -39,9 +39,9 @@ def wrap_html(html_content, header_content=None, footer_content=None):
     # Build running elements for header/footer
     running_elements = ""
     if header_content:
-        running_elements += f'<div id="header-running" style="position: running(header);">{header_content}</div>\n'
+        running_elements += f"{header_content}\n"
     if footer_content:
-        running_elements += f'<div id="footer-running" style="position: running(footer);">{footer_content}</div>\n'
+        running_elements += f"{footer_content}\n"
 
     wrapped = f"""<!DOCTYPE html>
 <html>

@@ -4,14 +4,10 @@ css:
   - "css/toc.css"
   - "css/header_footer.css"
   - "css/fancy.css"
-header:
-  file: "header.html"
-  title: "Docco Feature Showcase"
-  author: "Docco Team"
-footer:
-  file: "footer.html"
-  title: "Docco"
 ---
+<!-- inline:"header.html" title="Docco Feature Showcase" author="Docco Team" -->
+<!-- inline:"footer.html" -->
+
 
 <!-- toc:exclude -->
 # Docco: Feature Showcase
@@ -333,6 +329,15 @@ Markdown tables are supported for organizing tabular data:
 ## More Markdown Examples
 
 Check 'm out: https://markdown-it.github.io/
+
+# CSS
+WeasyPrint is used to convert the intermediate HTML files to PDF. At te time of writing (using version 66.0), it supports CSS up to v2.1. Modern CSS goes far beyond CSS 2.1’s basic block, inline, float, and positioning 
+model. It introduces powerful layout systems like Flexbox and Grid, new units 
+(`rem`, `vh`, `vw`), custom properties (`--variables`), and logical properties 
+(`margin-inline`, `padding-block`). Modern CSS also supports media queries, selectors 
+like `:not()` and `:nth-child()` and `gap` for spacing.
+
+Luckily, some of these features are (partially) supported. More info can be found in the WeasyPrint API documentation [here](https://doc.courtbouillon.org/weasyprint/stable/api_reference.html).
 
 # Conclusion
 

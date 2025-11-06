@@ -7,16 +7,16 @@
 
     /* Position header at top center of page */
     @top-center {
-        content: element(header);
+        content: element(header-content);
     }
 
     /* Position footer at bottom center of page */
     @bottom-center {
-        content: element(footer);
+        content: element(footer-content);
     }
 }
 
 /* Page number styling for use in footer */
-.page-number::before {
-    content: "Page " counter(page);
+.page-number::after {
+    content: " " counter(page);
 }
