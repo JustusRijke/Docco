@@ -24,31 +24,22 @@ def markdown_to_html(markdown_content):
     return html
 
 
-def wrap_html(html_content, header_content=None, footer_content=None):
+def wrap_html(html_content):
     """
-    Wrap HTML content in a complete HTML document with optional header/footer.
+    Wrap HTML content in a complete HTML document.
 
     Args:
         html_content: Raw HTML body content
-        header_content: Header HTML (for running header in PDF)
-        footer_content: Footer HTML (for running footer in PDF)
 
     Returns:
         str: Complete HTML document
     """
-    # Build running elements for header/footer
-    running_elements = ""
-    if header_content:
-        running_elements += f"{header_content}\n"
-    if footer_content:
-        running_elements += f"{footer_content}\n"
-
     wrapped = f"""<!DOCTYPE html>
 <html>
 <head>
 </head>
 <body>
-{running_elements}{html_content}
+{html_content}
 </body>
 </html>"""
 

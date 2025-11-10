@@ -10,7 +10,6 @@ from docco.toc import process_toc
 from docco.page_layout import process_page_layout
 from docco.html import markdown_to_html, wrap_html
 from docco.pdf import collect_css_files, html_to_pdf
-from docco.header_footer import process_header_footer
 from docco.utils import setup_logger
 from docco.directive_utils import extract_code_blocks
 
@@ -64,8 +63,19 @@ def process_directives_iteratively(content, base_dir, allow_python):
     return content
 
 
-def _generate_single_pdf(body, metadata, input_file, input_basename, output_dir, base_dir,
-                         css_file, keep_intermediate, allow_python, lang_suffix=None, po_file=None):
+def _generate_single_pdf(
+    body,
+    metadata,
+    input_file,
+    input_basename,
+    output_dir,
+    base_dir,
+    css_file,
+    keep_intermediate,
+    allow_python,
+    lang_suffix=None,
+    po_file=None,
+):
     """
     Generate a single PDF from processed markdown body.
 
@@ -87,24 +97,6 @@ def _generate_single_pdf(body, metadata, input_file, input_basename, output_dir,
     """
     suffix = lang_suffix or ""
 
-    # Process header and footer (if specified)
-    header_html = None
-    footer_html = None
-    if "header" in metadata:
-        header_html = process_header_footer(
-            metadata["header"],
-            base_dir,
-            allow_python,
-            directive_processor=process_directives_iteratively,
-        )
-    if "footer" in metadata:
-        footer_html = process_header_footer(
-            metadata["footer"],
-            base_dir,
-            allow_python,
-            directive_processor=process_directives_iteratively,
-        )
-
     # Generate filenames with optional language suffix
     md_filename = f"{input_basename}{suffix}_intermediate.md"
     html_filename = f"{input_basename}{suffix}.html"
@@ -122,14 +114,13 @@ def _generate_single_pdf(body, metadata, input_file, input_basename, output_dir,
     # Convert to HTML
     body_html = markdown_to_html(body)
 
-    # Process TOC and page layout on body only (before wrapping with header/footer)
+    # Process TOC and page layout on body only
     body_html = process_toc(body_html)
     body_html = process_page_layout(body_html)
 
-    # Wrap with header/footer (adds proper formatting for PDF)
-    html_wrapped = wrap_html(body_html, header_html, footer_html)
+    html_wrapped = wrap_html(body_html)
 
-    # Apply translation to wrapped HTML (headers/footers and body are all translatable)
+    # Apply translation to wrapped HTML
     if po_file:
         logger.info(f"Applying translations from {po_file}")
         html_wrapped = apply_po_to_html(html_wrapped, po_file)
@@ -155,8 +146,16 @@ def _generate_single_pdf(body, metadata, input_file, input_basename, output_dir,
     return pdf_path
 
 
-def _generate_multilingual_pdfs(body, metadata, input_file, output_dir, base_dir,
-                                css_file, keep_intermediate, allow_python):
+def _generate_multilingual_pdfs(
+    body,
+    metadata,
+    input_file,
+    output_dir,
+    base_dir,
+    css_file,
+    keep_intermediate,
+    allow_python,
+):
     """
     Generate PDFs for all languages in multilingual mode.
 
@@ -179,14 +178,12 @@ def _generate_multilingual_pdfs(body, metadata, input_file, output_dir, base_dir
     # Check for required base_language in multilingual mode
     base_language = metadata.get("base_language")
     if not base_language:
-        raise ValueError(
-            "Multilingual mode requires 'base_language' in frontmatter"
-        )
+        raise ValueError("Multilingual mode requires 'base_language' in frontmatter")
 
     input_basename = os.path.splitext(os.path.basename(input_file))[0]
     translations_dir = os.path.join(base_dir, input_basename)
 
-    # Step 1: Process header/footer and generate HTML for POT extraction
+    # Step 1: Generate HTML for POT extraction
     os.makedirs(translations_dir, exist_ok=True)
     body_html = markdown_to_html(body)
 
@@ -194,29 +191,11 @@ def _generate_multilingual_pdfs(body, metadata, input_file, output_dir, base_dir
     body_html = process_toc(body_html)
     body_html = process_page_layout(body_html)
 
-    # Process header and footer
-    header_html = None
-    footer_html = None
-    if "header" in metadata:
-        header_html = process_header_footer(
-            metadata["header"],
-            base_dir,
-            allow_python,
-            directive_processor=process_directives_iteratively,
-        )
-    if "footer" in metadata:
-        footer_html = process_header_footer(
-            metadata["footer"],
-            base_dir,
-            allow_python,
-            directive_processor=process_directives_iteratively,
-        )
-
-    # Wrap with header/footer (for extraction, headers/footers will be in POT)
-    wrapped_html = wrap_html(body_html, header_html, footer_html)
+    wrapped_html = wrap_html(body_html)
 
     # Step 2: Extract POT file from wrapped HTML to translations subfolder
     pot_path = os.path.join(translations_dir, f"{input_basename}.pot")
+    print(wrapped_html)
     extract_html_to_pot(wrapped_html, pot_path)
     logger.info(f"Extracted POT for multilingual: {pot_path}")
 
@@ -265,7 +244,12 @@ def _generate_multilingual_pdfs(body, metadata, input_file, output_dir, base_dir
 
 
 def parse_markdown(
-    input_file, output_dir, css_file=None, keep_intermediate=False, allow_python=False, po_file=None
+    input_file,
+    output_dir,
+    css_file=None,
+    keep_intermediate=False,
+    allow_python=False,
+    po_file=None,
 ):
     """
     Convert markdown file to PDF through full pipeline.
@@ -314,14 +298,28 @@ def parse_markdown(
     if metadata.get("multilingual", False):
         # Multilingual mode: ignore po_file parameter
         return _generate_multilingual_pdfs(
-            body, metadata, input_file, output_dir, base_dir,
-            css_file, keep_intermediate, allow_python
+            body,
+            metadata,
+            input_file,
+            output_dir,
+            base_dir,
+            css_file,
+            keep_intermediate,
+            allow_python,
         )
 
     # Step 4: Generate single PDF (with optional translation via po_file)
     pdf_path = _generate_single_pdf(
-        body, metadata, input_file, input_basename, output_dir, base_dir,
-        css_file, keep_intermediate, allow_python, po_file=po_file
+        body,
+        metadata,
+        input_file,
+        input_basename,
+        output_dir,
+        base_dir,
+        css_file,
+        keep_intermediate,
+        allow_python,
+        po_file=po_file,
     )
 
     return [pdf_path]

@@ -5,7 +5,6 @@ import os
 import sys
 from docco.parser import parse_markdown, process_directives_iteratively
 from docco.frontmatter import parse_frontmatter
-from docco.header_footer import process_header_footer
 from docco.html import markdown_to_html, wrap_html
 from docco.toc import process_toc
 from docco.page_layout import process_page_layout
@@ -28,24 +27,7 @@ def extract_pot(input_file, output_dir, allow_python):
     body_html = process_toc(body_html)
     body_html = process_page_layout(body_html)
 
-    header_html = None
-    footer_html = None
-    if "header" in metadata:
-        header_html = process_header_footer(
-            metadata["header"],
-            base_dir,
-            allow_python=allow_python,
-            directive_processor=process_directives_iteratively,
-        )
-    if "footer" in metadata:
-        footer_html = process_header_footer(
-            metadata["footer"],
-            base_dir,
-            allow_python=allow_python,
-            directive_processor=process_directives_iteratively,
-        )
-
-    wrapped_html = wrap_html(body_html, header_html, footer_html)
+    wrapped_html = wrap_html(body_html)
 
     input_basename = os.path.splitext(os.path.basename(input_file))[0]
     pot_path = os.path.join(output_dir, f"{input_basename}.pot")
@@ -64,7 +46,9 @@ def main():
             description="Convert Markdown to PDF with POT/PO translation support"
         )
 
-        subparsers = parser.add_subparsers(dest="command", help="Available commands", required=True)
+        subparsers = parser.add_subparsers(
+            dest="command", help="Available commands", required=True
+        )
 
         # Build command
         build_parser = subparsers.add_parser("build", help="Convert markdown to PDF")
@@ -99,7 +83,9 @@ def main():
         )
 
         # Extract command
-        extract_parser = subparsers.add_parser("extract", help="Extract translatable strings to POT file")
+        extract_parser = subparsers.add_parser(
+            "extract", help="Extract translatable strings to POT file"
+        )
         extract_parser.add_argument("input_file", help="Input markdown file")
         extract_parser.add_argument(
             "-o",
@@ -150,7 +136,7 @@ def main():
                 for output_file in output_files:
                     print(output_file)
         except Exception as e:
-            logger.error(f"Error: {e}")
+            logger.error(f"Error: {e}", exc_info=True)
             sys.exit(1)
     else:
         # Legacy mode: input_file is first positional argument
@@ -158,10 +144,7 @@ def main():
             description="Convert Markdown to PDF with POT/PO translation support"
         )
 
-        parser.add_argument(
-            "input_file",
-            help="Input markdown file"
-        )
+        parser.add_argument("input_file", help="Input markdown file")
         parser.add_argument(
             "-o",
             "--output",
@@ -222,7 +205,7 @@ def main():
                 print(output_file)
 
         except Exception as e:
-            logger.error(f"Error: {e}")
+            logger.error(f"Error: {e}", exc_info=True)
             sys.exit(1)
 
 

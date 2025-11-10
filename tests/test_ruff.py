@@ -2,7 +2,6 @@ import subprocess
 import pytest
 
 
-@pytest.mark.lint
 def test_ruff():
     result = subprocess.run(["ruff", "check", "."], capture_output=True, text=True)
     if result.returncode != 0:
