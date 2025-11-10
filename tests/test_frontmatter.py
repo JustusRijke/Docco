@@ -1,7 +1,7 @@
 """Tests for frontmatter parsing."""
 
 import pytest
-from docco.frontmatter import parse_frontmatter
+from docco.core import parse_frontmatter
 
 
 def test_parse_frontmatter_with_metadata():

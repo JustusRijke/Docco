@@ -3,14 +3,12 @@
 import os
 import re
 import glob
-from docco.frontmatter import parse_frontmatter
+from docco.core import parse_frontmatter, markdown_to_html, wrap_html, setup_logger
 from docco.inline import process_inlines
 from docco.translation import apply_po_to_html, extract_html_to_pot
 from docco.toc import process_toc
 from docco.page_layout import process_page_layout
-from docco.html import markdown_to_html, wrap_html
 from docco.pdf import collect_css_files, html_to_pdf
-from docco.utils import setup_logger
 from docco.directive_utils import extract_code_blocks
 
 logger = setup_logger(__name__)
@@ -63,6 +61,28 @@ def process_directives_iteratively(content, base_dir, allow_python):
     return content
 
 
+def process_markdown_to_html(markdown_body):
+    """
+    Convert markdown to complete HTML document.
+
+    Pipeline:
+    1. Markdown → HTML
+    2. Process TOC (generate and number headings)
+    3. Process page layout
+    4. Wrap in HTML document
+
+    Args:
+        markdown_body: Markdown content
+
+    Returns:
+        str: Complete HTML document
+    """
+    body_html = markdown_to_html(markdown_body)
+    body_html = process_toc(body_html)
+    body_html = process_page_layout(body_html)
+    return wrap_html(body_html)
+
+
 def _generate_single_pdf(
     body,
     metadata,
@@ -111,14 +131,8 @@ def _generate_single_pdf(
         f.write(body)
     logger.info(f"Wrote intermediate: {md_filename}")
 
-    # Convert to HTML
-    body_html = markdown_to_html(body)
-
-    # Process TOC and page layout on body only
-    body_html = process_toc(body_html)
-    body_html = process_page_layout(body_html)
-
-    html_wrapped = wrap_html(body_html)
+    # Convert markdown to complete HTML
+    html_wrapped = process_markdown_to_html(body)
 
     # Apply translation to wrapped HTML
     if po_file:
@@ -185,17 +199,10 @@ def _generate_multilingual_pdfs(
 
     # Step 1: Generate HTML for POT extraction
     os.makedirs(translations_dir, exist_ok=True)
-    body_html = markdown_to_html(body)
-
-    # Process TOC and page layout on body
-    body_html = process_toc(body_html)
-    body_html = process_page_layout(body_html)
-
-    wrapped_html = wrap_html(body_html)
+    wrapped_html = process_markdown_to_html(body)
 
     # Step 2: Extract POT file from wrapped HTML to translations subfolder
     pot_path = os.path.join(translations_dir, f"{input_basename}.pot")
-    print(wrapped_html)
     extract_html_to_pot(wrapped_html, pot_path)
     logger.info(f"Extracted POT for multilingual: {pot_path}")
 

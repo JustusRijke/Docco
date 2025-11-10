@@ -6,8 +6,7 @@ import tempfile
 import pytest
 from docco.parser import parse_markdown
 from docco.translation import extract_html_to_pot
-from docco.frontmatter import parse_frontmatter
-from docco.html import markdown_to_html
+from docco.core import parse_frontmatter, markdown_to_html
 
 
 def get_file_checksum(filepath):

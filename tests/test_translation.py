@@ -4,7 +4,7 @@ import os
 import tempfile
 import pytest
 from docco.translation import extract_html_to_pot, apply_po_to_html
-from docco.html import markdown_to_html
+from docco.core import markdown_to_html
 
 
 def test_extract_html_to_pot_creates_file():

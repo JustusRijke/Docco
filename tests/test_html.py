@@ -1,6 +1,6 @@
 """Tests for HTML conversion."""
 
-from docco.html import markdown_to_html, wrap_html
+from docco.core import markdown_to_html, wrap_html
 
 
 def test_markdown_to_html_returns_string():

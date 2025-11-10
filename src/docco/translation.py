@@ -3,7 +3,7 @@
 import os
 import tempfile
 from translate.convert import html2po, po2html
-from docco.utils import setup_logger
+from docco.core import setup_logger
 
 logger = setup_logger(__name__)
 

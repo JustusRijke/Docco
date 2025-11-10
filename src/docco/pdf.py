@@ -5,7 +5,7 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-from docco.utils import setup_logger
+from docco.core import setup_logger
 
 logger = setup_logger(__name__)
 

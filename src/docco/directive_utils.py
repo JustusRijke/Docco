@@ -77,28 +77,10 @@ def restore_code_blocks(content, code_blocks):
 
 
 def build_md_directive_pattern(directive_spec):
-    """
-    Build regex pattern for markdown directive.
-
-    Args:
-        directive_spec: Directive-specific pattern part (after <!--)
-
-    Returns:
-        str: Complete regex pattern
-    """
+    """Build regex pattern for markdown directive."""
     return r'<!--\s*' + directive_spec
 
 
 def build_html_directive_pattern(directive_spec):
-    """
-    Build regex pattern for HTML directive (requires re.MULTILINE flag).
-
-    Note: HTML directives still require line-start for proper HTML structure.
-
-    Args:
-        directive_spec: Directive-specific pattern part (after <!--)
-
-    Returns:
-        str: Complete regex pattern with line-start anchor
-    """
+    """Build regex pattern for HTML directive (requires re.MULTILINE flag)."""
     return r'^\s*<!--\s*' + directive_spec

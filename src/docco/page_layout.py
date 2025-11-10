@@ -1,7 +1,7 @@
 """Process page layout directives (page breaks and orientation)."""
 
 import re
-from docco.utils import setup_logger
+from docco.core import setup_logger
 from docco.directive_utils import build_html_directive_pattern
 
 logger = setup_logger(__name__)

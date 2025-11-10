@@ -4,7 +4,7 @@ import os
 import re
 import io
 import sys
-from docco.utils import setup_logger
+from docco.core import setup_logger
 from docco.directive_utils import build_md_directive_pattern, extract_code_blocks, restore_code_blocks
 
 logger = setup_logger(__name__)
