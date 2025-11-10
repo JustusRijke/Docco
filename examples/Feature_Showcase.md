@@ -58,7 +58,7 @@ Paths are relative to the markdown file. Additional CSS can also be provided via
 
 **`base_language`** - The language code of the source document (required when `multilingual: true`). Example: `base_language: en`. This will be used as the suffix for the base language PDF (e.g., `Document_EN.pdf`).
 
-**`header`** and **`footer`** - HTML files for page headers and footers with placeholder and directive support. See the [Headers & Footers](#headers--footers) section for details.
+**`header`** and **`footer`** - HTML files for page headers and footers with placeholder and directive support. See the Headers & Footers section for details.
 
 ## Multilingual Support
 
@@ -163,6 +163,25 @@ All attributes after the path are placeholders. For example, `author="Docco Team
 
 ### Recursive Inlining
 Inlined markdown files can themselves contain inline directives, allowing for multi-level composition (up to a maximum depth of 10 levels to prevent infinite recursion). This enables modular document structures where content can be composed from multiple nested files.
+
+### Important: HTML Content and Indentation
+
+When inlining HTML files (or embedding HTML directly in markdown), be aware that **all content is parsed as markdown**. This means:
+
+- **Leading indentation matters**: Lines starting with 4+ spaces are treated as code blocks. If your inlined HTML or any HTML in the markdown has indentation, it will be wrapped in `<code>` tags, breaking the HTML structure.
+- **Solution**: HTML files should start at column 0 (no leading indentation). When inlining HTML files that contain indented content, ensure the inline directive itself is not indented.
+
+Example:
+```markdown
+<!-- inline:"header.html" -->
+```
+
+Not:
+```markdown
+    <!-- inline:"header.html" -->
+```
+
+This applies to both `<!-- inline -->` directives and HTML directly embedded in markdown. The CommonMark specification, which Docco follows, treats indented content as code blocks to maintain compatibility with standard markdown parsing.
 
 ## Table of Contents
 
