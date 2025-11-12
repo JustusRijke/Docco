@@ -52,13 +52,11 @@ base_language: en
     - "css/toc.css"
   ```
 
-Paths are relative to the markdown file. Additional CSS can also be provided via the CLI `--css` argument, which overrides frontmatter styles.
+Paths are relative to the markdown file. CSS is embedded in the generated HTML document within `<style>` tags, making the HTML self-contained and independent.
 
 **`multilingual`** - Enable multilingual mode (boolean, default: `false`). When set to `true`, Docco automatically extracts translatable strings to a POT file and generates PDFs for the base language plus all discovered translations.
 
 **`base_language`** - The language code of the source document (required when `multilingual: true`). Example: `base_language: en`. This will be used as the suffix for the base language PDF (e.g., `Document_EN.pdf`).
-
-**`header`** and **`footer`** - HTML files for page headers and footers with placeholder and directive support. See the Headers & Footers section for details.
 
 ## Multilingual Support
 
@@ -214,25 +212,21 @@ This section returns to **portrait orientation** using the `<!-- portrait -->` d
 
 # Headers & Footers
 
-Docco supports page headers and footers using HTML files with full directive support. Headers and footers are processed through the same pipeline as the main document, allowing for:
+Docco supports page headers and footers using HTML files with full directive support. Headers and footers are added to the document using **inline directives** and are processed through the same pipeline as the main document, allowing for:
 - Placeholder substitution
 - Dynamic content with `<!-- python -->` directives
 - File inclusion with `<!-- inline -->` directives
 
-## Configuration
+## Adding Headers & Footers
 
-Headers and footers are configured in the frontmatter:
-```yaml
-header:
-  file: "header.html"
-  title: "Docco Feature Showcase"
-  author: "Docco Team"
-footer:
-  file: "footer.html"
-  title: "Docco"
+Headers and footers are included in your markdown document using the `<!-- inline -->` directive with placeholder attributes:
+
+```markdown
+<!-- inline:"header.html" title="Docco Feature Showcase" author="Docco Team" -->
+<!-- inline:"footer.html" title="Docco" -->
 ```
 
-The `file` key specifies the HTML file path. All other keys are placeholders that replace `{{key}}` in the HTML file.
+The attributes become placeholders that replace `{{key}}` in the HTML files. For example, `title="My Title"` replaces all instances of `{{title}}` in the HTML file.
 
 ## CSS Requirements
 
@@ -254,23 +248,11 @@ See `examples/css/header_footer.css` for a complete example.
 
 ## Example Files
 
-**Header (`header_showcase.html`):**
-```html
-<div style="text-align: center; color: #666;">
-    {{title}} - {{author}}
-</div>
-```
+Docco provides example header and footer HTML files in the `examples/` folder:
+- `examples/header.html` - Example page header with placeholder support
+- `examples/footer.html` - Example page footer with directive support
 
-**Footer (`footer_showcase.html`):**
-```html
-<div style="display: flex; justify-content: space-between;">
-    <span>{{title}} - Generated: <!-- python -->
-import datetime
-print(datetime.datetime.now().strftime("%Y-%m-%d"))
-    <!-- /python --></span>
-    <span class="page-number"></span>
-</div>
-```
+Examine these files to understand the structure and how to create your own headers and footers with placeholders (e.g., `{{title}}`, `{{author}}`) and directives.
 
 
 # Python Code Execution

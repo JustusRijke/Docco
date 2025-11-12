@@ -49,11 +49,6 @@ def main():
         help="Output directory (default: current directory)",
     )
     build_parser.add_argument(
-        "-c",
-        "--css",
-        help="CSS file for PDF styling",
-    )
-    build_parser.add_argument(
         "--po",
         help="PO file for translations",
     )
@@ -115,7 +110,6 @@ def main():
             output_files = parse_markdown(
                 input_file,
                 args.output,
-                css_file=args.css,
                 keep_intermediate=args.keep_intermediate,
                 allow_python=args.allow_python,
                 po_file=args.po,

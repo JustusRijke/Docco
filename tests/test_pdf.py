@@ -2,7 +2,7 @@
 
 import os
 import pytest
-from docco.pdf import collect_css_files, html_to_pdf
+from docco.pdf import collect_css_content, html_to_pdf
 
 
 @pytest.fixture
@@ -27,12 +27,12 @@ def test_collect_css_single_frontmatter(tmp_path):
     md_file.write_text("# Test")
 
     css_file = tmp_path / "style.css"
-    css_file.write_text("body {}")
+    css_content = "body { color: blue; }"
+    css_file.write_text(css_content)
 
     metadata = {"css": "style.css"}
-    found = collect_css_files(str(md_file), metadata)
-    assert len(found) == 1
-    assert found[0] == str(css_file)
+    content = collect_css_content(str(md_file), metadata)
+    assert content == css_content
 
 
 def test_collect_css_multiple_frontmatter(tmp_path):
@@ -40,55 +40,34 @@ def test_collect_css_multiple_frontmatter(tmp_path):
     md_file = tmp_path / "document.md"
     md_file.write_text("# Test")
 
+    css1_content = "@page { size: A4; }"
     css1 = tmp_path / "page.css"
-    css1.write_text("@page {}")
+    css1.write_text(css1_content)
+
+    css2_content = "body { margin: 0; }"
     css2 = tmp_path / "style.css"
-    css2.write_text("body {}")
+    css2.write_text(css2_content)
 
     metadata = {"css": ["page.css", "style.css"]}
-    found = collect_css_files(str(md_file), metadata)
-    assert len(found) == 2
-    assert found[0] == str(css1)
-    assert found[1] == str(css2)
-
-
-def test_collect_css_with_cli_arg(tmp_path):
-    """Test that CLI CSS argument is added last."""
-    md_file = tmp_path / "document.md"
-    md_file.write_text("# Test")
-
-    css1 = tmp_path / "style.css"
-    css1.write_text("body {}")
-    css2 = tmp_path / "override.css"
-    css2.write_text("body { color: red; }")
-
-    metadata = {"css": "style.css"}
-    found = collect_css_files(str(md_file), metadata, str(css2))
-    assert len(found) == 2
-    assert found[0] == str(css1)
-    assert found[1] == str(css2)  # CLI arg should be last
+    content = collect_css_content(str(md_file), metadata)
+    assert css1_content in content
+    assert css2_content in content
+    # Content should be joined with newlines
+    assert content == f"{css1_content}\n{css2_content}"
 
 
 def test_collect_css_missing_file(tmp_path, tmp_md):
     """Test that missing CSS files log warning but don't fail."""
     metadata = {"css": "nonexistent.css"}
-    found = collect_css_files(tmp_md, metadata)
-    assert len(found) == 0
+    content = collect_css_content(tmp_md, metadata)
+    assert content == ""
 
 
 def test_collect_css_empty_metadata(tmp_md):
     """Test with empty metadata."""
     metadata = {}
-    found = collect_css_files(tmp_md, metadata)
-    assert len(found) == 0
-
-
-def test_collect_css_cli_only(tmp_path, tmp_md, tmp_css):
-    """Test with only CLI CSS argument."""
-    metadata = {}
-    found = collect_css_files(tmp_md, metadata, tmp_css)
-    assert len(found) == 1
-    assert found[0] == tmp_css
+    content = collect_css_content(tmp_md, metadata)
+    assert content == ""
 
 
 def test_html_to_pdf_creates_file(tmp_path):
@@ -102,28 +81,21 @@ def test_html_to_pdf_creates_file(tmp_path):
     assert result == str(output_path)
 
 
-def test_html_to_pdf_with_css(tmp_path, tmp_css):
-    """Test PDF generation with CSS styling."""
-    html_content = "<!DOCTYPE html><html><body><p>Test</p></body></html>"
+def test_html_to_pdf_with_embedded_css(tmp_path):
+    """Test PDF generation with embedded CSS in HTML."""
+    html_content = """<!DOCTYPE html>
+<html>
+<head>
+<style>
+body { color: blue; }
+p { font-size: 14px; }
+</style>
+</head>
+<body><p>Test</p></body>
+</html>"""
     output_path = tmp_path / "test.pdf"
 
-    result = html_to_pdf(html_content, str(output_path), [tmp_css])
-
-    assert os.path.exists(str(output_path))
-    assert result == str(output_path)
-
-
-def test_html_to_pdf_with_multiple_css(tmp_path):
-    """Test PDF generation with multiple CSS files."""
-    css1 = tmp_path / "style1.css"
-    css1.write_text("@page { size: A4; }")
-    css2 = tmp_path / "style2.css"
-    css2.write_text("body { margin: 0; }")
-
-    html_content = "<!DOCTYPE html><html><body><p>Test</p></body></html>"
-    output_path = tmp_path / "test.pdf"
-
-    result = html_to_pdf(html_content, str(output_path), [str(css1), str(css2)])
+    result = html_to_pdf(html_content, str(output_path))
 
     assert os.path.exists(str(output_path))
     assert result == str(output_path)

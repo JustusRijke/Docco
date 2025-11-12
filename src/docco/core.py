@@ -60,20 +60,23 @@ def markdown_to_html(markdown_content):
     return html
 
 
-def wrap_html(html_content):
+def wrap_html(html_content, css_content=""):
     """
     Wrap HTML content in a complete HTML document.
 
     Args:
         html_content: Raw HTML body content
+        css_content: CSS content to embed in <style> tag (optional)
 
     Returns:
         str: Complete HTML document
     """
+    style_tag = f"<style>\n{css_content}\n</style>\n" if css_content.strip() else ""
+
     wrapped = f"""<!DOCTYPE html>
 <html>
 <head>
-</head>
+{style_tag}</head>
 <body>
 {html_content}
 </body>

@@ -8,7 +8,7 @@ from docco.inline import process_inlines
 from docco.translation import apply_po_to_html, extract_html_to_pot
 from docco.toc import process_toc
 from docco.page_layout import process_page_layout
-from docco.pdf import collect_css_files, html_to_pdf
+from docco.pdf import collect_css_content, html_to_pdf
 from docco.directive_utils import extract_code_blocks
 
 logger = setup_logger(__name__)
@@ -61,7 +61,7 @@ def process_directives_iteratively(content, base_dir, allow_python):
     return content
 
 
-def process_markdown_to_html(markdown_body):
+def process_markdown_to_html(markdown_body, css_content=""):
     """
     Convert markdown to complete HTML document.
 
@@ -69,10 +69,11 @@ def process_markdown_to_html(markdown_body):
     1. Markdown → HTML
     2. Process TOC (generate and number headings)
     3. Process page layout
-    4. Wrap in HTML document
+    4. Wrap in HTML document with embedded CSS
 
     Args:
         markdown_body: Markdown content
+        css_content: CSS content to embed in <style> tag (optional)
 
     Returns:
         str: Complete HTML document
@@ -80,7 +81,7 @@ def process_markdown_to_html(markdown_body):
     body_html = markdown_to_html(markdown_body)
     body_html = process_toc(body_html)
     body_html = process_page_layout(body_html)
-    return wrap_html(body_html)
+    return wrap_html(body_html, css_content=css_content)
 
 
 def _generate_single_pdf(
@@ -90,7 +91,6 @@ def _generate_single_pdf(
     input_basename,
     output_dir,
     base_dir,
-    css_file,
     keep_intermediate,
     allow_python,
     lang_suffix=None,
@@ -106,7 +106,6 @@ def _generate_single_pdf(
         input_basename: Base filename without extension
         output_dir: Directory for output files
         base_dir: Base directory for resource resolution
-        css_file: Optional CSS file for PDF styling
         keep_intermediate: Keep intermediate HTML/MD files if True
         allow_python: Allow python code execution in directives
         lang_suffix: Optional language suffix for filenames (e.g., "_de")
@@ -122,8 +121,8 @@ def _generate_single_pdf(
     html_filename = f"{input_basename}{suffix}.html"
     pdf_filename = f"{input_basename}{suffix}.pdf"
 
-    # Collect CSS files from frontmatter and CLI argument
-    css_files = collect_css_files(input_file, metadata, css_file)
+    # Collect CSS content from frontmatter
+    css_content = collect_css_content(input_file, metadata)
 
     # Write intermediate MD
     md_path = os.path.join(output_dir, md_filename)
@@ -131,8 +130,8 @@ def _generate_single_pdf(
         f.write(body)
     logger.info(f"Wrote intermediate: {md_filename}")
 
-    # Convert markdown to complete HTML
-    html_wrapped = process_markdown_to_html(body)
+    # Convert markdown to complete HTML with embedded CSS
+    html_wrapped = process_markdown_to_html(body, css_content=css_content)
 
     # Apply translation to wrapped HTML
     if po_file:
@@ -146,7 +145,7 @@ def _generate_single_pdf(
 
     # Convert to PDF
     pdf_path = os.path.join(output_dir, pdf_filename)
-    html_to_pdf(html_wrapped, pdf_path, css_files, base_url=base_dir)
+    html_to_pdf(html_wrapped, pdf_path, base_url=base_dir)
 
     # Clean up intermediate files if not keeping them
     if not keep_intermediate:
@@ -166,7 +165,6 @@ def _generate_multilingual_pdfs(
     input_file,
     output_dir,
     base_dir,
-    css_file,
     keep_intermediate,
     allow_python,
 ):
@@ -179,7 +177,6 @@ def _generate_multilingual_pdfs(
         input_file: Path to input markdown file
         output_dir: Directory for output files
         base_dir: Base directory for resource resolution
-        css_file: Optional CSS file for PDF styling
         keep_intermediate: Keep intermediate HTML/MD files if True
         allow_python: Allow python code execution in directives
 
@@ -218,7 +215,6 @@ def _generate_multilingual_pdfs(
         input_basename,
         output_dir,
         base_dir,
-        css_file,
         keep_intermediate,
         allow_python,
         lang_suffix=f"_{base_lang_code}",
@@ -239,7 +235,6 @@ def _generate_multilingual_pdfs(
             input_basename,
             output_dir,
             base_dir,
-            css_file,
             keep_intermediate,
             allow_python,
             lang_suffix=f"_{lang_code}",
@@ -253,7 +248,6 @@ def _generate_multilingual_pdfs(
 def parse_markdown(
     input_file,
     output_dir,
-    css_file=None,
     keep_intermediate=False,
     allow_python=False,
     po_file=None,
@@ -276,7 +270,6 @@ def parse_markdown(
     Args:
         input_file: Path to input markdown file
         output_dir: Directory for output files
-        css_file: CSS file for PDF styling (optional)
         keep_intermediate: Keep intermediate HTML/MD files if True
         allow_python: Allow python code execution in directives
         po_file: Path to PO file for translations (optional, ignored in multilingual mode)
@@ -310,7 +303,6 @@ def parse_markdown(
             input_file,
             output_dir,
             base_dir,
-            css_file,
             keep_intermediate,
             allow_python,
         )
@@ -323,7 +315,6 @@ def parse_markdown(
         input_basename,
         output_dir,
         base_dir,
-        css_file,
         keep_intermediate,
         allow_python,
         po_file=po_file,
