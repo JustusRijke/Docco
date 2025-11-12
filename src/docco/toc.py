@@ -1,16 +1,20 @@
 """Process TOC (Table of Contents) directive."""
 
 import re
-from docco.core import setup_logger
-from docco.directive_utils import build_html_directive_pattern
+import logging
 
-logger = setup_logger(__name__)
+logger = logging.getLogger(__name__)
+
+
+def _strip_html_tags(text):
+    """Remove HTML tags from text."""
+    return re.sub(r'<[^>]+>', '', text)
 
 
 def _generate_id(text):
     """Generate URL-safe ID from heading text."""
     # Remove HTML tags
-    text = re.sub(r'<[^>]+>', '', text)
+    text = _strip_html_tags(text)
     # Convert to lowercase and replace spaces/special chars with hyphens
     slug = re.sub(r'[^\w\s-]', '', text.lower())
     slug = re.sub(r'[-\s]+', '-', slug).strip('-')
@@ -30,7 +34,7 @@ def _extract_headings(html_content):
     used_ids = set()
 
     # Find positions of toc:exclude directives and following headings (only at line start, allowing leading whitespace)
-    exclude_pattern = build_html_directive_pattern(r'toc:exclude\s*-->\s*<(h[1-6])')
+    exclude_pattern = r'^\s*<!--\s*toc:exclude\s*-->\s*<(h[1-6])'
     excluded_positions = set()
     for match in re.finditer(exclude_pattern, html_content, flags=re.MULTILINE):
         # Mark the position of the heading tag that follows
@@ -80,7 +84,7 @@ def _extract_headings(html_content):
     modified_html = re.sub(heading_pattern, process_heading, html_content)
 
     # Remove toc:exclude directives from HTML
-    modified_html = re.sub(build_html_directive_pattern(r'toc:exclude\s*-->\s*'), '', modified_html, flags=re.MULTILINE)
+    modified_html = re.sub(r'^\s*<!--\s*toc:exclude\s*-->\s*', '', modified_html, flags=re.MULTILINE)
 
     return modified_html, headings
 
@@ -126,7 +130,7 @@ def _build_toc_html(headings):
     counters = [0, 0, 0, 0, 0, 0]  # h1-h6
 
     for level, heading_id, text in headings:
-        display_text = re.sub(r'<[^>]+>', '', text)
+        display_text = _strip_html_tags(text)
         number = _update_counters(counters, level)
 
         # Handle level changes
@@ -172,17 +176,7 @@ def _number_headings(html_content, headings):
     heading_numbers = {}
 
     for level, heading_id, _ in headings:
-        # Update counters
-        counters[level - 1] += 1
-        for i in range(level, 6):
-            counters[i] = 0
-
-        # Build number string
-        number_parts = [str(counters[i]) for i in range(level) if counters[i] > 0]
-        number = '.'.join(number_parts)
-        if number:
-            number += ' '
-
+        number = _update_counters(counters, level)
         heading_numbers[heading_id] = number
 
     # Replace heading text with numbered text
@@ -222,7 +216,7 @@ def process_toc(html_content):
         str: HTML with TOC directive replaced by generated TOC
     """
     # Check if TOC directive exists (only at line start, allowing leading whitespace)
-    toc_pattern = build_html_directive_pattern(r'TOC\s*-->')
+    toc_pattern = r'^\s*<!--\s*TOC\s*-->'
     if not re.search(toc_pattern, html_content, flags=re.MULTILINE):
         return html_content
 

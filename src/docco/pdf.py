@@ -3,11 +3,10 @@
 import os
 import shutil
 import subprocess
-import tempfile
-from pathlib import Path
-from docco.core import setup_logger
+import logging
+from docco.core import html_temp_file
 
-logger = setup_logger(__name__)
+logger = logging.getLogger(__name__)
 
 # Check if WeasyPrint Python library is available
 try:
@@ -114,13 +113,7 @@ def _html_to_pdf_with_executable(
         )
 
     # Create temp file for HTML
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".html", delete=False, encoding="utf-8"
-    ) as html_tmp:
-        html_tmp.write(html_content)
-        html_tmp_path = html_tmp.name
-
-    try:
+    with html_temp_file(html_content) as html_tmp_path:
         # Build command
         cmd = [weasyprint_cmd]
 
@@ -133,7 +126,3 @@ def _html_to_pdf_with_executable(
         # Call weasyprint executable
         result = subprocess.run(cmd, check=True, capture_output=True, text=True)
         logger.error(result.stderr)
-
-    finally:
-        # Clean up temp file
-        Path(html_tmp_path).unlink(missing_ok=True)

@@ -14,3 +14,4 @@
 - reset CSS (* margins 0)
 - zie sectie over image optimalisation [Common Use Cases - WeasyPrint 66.0 documentation](https://doc.courtbouillon.org/weasyprint/stable/common_use_cases.html)
 - comments mogelijk maken, en optioneel zichtbaar in pdf (geel gearceerde) en log output
+- pot files zitten vol references naar .tmp files, en bevatten timestamps, niet fijn voor version control -> volgens claude geen optie om dit uit te schakelen

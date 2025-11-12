@@ -3,12 +3,12 @@
 import os
 import glob
 import subprocess
-import tempfile
+import logging
 from translate.convert import html2po, po2html
 from translate.storage import po
-from docco.core import setup_logger
+from docco.core import html_temp_file
 
-logger = setup_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def extract_html_to_pot(html_content, output_path):
@@ -25,13 +25,7 @@ def extract_html_to_pot(html_content, output_path):
     logger.debug(f"Extracting translatable strings from HTML to {output_path}")
 
     # Create temporary HTML file for translate-toolkit
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".html", delete=False, encoding="utf-8"
-    ) as html_tmp:
-        html_tmp.write(html_content)
-        html_tmp_path = html_tmp.name
-
-    try:
+    with html_temp_file(html_content) as html_tmp_path:
         # Convert HTML to POT using file objects
         with (
             open(html_tmp_path, "rb") as html_file,
@@ -41,9 +35,6 @@ def extract_html_to_pot(html_content, output_path):
 
         logger.debug(f"Extracted to POT: {output_path}")
         return output_path
-    finally:
-        # Clean up temporary file
-        os.unlink(html_tmp_path)
 
 
 def apply_po_to_html(html_content, po_path):
@@ -63,36 +54,22 @@ def apply_po_to_html(html_content, po_path):
         raise FileNotFoundError(f"PO file not found: {po_path}")
 
     # Create temporary files for translate-toolkit
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".html", delete=False, encoding="utf-8"
-    ) as html_tmp:
-        html_tmp.write(html_content)
-        html_tmp_path = html_tmp.name
+    with html_temp_file(html_content) as html_tmp_path:
+        with html_temp_file("") as out_tmp_path:
+            # Convert PO to HTML using file objects
+            with (
+                open(po_path, "rb") as po_file,
+                open(html_tmp_path, "rb") as html_file,
+                open(out_tmp_path, "wb") as out_file,
+            ):
+                po2html.converthtml(po_file, out_file, html_file)
 
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".html", delete=False, encoding="utf-8"
-    ) as out_tmp:
-        out_tmp_path = out_tmp.name
+            # Read the translated HTML
+            with open(out_tmp_path, "r", encoding="utf-8") as f:
+                translated_html = f.read()
 
-    try:
-        # Convert PO to HTML using file objects
-        with (
-            open(po_path, "rb") as po_file,
-            open(html_tmp_path, "rb") as html_file,
-            open(out_tmp_path, "wb") as out_file,
-        ):
-            po2html.converthtml(po_file, out_file, html_file)
-
-        # Read the translated HTML
-        with open(out_tmp_path, "r", encoding="utf-8") as f:
-            translated_html = f.read()
-
-        logger.debug(f"Applied translations from {po_path}")
-        return translated_html
-    finally:
-        # Clean up temporary files
-        os.unlink(html_tmp_path)
-        os.unlink(out_tmp_path)
+            logger.debug(f"Applied translations from {po_path}")
+            return translated_html
 
 
 def get_po_stats(po_path):

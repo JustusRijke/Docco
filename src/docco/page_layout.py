@@ -1,10 +1,9 @@
 """Process page layout directives (page breaks and orientation)."""
 
 import re
-from docco.core import setup_logger
-from docco.directive_utils import build_html_directive_pattern
+import logging
 
-logger = setup_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def process_page_layout(html_content):
@@ -26,7 +25,7 @@ def process_page_layout(html_content):
     """
     # Replace pagebreak directives with div (only at line start, allowing leading whitespace)
     html_content = re.sub(
-        build_html_directive_pattern(r"pagebreak\s*-->"),
+        r'^\s*<!--\s*pagebreak\s*-->',
         '<div class="pagebreak"></div>',
         html_content,
         flags=re.MULTILINE,
@@ -39,7 +38,7 @@ def process_page_layout(html_content):
     current_orientation = "portrait"
 
     # Find all orientation directives (only at line start, allowing leading whitespace)
-    orientation_pattern = build_html_directive_pattern(r"(landscape|portrait)\s*-->")
+    orientation_pattern = r'^\s*<!--\s*(landscape|portrait)\s*-->'
 
     for match in re.finditer(orientation_pattern, html_content, flags=re.MULTILINE):
         # Save content before this directive
@@ -68,7 +67,7 @@ def process_page_layout(html_content):
 
     # Remove remaining orientation directives (shouldn't be any left)
     result = re.sub(
-        build_html_directive_pattern(r"(landscape|portrait)\s*-->"),
+        r'^\s*<!--\s*(landscape|portrait)\s*-->',
         "",
         result,
         flags=re.MULTILINE,

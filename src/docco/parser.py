@@ -3,8 +3,9 @@
 import os
 import re
 import glob
-from docco.core import parse_frontmatter, markdown_to_html, wrap_html, setup_logger
-from docco.inline import process_inlines
+import logging
+from docco.core import parse_frontmatter, markdown_to_html, wrap_html
+from docco.inline import process_inlines, extract_code_blocks
 from docco.translation import (
     apply_po_to_html,
     extract_html_to_pot,
@@ -14,10 +15,27 @@ from docco.translation import (
 from docco.toc import process_toc
 from docco.page_layout import process_page_layout
 from docco.pdf import collect_css_content, html_to_pdf
-from docco.directive_utils import extract_code_blocks
 
-logger = setup_logger(__name__)
+logger = logging.getLogger(__name__)
 MAX_ITERATIONS = 10
+
+
+def preprocess_document(content, input_file, allow_python=False):
+    """
+    Parse frontmatter and process directives.
+
+    Args:
+        content: Markdown content string
+        input_file: Path to input file (for base directory resolution)
+        allow_python: Allow python directive execution
+
+    Returns:
+        tuple: (metadata dict, processed body string, base directory path)
+    """
+    metadata, body = parse_frontmatter(content)
+    base_dir = os.path.dirname(os.path.abspath(input_file))
+    body = process_directives_iteratively(body, base_dir, allow_python)
+    return metadata, body, base_dir
 
 
 def has_directives(content):
@@ -306,16 +324,10 @@ def parse_markdown(
     with open(input_file, "r") as f:
         content = f.read()
 
-    # Step 1: Parse frontmatter
-    metadata, body = parse_frontmatter(content)
+    # Step 1 & 2: Preprocess document (parse frontmatter and process directives)
+    metadata, body, base_dir = preprocess_document(content, input_file, allow_python)
     logger.debug(f"Parsed frontmatter: {metadata}")
-
-    # Determine base directory for inline resolution
-    base_dir = os.path.dirname(os.path.abspath(input_file))
     input_basename = os.path.splitext(os.path.basename(input_file))[0]
-
-    # Step 2: Iteratively process directives (common to all workflows)
-    body = process_directives_iteratively(body, base_dir, allow_python)
 
     # Step 3: Route to appropriate workflow based on multilingual flag
     if metadata.get("multilingual", False):

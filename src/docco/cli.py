@@ -3,11 +3,11 @@
 import argparse
 import os
 import sys
-from docco.parser import parse_markdown, process_directives_iteratively, process_markdown_to_html
-from docco.core import parse_frontmatter, setup_logger
+import logging
+from docco.parser import parse_markdown, preprocess_document, process_markdown_to_html
 from docco.translation import extract_html_to_pot, update_po_files
 
-logger = setup_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def extract_pot(input_file, output_dir, allow_python):
@@ -15,9 +15,7 @@ def extract_pot(input_file, output_dir, allow_python):
     with open(input_file, "r") as f:
         content = f.read()
 
-    metadata, body = parse_frontmatter(content)
-    base_dir = os.path.dirname(os.path.abspath(input_file))
-    body = process_directives_iteratively(body, base_dir, allow_python=allow_python)
+    metadata, body, base_dir = preprocess_document(content, input_file, allow_python)
 
     wrapped_html = process_markdown_to_html(body)
 
@@ -93,8 +91,11 @@ def main():
     args = parser.parse_args()
 
     # Set up logging
-    if args.verbose:
-        setup_logger(level=10)  # DEBUG level
+    log_level = logging.DEBUG if args.verbose else logging.INFO
+    logging.basicConfig(
+        level=log_level,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
 
     try:
         input_file = args.input_file

@@ -1,25 +1,34 @@
 """Core utilities: logging, frontmatter parsing, HTML wrapping."""
 
 import logging
+import tempfile
+from pathlib import Path
+from contextlib import contextmanager
 import frontmatter
 from markdown_it import MarkdownIt
 from mdit_py_plugins.attrs import attrs_block_plugin, attrs_plugin
 
 
-def setup_logger(name=__name__, level=logging.INFO):
-    """Set up logger for Docco."""
-    logger = logging.getLogger(name)
-    logger.setLevel(level)
+@contextmanager
+def html_temp_file(content):
+    """
+    Write HTML content to temp file, yield path, auto-cleanup.
 
-    if not logger.handlers:
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        )
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
+    Args:
+        content: HTML content string
 
-    return logger
+    Yields:
+        str: Path to temporary HTML file
+    """
+    with tempfile.NamedTemporaryFile(
+        mode='w', suffix='.html', delete=False, encoding='utf-8'
+    ) as f:
+        f.write(content)
+        path = f.name
+    try:
+        yield path
+    finally:
+        Path(path).unlink(missing_ok=True)
 
 
 def parse_frontmatter(content):
@@ -55,7 +64,7 @@ def markdown_to_html(markdown_content):
     md = MarkdownIt().use(attrs_plugin).use(attrs_block_plugin).enable("table")
 
     html = md.render(markdown_content)
-    logger = setup_logger(__name__)
+    logger = logging.getLogger(__name__)
     logger.debug("Converted markdown to HTML")
     return html
 

@@ -22,7 +22,7 @@ Target audience: developers and technical writers familiar with Markdown, HTML, 
 
 Processing pipeline:
 
-1. **Frontmatter Parsing** (`frontmatter.py`): Extracts YAML metadata and document body
+1. **Frontmatter Parsing** (`core.py`): Extracts YAML metadata and document body
 2. **Directive Processing** (`parser.py`): Iteratively processes inline and python directives
 3. **Inline Processing** (`inline.py`): Embeds external markdown via `<!-- inline:"path" -->` directives (recursive, max depth 10)
 4. **HTML Conversion** (`core.py`): Converts markdown to HTML; collects CSS from frontmatter (files are embedded in `<style>` tags, external URLs become `<link>` tags)
@@ -142,15 +142,13 @@ docco build examples/Multilingual_Document_Example.md -o output/ --allow-python
 ```
 src/docco/
   cli.py              - CLI argument parsing and commands
-  parser.py           - Main pipeline orchestration
-  frontmatter.py      - YAML frontmatter extraction
-  inline.py           - Directive processing (inline, python)
-  core.py             - Markdown to HTML conversion and wrapping
+  parser.py           - Main pipeline orchestration (includes preprocess_document)
+  inline.py           - Directive processing (inline, python, code block protection)
+  core.py             - Frontmatter, markdown/HTML conversion, temp file utilities
   pdf.py              - CSS collection and HTML to PDF rendering
-  toc.py              - Table of contents generation
+  toc.py              - Table of contents generation with heading numbering
   page_layout.py      - Page break and orientation directives
   translation.py      - PO file application and POT extraction
-  directive_utils.py  - Utility functions for directive processing
 
 examples/
   Feature_Showcase.md                 - Comprehensive feature demo
