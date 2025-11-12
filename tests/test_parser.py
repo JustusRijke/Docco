@@ -105,3 +105,50 @@ def test_max_iterations_exceeded_self_referencing():
 
         with pytest.raises(ValueError, match=f"Max iterations \\({MAX_ITERATIONS}\\) exceeded"):
             process_directives_iteratively(content, tmpdir, False)
+
+
+def test_multilingual_build_logs_translation_warnings(caplog):
+    """Test that incomplete translations trigger warnings in multilingual mode."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Create markdown file with multilingual frontmatter
+        input_file = os.path.join(tmpdir, "test.md")
+        with open(input_file, "w") as f:
+            f.write("""---
+multilingual: true
+base_language: en
+---
+
+# Hello
+
+This is a test document.
+""")
+
+        # Create translations directory and incomplete PO file
+        translations_dir = os.path.join(tmpdir, "test")
+        os.makedirs(translations_dir, exist_ok=True)
+
+        # Create PO file with incomplete translation (fuzzy and untranslated)
+        de_po = os.path.join(translations_dir, "de.po")
+        with open(de_po, "w") as f:
+            f.write("""
+msgid "Hello"
+msgstr "Hallo"
+
+#, fuzzy
+msgid "This is a test document."
+msgstr "Dies ist ein Testdokument."
+
+msgid "New string not yet translated"
+msgstr ""
+""")
+
+        # Build multilingual PDF
+        outputs = parse_markdown(input_file, tmpdir)
+
+        # Should generate PDFs for EN and DE
+        assert len(outputs) == 2
+
+        # Should have logged warning about incomplete translation
+        assert "Translation incomplete for DE" in caplog.text
+        assert "1 untranslated" in caplog.text
+        assert "1 fuzzy" in caplog.text

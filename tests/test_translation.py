@@ -3,7 +3,7 @@
 import os
 import tempfile
 import pytest
-from docco.translation import extract_html_to_pot, apply_po_to_html
+from docco.translation import extract_html_to_pot, apply_po_to_html, get_po_stats, update_po_files
 from docco.core import markdown_to_html
 
 
@@ -138,3 +138,189 @@ msgstr ""
         # Result should contain original text when translation is empty
         assert "Hello" in result
         assert "World" in result
+
+
+def test_get_po_stats_all_translated():
+    """Test get_po_stats with fully translated PO file."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        po_path = os.path.join(tmpdir, "test.po")
+        with open(po_path, "w") as f:
+            f.write("""# German Translation
+msgid "Hello"
+msgstr "Hallo"
+
+msgid "World"
+msgstr "Welt"
+
+msgid "Test"
+msgstr "Prüfung"
+""")
+
+        stats = get_po_stats(po_path)
+        assert stats['total'] == 3
+        assert stats['translated'] == 3
+        assert stats['fuzzy'] == 0
+        assert stats['untranslated'] == 0
+
+
+def test_get_po_stats_with_untranslated():
+    """Test get_po_stats with untranslated strings."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        po_path = os.path.join(tmpdir, "test.po")
+        with open(po_path, "w") as f:
+            f.write("""# German Translation
+msgid "Hello"
+msgstr "Hallo"
+
+msgid "World"
+msgstr ""
+
+msgid "Test"
+msgstr ""
+""")
+
+        stats = get_po_stats(po_path)
+        assert stats['total'] == 3
+        assert stats['translated'] == 1
+        assert stats['fuzzy'] == 0
+        assert stats['untranslated'] == 2
+
+
+def test_get_po_stats_with_fuzzy():
+    """Test get_po_stats with fuzzy translations."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        po_path = os.path.join(tmpdir, "test.po")
+        with open(po_path, "w") as f:
+            f.write("""# German Translation
+msgid "Hello"
+msgstr "Hallo"
+
+#, fuzzy
+msgid "World"
+msgstr "Welt"
+
+msgid "Test"
+msgstr ""
+""")
+
+        stats = get_po_stats(po_path)
+        assert stats['total'] == 3
+        assert stats['translated'] == 1
+        assert stats['fuzzy'] == 1
+        assert stats['untranslated'] == 1
+
+
+def test_get_po_stats_empty_po():
+    """Test get_po_stats with empty PO file (only header)."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        po_path = os.path.join(tmpdir, "test.po")
+        with open(po_path, "w") as f:
+            f.write("""# Translation file
+msgid ""
+msgstr ""
+"Language: de\\n"
+""")
+
+        stats = get_po_stats(po_path)
+        assert stats['total'] == 0
+        assert stats['translated'] == 0
+        assert stats['fuzzy'] == 0
+        assert stats['untranslated'] == 0
+
+
+def test_update_po_files_no_existing_po(caplog):
+    """Test update_po_files with no existing PO files."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        pot_path = os.path.join(tmpdir, "test.pot")
+        with open(pot_path, "w") as f:
+            f.write("""
+msgid "Hello"
+msgstr ""
+""")
+
+        # Call update_po_files with empty directory
+        update_po_files(pot_path, tmpdir)
+
+        # Should log that no files were found
+        assert "No existing PO files to update" in caplog.text
+
+
+def test_update_po_files_preserves_translations():
+    """Test that update_po_files preserves existing translations."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Create original POT with 2 strings
+        pot_path = os.path.join(tmpdir, "test.pot")
+        with open(pot_path, "w") as f:
+            f.write("""
+msgid "Hello"
+msgstr ""
+
+msgid "World"
+msgstr ""
+""")
+
+        # Create PO with translations
+        po_path = os.path.join(tmpdir, "test.po")
+        with open(po_path, "w") as f:
+            f.write("""
+msgid "Hello"
+msgstr "Hallo"
+
+msgid "World"
+msgstr "Welt"
+""")
+
+        # Get original stats
+        orig_stats = get_po_stats(po_path)
+        assert orig_stats['translated'] == 2
+
+        # Update with same POT (should preserve translations)
+        update_po_files(pot_path, tmpdir)
+
+        # Stats should be unchanged
+        updated_stats = get_po_stats(po_path)
+        assert updated_stats['translated'] == 2
+        assert updated_stats['untranslated'] == 0
+
+
+def test_update_po_files_adds_new_strings():
+    """Test that update_po_files adds new strings to PO."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Original POT
+        pot_path = os.path.join(tmpdir, "test.pot")
+        with open(pot_path, "w") as f:
+            f.write("""
+msgid "Hello"
+msgstr ""
+
+msgid "World"
+msgstr ""
+
+msgid "New String"
+msgstr ""
+""")
+
+        # PO with translations for original strings only
+        po_path = os.path.join(tmpdir, "test.po")
+        with open(po_path, "w") as f:
+            f.write("""
+msgid "Hello"
+msgstr "Hallo"
+
+msgid "World"
+msgstr "Welt"
+""")
+
+        # Get original stats (2 translated)
+        orig_stats = get_po_stats(po_path)
+        assert orig_stats['translated'] == 2
+        assert orig_stats['untranslated'] == 0
+
+        # Update with new POT containing extra string
+        update_po_files(pot_path, tmpdir)
+
+        # Stats should reflect new untranslated string
+        updated_stats = get_po_stats(po_path)
+        assert updated_stats['total'] == 3
+        assert updated_stats['translated'] == 2  # Preserved
+        assert updated_stats['untranslated'] == 1  # New string

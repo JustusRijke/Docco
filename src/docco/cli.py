@@ -5,7 +5,7 @@ import os
 import sys
 from docco.parser import parse_markdown, process_directives_iteratively, process_markdown_to_html
 from docco.core import parse_frontmatter, setup_logger
-from docco.translation import extract_html_to_pot
+from docco.translation import extract_html_to_pot, update_po_files
 
 logger = setup_logger(__name__)
 
@@ -26,6 +26,10 @@ def extract_pot(input_file, output_dir, allow_python):
 
     extract_html_to_pot(wrapped_html, pot_path)
     logger.info(f"Generated {pot_path}")
+
+    # Auto-update existing PO files in the same directory
+    update_po_files(pot_path, output_dir)
+
     return pot_path
 
 

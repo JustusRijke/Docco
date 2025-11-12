@@ -45,13 +45,17 @@ The `collect_css_content()` function in `pdf.py` separates CSS sources:
 For professional translations using POT/PO files:
 
 1. **Extraction**: `docco extract input.md -o translations/` generates a POT file from final HTML
-2. **Translation**: Translators create language-specific PO files (e.g., `de.po`, `fr.po`) using standard translation tools. msgids contain HTML tags (not markdown); translators must preserve them.
+   - If PO files exist in the output directory, they are automatically updated with new/changed strings
+   - Statistics reported for each language: `Updated de.po: 40 translated, 2 fuzzy, 3 untranslated`
+2. **Translation**: Translators create/update language-specific PO files (e.g., `de.po`, `fr.po`) using standard translation tools. msgids contain HTML tags (not markdown); translators must preserve them.
 3. **Build**: Generate translated PDFs with `docco build input.md --po translations/de.po -o output/`
+   - In multilingual mode, warnings shown for incomplete translations: `WARNING - Translation incomplete for DE: 5 untranslated, 2 fuzzy`
 
 This workflow:
 - Extracts strings from final HTML, enabling translation of dynamic content (TOC numbers, page elements)
 - Applies translations before TOC generation so headings are numbered in target language
 - Integrates with CAT tools supporting HTML
+- Automatically tracks translation completeness and alerts users to untranslated/fuzzy strings
 
 ## Development Commands
 

@@ -362,6 +362,18 @@ myfile/
   └── myfile.pot        (template)
 ```
 
+**Automatic Translation Updates:** If PO files already exist in the output directory, they are automatically updated with new/changed strings:
+
+```
+Extracted to POT: translations/myfile.pot
+Updating de.po with new POT...
+Updated de.po: 40 translated, 2 fuzzy, 5 untranslated
+Updating fr.po with new POT...
+Updated fr.po: 38 translated, 1 fuzzy, 6 untranslated
+```
+
+Translations are preserved; only new strings appear as untranslated and changed strings may be marked for review.
+
 ### Step 2: Create Language-Specific Translations
 
 Translators create `.po` files for each language using professional tools:
@@ -394,19 +406,34 @@ Or manually for specific translations:
 docco myfile.md --po translations/de.po -o output/de/
 ```
 
-### Translation Maintenance
+### Step 4: Monitor Translation Status
 
-When the source document changes:
+When building PDFs with multilingual mode, Docco automatically checks translation completeness:
 
 ```bash
-# Re-extract POT
-docco extract myfile.md -o translations/
-
-# Merge with existing translations (updates only new/changed strings)
-msgmerge -U translations/de.po translations/myfile.pot
+docco myfile.md -o output/
+# Building multilingual PDFs:
+#   EN.pdf ✓
+#   DE.pdf ⚠ (2 fuzzy, 5 untranslated)
+#   FR.pdf ⚠ (1 fuzzy, 6 untranslated)
 ```
 
-This allows translators to focus on new content rather than re-translating the entire document.
+Warnings are logged for incomplete translations so you can track which languages need translator attention.
+
+### Translation Maintenance
+
+When the source document changes, simply run `docco extract` again:
+
+```bash
+docco extract myfile.md -o translations/
+```
+
+Existing PO files are automatically updated with:
+- New strings (appear as untranslated)
+- Changed strings (may be marked for review)
+- Preserved translations (existing translations are kept)
+
+This allows translators to focus only on new/modified content rather than re-translating the entire document.
 
 # Conclusion
 

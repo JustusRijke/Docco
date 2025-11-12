@@ -5,7 +5,7 @@ import re
 import glob
 from docco.core import parse_frontmatter, markdown_to_html, wrap_html, setup_logger
 from docco.inline import process_inlines
-from docco.translation import apply_po_to_html, extract_html_to_pot
+from docco.translation import apply_po_to_html, extract_html_to_pot, get_po_stats
 from docco.toc import process_toc
 from docco.page_layout import process_page_layout
 from docco.pdf import collect_css_content, html_to_pdf
@@ -229,6 +229,14 @@ def _generate_multilingual_pdfs(
     for po_file in po_files:
         lang_code = os.path.splitext(os.path.basename(po_file))[0].upper()
         logger.info(f"Processing language: {lang_code}")
+
+        # Check translation status
+        stats = get_po_stats(po_file)
+        if stats['untranslated'] > 0 or stats['fuzzy'] > 0:
+            logger.warning(
+                f"Translation incomplete for {lang_code}: "
+                f"{stats['untranslated']} untranslated, {stats['fuzzy']} fuzzy"
+            )
 
         # Generate PDF with translation (po_file parameter passed to _generate_single_pdf)
         pdf_path = _generate_single_pdf(
