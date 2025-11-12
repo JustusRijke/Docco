@@ -4,71 +4,89 @@ Guidance for working with this repository.
 
 ## Project Overview
 
-**Docco** is a CLI tool that converts Markdown (with YAML frontmatter) into PDFs. Features:
-- Markdown parsing with YAML frontmatter
-- Inline file embedding with placeholder substitution
+**Docco** is a CLI tool that converts Markdown documents (with YAML frontmatter) into professional PDFs. Key capabilities:
+
+- Markdown parsing with YAML frontmatter configuration
+- Inline file inclusion with placeholder substitution
+- CSS styling with support for external fonts (Google Fonts, etc.)
+- Automatic table of contents with heading numbering
+- Page layout control (breaks, orientation, headers, footers)
 - Professional translation workflows with POT/PO files
-- HTML and PDF generation with CSS styling
-- Table of Contents (TOC) generation with automatic numbering
-- Page layout and formatting options
+- Dynamic content via Python code execution (opt-in)
 
-Target audience: users with basic knowledge of Python, HTML, and CSS.
+Target audience: developers and technical writers familiar with Markdown, HTML, and CSS.
 
-`examples/Feature_Showcase.md` showcases all Docco features.
+`examples/Feature_Showcase.md` demonstrates all features with detailed explanations.
 
 ## Architecture
 
 Processing pipeline:
 
 1. **Frontmatter Parsing** (`frontmatter.py`): Extracts YAML metadata and document body
-2. **Inline Processing** (`inline.py`): Embeds external markdown via `<!-- inline:"path" -->` directives (recursive, max depth 10)
-3. **Directive Processing** (`parser.py`): Iteratively processes inline and python directives
-4. **HTML Conversion** (`html.py`): Converts markdown to HTML with styling
-5. **Translation Application** (`translation.py`): Optionally applies PO file translations to HTML (before TOC/layout)
-6. **TOC Generation** (`toc.py`): Generates table of contents with automatic heading numbering (applied after translation, so headings are numbered in target language)
-7. **Page Layout** (`page_layout.py`): Applies page layout formatting
-8. **PDF Generation** (`pdf.py`): Renders HTML to PDF with CSS support
+2. **Directive Processing** (`parser.py`): Iteratively processes inline and python directives
+3. **Inline Processing** (`inline.py`): Embeds external markdown via `<!-- inline:"path" -->` directives (recursive, max depth 10)
+4. **HTML Conversion** (`core.py`): Converts markdown to HTML; collects CSS from frontmatter (files are embedded in `<style>` tags, external URLs become `<link>` tags)
+5. **Translation Application** (`translation.py`): Optionally applies PO file translations to HTML
+6. **TOC Generation** (`toc.py`): Generates table of contents with automatic heading numbering
+7. **Page Layout** (`page_layout.py`): Applies page layout directives (pagebreak, landscape/portrait)
+8. **PDF Generation** (`pdf.py`): Renders HTML to PDF with CSS support (both embedded and external CSS)
 
 Main entry point: `parse_markdown()` in `parser.py`. CLI orchestration in `cli.py`.
+
+### CSS Handling
+
+The `collect_css_content()` function in `pdf.py` separates CSS sources:
+
+- **File-based CSS**: Relative paths are read and embedded in `<style>` tags in the HTML head
+- **External CSS URLs**: URLs (http:// or https://) are added as `<link>` tags, allowing WeasyPrint to fetch them (enables Google Fonts and other web fonts)
 
 ### Translation Workflow
 
 For professional translations using POT/PO files:
 
-1. **Extraction**: Use `docco extract input.md -o translations/` to generate a POT file from HTML (markdown is first converted to HTML, then POT is extracted from the HTML)
-2. **Translation**: Translators create language-specific PO files (e.g., `de.po`, `fr.po`) using tools like poedit or web-based platforms. **Note**: msgids contain HTML tags (e.g., `"Text with <strong>bold</strong>"`), not markdown syntax. Translators must preserve HTML tags in translations.
-3. **Build**: Generate translated PDFs with `docco input.md --po translations/de.po -o output/`
+1. **Extraction**: `docco extract input.md -o translations/` generates a POT file from final HTML
+2. **Translation**: Translators create language-specific PO files (e.g., `de.po`, `fr.po`) using standard translation tools. msgids contain HTML tags (not markdown); translators must preserve them.
+3. **Build**: Generate translated PDFs with `docco build input.md --po translations/de.po -o output/`
 
 This workflow:
-- Extracts strings from final HTML, enabling translation of dynamically-generated content (TOC numbers, page layout elements)
-- Applies translations before TOC generation, so headings are numbered in the target language
-- Integrates with professional CAT tools and translation management systems that support HTML
-
-**Breaking change**: Existing POT/PO files from the markdown-based workflow (mdpo) are incompatible with the new HTML-based workflow. msgids differ because markdown formatting is converted to HTML tags.
+- Extracts strings from final HTML, enabling translation of dynamic content (TOC numbers, page elements)
+- Applies translations before TOC generation so headings are numbered in target language
+- Integrates with CAT tools supporting HTML
 
 ## Development Commands
 
-### Setup and Running
+### Setup
 
 ```bash
-# Install in development mode
 pip install -e ".[dev]"
+```
 
-# Run CLI
-docco input.md -o output_dir
-docco input.md -o output_dir --css style.css  # With custom CSS
-docco input.md -o output_dir -v               # Verbose logging
-docco input.md -o output_dir --keep-intermediate  # Debug: keep intermediate files
+### Running
 
-# Translation workflow
-docco extract input.md -o translations/       # Extract translatable strings to POT
-docco input.md --po translations/de.po -o output/  # Build PDF with German translation
+```bash
+# Build a single PDF
+docco build input.md -o output_dir
+
+# Verbose output
+docco build input.md -o output_dir -v
+
+# Keep intermediate files (for debugging)
+docco build input.md -o output_dir --keep-intermediate
+
+# Extract translatable strings
+docco extract input.md -o translations/
+
+# Build with translation
+docco build input.md --po translations/de.po -o output/
+
+# Allow Python code execution (security-sensitive)
+docco build input.md --allow-python -o output/
 ```
 
 ### Testing
 
 ```bash
-# Ruff check 
+# Lint
 ruff check .
 
 # Run all tests
@@ -77,31 +95,63 @@ pytest
 # Run specific test file
 pytest tests/test_frontmatter.py
 
-# Run with coverage report
+# Run with coverage
 pytest --cov=src/docco --cov-report=term-missing
 
-# Generate the Feature Showcase PDF
-docco examples/Feature_Showcase.md --allow-python
+# Build example PDFs
+docco build examples/Feature_Showcase.md -o output/ --allow-python
+docco build examples/Multilingual_Document_Example.md -o output/ --allow-python
 ```
 
 ## Dependencies
 
 - **pyyaml**: YAML frontmatter parsing
-- **markdown-it-py**: Markdown parsing for HTML generation
-- **weasyprint**: HTML to PDF conversion with CSS support
-- **translate-toolkit**: HTML to POT/PO file conversion for translations
+- **markdown-it-py**: Markdown to HTML conversion
+- **weasyprint**: HTML to PDF generation
+- **translate-toolkit**: HTML to POT/PO file conversion
 - **pytest**: Testing framework
 - **pytest-cov**: Coverage measurement
+- **ruff**: Code linting
 
 ## Coding Guidelines
 
-- Test-driven development: write tests first, then implementation
-- Minimize code: use KISS & DRY principles, reduce LOC, use libraries when beneficial
-- Sparse comments (complex code only), minimal function/class descriptions
-- Achieve 100% test coverage
-- Short, concise git commits (1-2 lines, no "Generated with Claude" messages)
+- Test-driven development: write tests before implementation
+- Minimize code: KISS & DRY principles
+- Sparse comments (complex logic only); minimal docstrings
+- Target 100% test coverage
+- Short, concise commit messages (1-2 lines)
 - No edge case tests unless critical
-- References: [markdown-it docs](https://markdown-it-py.readthedocs.io/), [weasyprint docs](https://doc.courtbouillon.org/weasyprint/stable/) and [translate-toolkit docs](https://docs.translatehouse.org/projects/translate-toolkit/en/latest/).
-- Any feature change/addition/removal must be kept in sync with the Feature Showcase document.
-- Before committing any code, do a sanity check by running the Docco CLI on all examples and update the regression test baseline pdf files.
- - Prefer fail-fast behavior: avoid over-defensive exception handling, let errors surface.
+- References:
+  - [markdown-it docs](https://markdown-it-py.readthedocs.io/)
+  - [weasyprint docs](https://doc.courtbouillon.org/weasyprint/stable/)
+  - [translate-toolkit docs](https://docs.translatehouse.org/projects/translate-toolkit/en/latest/)
+- **Important**: After any feature change, update `examples/Feature_Showcase.md` and rebuild regression test baselines:
+  ```bash
+  docco build examples/Feature_Showcase.md -o tests/output/ --allow-python
+  docco build examples/Multilingual_Document_Example.md -o tests/output/ --allow-python
+  cp tests/output/*.pdf tests/baselines/
+  ```
+- Prefer fail-fast: avoid over-defensive exception handling
+
+## File Structure
+
+```
+src/docco/
+  cli.py              - CLI argument parsing and commands
+  parser.py           - Main pipeline orchestration
+  frontmatter.py      - YAML frontmatter extraction
+  inline.py           - Directive processing (inline, python)
+  core.py             - Markdown to HTML conversion and wrapping
+  pdf.py              - CSS collection and HTML to PDF rendering
+  toc.py              - Table of contents generation
+  page_layout.py      - Page break and orientation directives
+  translation.py      - PO file application and POT extraction
+  directive_utils.py  - Utility functions for directive processing
+
+examples/
+  Feature_Showcase.md                 - Comprehensive feature demo
+  Multilingual_Document_Example.md    - Translation workflow example
+  css/                                - Stylesheet examples
+  header.html, footer.html            - Page template examples
+  inline/                             - Reusable inline content
+```

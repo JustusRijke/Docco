@@ -1,122 +1,80 @@
 # Docco
 
-**A pure CLI tool for generating professional A4 PDFs from Markdown and CSS.**
+**A CLI tool for generating professional A4 PDFs from Markdown with CSS styling.**
 
-Docco converts Markdown documents into styled PDFs using WeasyPrint. Write your content in Markdown, style it with CSS, and generate beautiful PDFs with automatic table of contents, section numbering, headers, footers, and multilingual support.
+Docco converts Markdown documents into styled PDFs using WeasyPrint. Specify your content in Markdown, configure styling with CSS, and generate beautiful PDFs with automatic table of contents, section numbering, headers, footers, and multilingual support.
 
 ## Features
 
-- **Markdown to PDF**: Convert Markdown content to professional A4 PDFs
-- **External CSS Styling**: Complete layout control via CSS (no embedded styles)
-- **Table of Contents**: Automatically generated with section numbers and `<!-- TOC -->` placement control
-- **Multilingual Support**: Generate language-specific PDFs from a single file
-- **Custom Commands**: Define reusable HTML components via templates
-- **Orientation Control**: Mix portrait and landscape pages
-- **Headers & Footers**: Language-specific templates with variable substitution
-- **Debug HTML**: Intermediate HTML output for browser-based layout debugging
+- **Markdown to PDF**: Convert Markdown to professional A4 PDFs
+- **CSS Styling**: Complete layout control via CSS (including external fonts like Google Fonts)
+- **Table of Contents**: Automatically generated and numbered
+- **Page Layout**: Control page breaks and orientation (portrait/landscape)
+- **Headers & Footers**: Customizable page headers and footers
+- **Multilingual Support**: Generate language-specific PDFs from POT/PO translation files
+- **Dynamic Content**: Inline file inclusion and Python code execution
+- **YAML Frontmatter**: Configure document settings (CSS, multilingual mode, etc.)
 
 ## Installation
 
 ### Linux
 
-**System Dependencies:**
-
 ```bash
-# Debian/Ubuntu
+# Install WeasyPrint (system package)
+# Debian/Ubuntu:
 sudo apt install weasyprint
 
-# Arch
+# Arch:
 sudo pacman -S python-weasyprint
 
-# Fedora
+# Fedora:
 sudo dnf install weasyprint
-```
 
-**Install Docco:**
-
-```bash
-# Clone repository
-git clone <repo-url>
-cd Docco
-
-# Install package
+# Install Docco
 pip install -e .
-
-# Verify installation
-docco version
 ```
 
 ### Windows
 
-**System Dependencies:**
+Download the WeasyPrint executable from [GitHub releases](https://github.com/Kozea/WeasyPrint/releases), extract it, and add to PATH.
 
-1. Download WeasyPrint executable from: https://github.com/Kozea/WeasyPrint/releases
-2. Extract and add to PATH (or place in a directory already in PATH)
-
-**Install Docco:**
-
-```powershell
-# Clone repository
-git clone https://github.com/JustusRijke/Docco
-cd Docco
-
-# Install package
+```bash
+# Install Docco
 pip install -e .
-
-# Verify installation
-docco version
 ```
 
-**Note:** Docco will automatically use the WeasyPrint executable if the Python library is unavailable.
+Docco will automatically use the WeasyPrint executable if the Python library is unavailable.
 
 ## Quick Start
 
 ```bash
-# Generate PDF from examples
-docco build examples/Feature\ Showcase.md examples/style.css
+# Build a PDF
+docco build examples/Feature_Showcase.md -o output/
 
-# Output will be in output/ directory
-# - Feature Showcase.pdf (generated PDF)
-# - debug.html (intermediate HTML for debugging)
+# Extract translatable strings
+docco extract document.md -o translations/
+
+# Build with translation
+docco build document.md --po translations/de.po -o output/
 ```
 
-## Basic Usage
+## Learn by Example
 
-```bash
-# Generate single PDF
-docco build document.md style.css
+See `examples/` for complete working examples:
 
-# Specify output path
-docco build document.md style.css --output report.pdf
+- **Feature_Showcase.md** - Demonstrates all features with detailed explanations
+- **Multilingual_Document_Example.md** - Multilingual document setup
+- **css/** - Stylesheet examples for layout, headers, footers, and typography
 
-# Multilingual documents (generates document_EN.pdf, document_DE.pdf, etc.)
-docco build multilingual.md style.css
-```
-
-## Examples
-
-The `examples/` directory contains complete working examples:
-
-- **Feature Showcase.md** - Demonstrates all features (TOC, numbering, orientation control, images)
-- **Multilingual Example.md** - Shows language filtering and multilingual PDF generation
-- **style.css** - Production-ready stylesheet with A4 layout, headers, footers
-- **inlines/** - Inline directive templates (callout boxes, etc.)
-- **header.html / footer.html** - Header/footer templates with language variants
-
-These examples serve as the primary documentation. Study them to learn:
-- How to structure markdown documents
-- How to position the table of contents (`<!-- TOC -->`)
-- How to insert page breaks (`<!-- pagebreak -->`)
-- How to use inline directives (`<!-- inline: callout -->`)
-- How to control orientation (`<!-- landscape -->`, `<!-- portrait -->`)
-- How to create addendums (`<!-- addendum -->`)
-- How to filter content by language (`<!-- lang:EN -->`)
-- How to style with CSS (@page rules, section numbering, etc.)
+The examples directory includes:
+- CSS files for page styling
+- HTML templates for headers and footers
+- Inline content templates for reusable components
 
 ## Documentation
 
-- **CLAUDE.md** - Complete technical documentation covering architecture, modules, features, and coding guidelines
-- **examples/** - Working examples demonstrating all features
+- **CLAUDE.md** - Complete technical documentation
+- **examples/** - Working examples with inline documentation
 
 ## License
 
