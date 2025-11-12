@@ -60,23 +60,29 @@ def markdown_to_html(markdown_content):
     return html
 
 
-def wrap_html(html_content, css_content=""):
+def wrap_html(html_content, css_content="", external_css=None):
     """
     Wrap HTML content in a complete HTML document.
 
     Args:
         html_content: Raw HTML body content
         css_content: CSS content to embed in <style> tag (optional)
+        external_css: List of external CSS URLs (optional)
 
     Returns:
         str: Complete HTML document
     """
     style_tag = f"<style>\n{css_content}\n</style>\n" if css_content.strip() else ""
 
+    # Generate <link> tags for external CSS URLs
+    external_css = external_css or []
+    link_tags = "\n".join(f'<link rel="stylesheet" href="{url}">' for url in external_css)
+    link_tags = f"{link_tags}\n" if link_tags else ""
+
     wrapped = f"""<!DOCTYPE html>
 <html>
 <head>
-{style_tag}</head>
+{link_tags}{style_tag}</head>
 <body>
 {html_content}
 </body>

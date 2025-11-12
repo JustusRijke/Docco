@@ -4,6 +4,7 @@ css:
   - "css/toc.css"
   - "css/header_footer.css"
   - "css/fancy.css"
+  - "https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&family=Montserrat:wght@700&display=swap"
 ---
 <!-- inline:"header.html" title="Docco Feature Showcase" author="Docco Team" -->
 <!-- inline:"footer.html" -->
@@ -43,8 +44,14 @@ base_language: en
     - "css/page.css"
     - "css/toc.css"
   ```
+- External CSS URLs (e.g., Google Fonts):
+  ```yaml
+  css:
+    - "css/page.css"
+    - "https://fonts.googleapis.com/css?family=Raleway:400,600&display=swap"
+  ```
 
-Paths are relative to the markdown file. CSS is embedded in the generated HTML document within `<style>` tags, making the HTML self-contained and independent.
+File paths are relative to the markdown file and are embedded in the generated HTML document within `<style>` tags. External CSS URLs (starting with `http://` or `https://`) are included as `<link>` tags in the HTML, allowing WeasyPrint to fetch them during PDF generation. This enables use of web fonts like Google Fonts directly in your PDF documents.
 
 **`multilingual`** - Enable multilingual mode (boolean, default: `false`). When set to `true`, Docco automatically extracts translatable strings to a POT file and generates PDFs for the base language plus all discovered translations.
 

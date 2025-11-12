@@ -22,16 +22,22 @@ def collect_css_content(markdown_file, metadata):
     """
     Collect CSS content from frontmatter.
 
-    CSS files from frontmatter are resolved relative to the markdown file directory.
+    Separates file-based CSS from external CSS URLs. File paths are resolved
+    relative to the markdown file directory. External URLs (http:// or https://)
+    are passed separately to WeasyPrint.
 
     Args:
         markdown_file: Path to markdown file
         metadata: Parsed frontmatter metadata dict
 
     Returns:
-        str: Concatenated CSS content (may be empty string)
+        dict: {
+            "inline": str (concatenated CSS content from files),
+            "external": list (CSS URLs like https://fonts.googleapis.com/...)
+        }
     """
     css_content = []
+    external_urls = []
     md_dir = os.path.dirname(os.path.abspath(markdown_file))
 
     # Extract CSS from frontmatter
@@ -41,17 +47,21 @@ def collect_css_content(markdown_file, metadata):
     if isinstance(frontmatter_css, str):
         frontmatter_css = [frontmatter_css]
 
-    # Read CSS file contents
+    # Separate URLs from file paths
     for css_path in frontmatter_css:
-        abs_path = os.path.join(md_dir, css_path)
-        if os.path.exists(abs_path):
-            with open(abs_path, "r", encoding="utf-8") as f:
-                css_content.append(f.read())
-            logger.info(f"Using CSS from frontmatter: {css_path}")
+        if css_path.startswith("http://") or css_path.startswith("https://"):
+            external_urls.append(css_path)
+            logger.info(f"Using external CSS: {css_path}")
         else:
-            logger.warning(f"CSS file not found: {abs_path}")
+            abs_path = os.path.join(md_dir, css_path)
+            if os.path.exists(abs_path):
+                with open(abs_path, "r", encoding="utf-8") as f:
+                    css_content.append(f.read())
+                logger.info(f"Using CSS from frontmatter: {css_path}")
+            else:
+                logger.warning(f"CSS file not found: {abs_path}")
 
-    return "\n".join(css_content)
+    return {"inline": "\n".join(css_content), "external": external_urls}
 
 
 def html_to_pdf(html_content, output_path, base_url=None):
@@ -121,7 +131,9 @@ def _html_to_pdf_with_executable(
         cmd.extend([html_tmp_path, str(output_path)])
 
         # Call weasyprint executable
-        subprocess.run(cmd, check=True, capture_output=True, text=True)
+        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        logger.error(result.stderr)
+
     finally:
         # Clean up temp file
         Path(html_tmp_path).unlink(missing_ok=True)

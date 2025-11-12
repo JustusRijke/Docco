@@ -31,8 +31,9 @@ def test_collect_css_single_frontmatter(tmp_path):
     css_file.write_text(css_content)
 
     metadata = {"css": "style.css"}
-    content = collect_css_content(str(md_file), metadata)
-    assert content == css_content
+    result = collect_css_content(str(md_file), metadata)
+    assert result["inline"] == css_content
+    assert result["external"] == []
 
 
 def test_collect_css_multiple_frontmatter(tmp_path):
@@ -49,25 +50,28 @@ def test_collect_css_multiple_frontmatter(tmp_path):
     css2.write_text(css2_content)
 
     metadata = {"css": ["page.css", "style.css"]}
-    content = collect_css_content(str(md_file), metadata)
-    assert css1_content in content
-    assert css2_content in content
+    result = collect_css_content(str(md_file), metadata)
+    assert css1_content in result["inline"]
+    assert css2_content in result["inline"]
     # Content should be joined with newlines
-    assert content == f"{css1_content}\n{css2_content}"
+    assert result["inline"] == f"{css1_content}\n{css2_content}"
+    assert result["external"] == []
 
 
 def test_collect_css_missing_file(tmp_path, tmp_md):
     """Test that missing CSS files log warning but don't fail."""
     metadata = {"css": "nonexistent.css"}
-    content = collect_css_content(tmp_md, metadata)
-    assert content == ""
+    result = collect_css_content(tmp_md, metadata)
+    assert result["inline"] == ""
+    assert result["external"] == []
 
 
 def test_collect_css_empty_metadata(tmp_md):
     """Test with empty metadata."""
     metadata = {}
-    content = collect_css_content(tmp_md, metadata)
-    assert content == ""
+    result = collect_css_content(tmp_md, metadata)
+    assert result["inline"] == ""
+    assert result["external"] == []
 
 
 def test_html_to_pdf_creates_file(tmp_path):

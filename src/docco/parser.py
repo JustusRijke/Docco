@@ -61,7 +61,7 @@ def process_directives_iteratively(content, base_dir, allow_python):
     return content
 
 
-def process_markdown_to_html(markdown_body, css_content=""):
+def process_markdown_to_html(markdown_body, css_content="", external_css=None):
     """
     Convert markdown to complete HTML document.
 
@@ -69,11 +69,12 @@ def process_markdown_to_html(markdown_body, css_content=""):
     1. Markdown → HTML
     2. Process TOC (generate and number headings)
     3. Process page layout
-    4. Wrap in HTML document with embedded CSS
+    4. Wrap in HTML document with embedded CSS and external CSS links
 
     Args:
         markdown_body: Markdown content
         css_content: CSS content to embed in <style> tag (optional)
+        external_css: List of external CSS URLs (optional)
 
     Returns:
         str: Complete HTML document
@@ -81,7 +82,7 @@ def process_markdown_to_html(markdown_body, css_content=""):
     body_html = markdown_to_html(markdown_body)
     body_html = process_toc(body_html)
     body_html = process_page_layout(body_html)
-    return wrap_html(body_html, css_content=css_content)
+    return wrap_html(body_html, css_content=css_content, external_css=external_css or [])
 
 
 def _generate_single_pdf(
@@ -122,7 +123,7 @@ def _generate_single_pdf(
     pdf_filename = f"{input_basename}{suffix}.pdf"
 
     # Collect CSS content from frontmatter
-    css_content = collect_css_content(input_file, metadata)
+    css_result = collect_css_content(input_file, metadata)
 
     # Write intermediate MD
     md_path = os.path.join(output_dir, md_filename)
@@ -130,8 +131,10 @@ def _generate_single_pdf(
         f.write(body)
     logger.info(f"Wrote intermediate: {md_filename}")
 
-    # Convert markdown to complete HTML with embedded CSS
-    html_wrapped = process_markdown_to_html(body, css_content=css_content)
+    # Convert markdown to complete HTML with embedded CSS and external CSS URLs
+    html_wrapped = process_markdown_to_html(
+        body, css_content=css_result["inline"], external_css=css_result["external"]
+    )
 
     # Apply translation to wrapped HTML
     if po_file:
