@@ -51,13 +51,13 @@ def collect_css_content(markdown_file, metadata):
     for css_path in frontmatter_css:
         if css_path.startswith("http://") or css_path.startswith("https://"):
             external_urls.append(css_path)
-            logger.info(f"Using external CSS: {css_path}")
+            logger.debug(f"Using external CSS: {css_path}")
         else:
             abs_path = os.path.join(md_dir, css_path)
             if os.path.exists(abs_path):
                 with open(abs_path, "r", encoding="utf-8") as f:
                     css_content.append(f.read())
-                logger.info(f"Using CSS from frontmatter: {css_path}")
+                logger.debug(f"Using CSS from frontmatter: {css_path}")
             else:
                 logger.warning(f"CSS file not found: {abs_path}")
 
@@ -79,10 +79,10 @@ def html_to_pdf(html_content, output_path, base_url=None):
         str: Path to generated PDF file
     """
     if USE_EXECUTABLE:  # pragma: no cover
-        logger.info("Using weasyprint executable for PDF generation")
+        logger.debug("Using weasyprint executable for PDF generation")
         _html_to_pdf_with_executable(html_content, output_path, base_url)
     else:
-        logger.info("Using WeasyPrint Python module for PDF generation")
+        logger.debug("Using WeasyPrint Python module for PDF generation")
         html_obj = HTML(string=html_content, base_url=base_url)
         html_obj.write_pdf(output_path)
 

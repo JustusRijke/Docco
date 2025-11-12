@@ -56,7 +56,7 @@ def markdown_to_html(markdown_content):
 
     html = md.render(markdown_content)
     logger = setup_logger(__name__)
-    logger.info("Converted markdown to HTML")
+    logger.debug("Converted markdown to HTML")
     return html
 
 
@@ -76,7 +76,9 @@ def wrap_html(html_content, css_content="", external_css=None):
 
     # Generate <link> tags for external CSS URLs
     external_css = external_css or []
-    link_tags = "\n".join(f'<link rel="stylesheet" href="{url}">' for url in external_css)
+    link_tags = "\n".join(
+        f'<link rel="stylesheet" href="{url}">' for url in external_css
+    )
     link_tags = f"{link_tags}\n" if link_tags else ""
 
     wrapped = f"""<!DOCTYPE html>

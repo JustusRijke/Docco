@@ -21,15 +21,8 @@ def get_file_checksum(filepath):
 @pytest.fixture
 def translation_files():
     """Path to translation files in examples directory."""
-    examples_dir = os.path.join(
-        os.path.dirname(__file__),
-        "..",
-        "examples"
-    )
-    output_dir = os.path.join(
-        os.path.dirname(__file__),
-        "output"
-    )
+    examples_dir = os.path.join(os.path.dirname(__file__), "..", "examples")
+    output_dir = os.path.join(os.path.dirname(__file__), "output")
     os.makedirs(output_dir, exist_ok=True)
     return {
         "source": os.path.join(examples_dir, "Multilingual_Document_Example.md"),
@@ -42,10 +35,7 @@ def translation_files():
 @pytest.fixture
 def baselines_dir():
     """Path to baseline PDFs directory."""
-    return os.path.join(
-        os.path.dirname(__file__),
-        "baselines"
-    )
+    return os.path.join(os.path.dirname(__file__), "baselines")
 
 
 def test_extract_pot_file_from_html(translation_files):
@@ -90,19 +80,22 @@ def test_translation_workflow_all_languages(translation_files, baselines_dir):
             translation_files["source"],
             tmpdir,
             allow_python=True,
-            keep_intermediate=False
+            keep_intermediate=False,
         )
 
         # Should generate 3 PDFs (en base language + de and nl from available .po files)
-        assert len(output_files) == 3, f"Expected 3 PDFs for multilingual mode, got {len(output_files)}"
+        assert len(output_files) == 3, (
+            f"Expected 3 PDFs for multilingual mode, got {len(output_files)}"
+        )
 
         # Verify each PDF was created with uppercase language codes
         # Output order: base language first (EN), then .po files in sorted order (DE, NL)
         expected_langs = ["EN", "DE", "NL"]
         for pdf_file, lang_code in zip(output_files, expected_langs):
             assert os.path.exists(pdf_file), f"PDF not created for language {lang_code}"
-            assert pdf_file.endswith(f"_{lang_code}.pdf"), \
+            assert pdf_file.endswith(f"_{lang_code}.pdf"), (
                 f"PDF filename should have language suffix: {pdf_file}"
+            )
 
 
 def test_single_language_mode_with_po_file():
@@ -139,10 +132,7 @@ msgstr "Hola mundo"
 
         # Generate PDF with po_file parameter
         output_files = parse_markdown(
-            md_path,
-            output_dir,
-            po_file=po_path,
-            allow_python=False
+            md_path, output_dir, po_file=po_path, allow_python=False
         )
 
         # Should generate 1 PDF with no language suffix
@@ -172,11 +162,7 @@ Hello world"""
 
         # Should raise ValueError because base_language is missing
         with pytest.raises(ValueError) as exc_info:
-            parse_markdown(
-                md_path,
-                output_dir,
-                allow_python=False
-            )
+            parse_markdown(md_path, output_dir, allow_python=False)
 
         assert "base_language" in str(exc_info.value)
 
@@ -201,11 +187,7 @@ Hello world"""
         os.makedirs(output_dir)
 
         # Should generate PDF for base language even without translations
-        output_files = parse_markdown(
-            md_path,
-            output_dir,
-            allow_python=False
-        )
+        output_files = parse_markdown(md_path, output_dir, allow_python=False)
 
         # Should have 1 PDF for base language
         assert len(output_files) == 1

@@ -22,7 +22,7 @@ def extract_html_to_pot(html_content, output_path):
     Returns:
         str: Path to generated POT file
     """
-    logger.info(f"Extracting translatable strings from HTML to {output_path}")
+    logger.debug(f"Extracting translatable strings from HTML to {output_path}")
 
     # Create temporary HTML file for translate-toolkit
     with tempfile.NamedTemporaryFile(
@@ -39,7 +39,7 @@ def extract_html_to_pot(html_content, output_path):
         ):
             html2po.converthtml(html_file, pot_file, None, pot=True)
 
-        logger.info(f"Extracted to POT: {output_path}")
+        logger.debug(f"Extracted to POT: {output_path}")
         return output_path
     finally:
         # Clean up temporary file
@@ -57,7 +57,7 @@ def apply_po_to_html(html_content, po_path):
     Returns:
         str: HTML content with translations applied
     """
-    logger.info(f"Applying translations from {po_path}")
+    logger.debug(f"Applying translations from {po_path}")
 
     if not os.path.exists(po_path):
         raise FileNotFoundError(f"PO file not found: {po_path}")
@@ -87,7 +87,7 @@ def apply_po_to_html(html_content, po_path):
         with open(out_tmp_path, "r", encoding="utf-8") as f:
             translated_html = f.read()
 
-        logger.info(f"Applied translations from {po_path}")
+        logger.debug(f"Applied translations from {po_path}")
         return translated_html
     finally:
         # Clean up temporary files
@@ -125,6 +125,26 @@ def get_po_stats(po_path):
     }
 
 
+def check_po_sync(pot_path, po_path):
+    """
+    Check if PO file msgids match current POT.
+
+    Args:
+        pot_path: Path to POT template file
+        po_path: Path to PO translation file
+
+    Returns:
+        bool: True if in sync, False if out of sync
+    """
+    pot_store = po.pofile.parsefile(pot_path)
+    po_store = po.pofile.parsefile(po_path)
+
+    pot_msgids = {u.source for u in pot_store.units if u.istranslatable()}
+    po_msgids = {u.source for u in po_store.units if u.istranslatable()}
+
+    return pot_msgids == po_msgids
+
+
 def update_po_files(pot_path, translations_dir):
     """
     Update existing PO files with new/changed strings from POT file.
@@ -139,12 +159,12 @@ def update_po_files(pot_path, translations_dir):
     po_files = sorted(glob.glob(os.path.join(translations_dir, "*.po")))
 
     if not po_files:
-        logger.info("No existing PO files to update")
+        logger.debug("No existing PO files to update")
         return
 
     for po_file in po_files:
         lang = os.path.basename(po_file)
-        logger.info(f"Updating {lang} with new POT...")
+        logger.debug(f"Updating {lang} with new POT...")
 
         # Create temporary file for merged PO
         temp_po = f"{po_file}.new"
@@ -170,7 +190,7 @@ def update_po_files(pot_path, translations_dir):
 
             # Report statistics
             stats = get_po_stats(po_file)
-            logger.info(
+            logger.debug(
                 f"Updated {lang}: {stats['translated']} translated, "
                 f"{stats['fuzzy']} fuzzy, {stats['untranslated']} untranslated"
             )

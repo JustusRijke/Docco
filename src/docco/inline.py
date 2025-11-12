@@ -5,7 +5,11 @@ import re
 import io
 import sys
 from docco.core import setup_logger
-from docco.directive_utils import build_md_directive_pattern, extract_code_blocks, restore_code_blocks
+from docco.directive_utils import (
+    build_md_directive_pattern,
+    extract_code_blocks,
+    restore_code_blocks,
+)
 
 logger = setup_logger(__name__)
 
@@ -35,7 +39,9 @@ def process_inlines(content, base_dir=".", allow_python=False):
     # Pattern to match inline directives
     pattern = build_md_directive_pattern(r'inline\s*:\s*"([^"]+)"(.*?)-->')
     # Pattern to match python directives
-    python_pattern = build_md_directive_pattern(r'python\s*-->(.*?)<!--\s*/python\s*-->')
+    python_pattern = build_md_directive_pattern(
+        r"python\s*-->(.*?)<!--\s*/python\s*-->"
+    )
 
     def replace_inline(match):
         filepath = match.group(1)
@@ -52,7 +58,7 @@ def process_inlines(content, base_dir=".", allow_python=False):
         with open(full_path, "r") as f:
             file_content = f.read()
 
-        logger.info(f"Inlining: {filepath}")
+        logger.debug(f"Inlining: {filepath}")
 
         # Parse arguments from the directive
         args = parse_inline_args(args_str)
@@ -66,7 +72,7 @@ def process_inlines(content, base_dir=".", allow_python=False):
 
     def replace_python(match):
         code = match.group(1)
-        logger.info(f"Executing python code: {repr(code[:100])}")
+        logger.debug(f"Executing python code: {repr(code[:100])}")
 
         # Capture stdout
         old_stdout = sys.stdout
@@ -84,12 +90,16 @@ def process_inlines(content, base_dir=".", allow_python=False):
         return output
 
     # Check if python directives exist when not allowed
-    if not allow_python and re.search(python_pattern, protected_content, flags=re.DOTALL):
+    if not allow_python and re.search(
+        python_pattern, protected_content, flags=re.DOTALL
+    ):
         raise ValueError("Python code execution not allowed. Use --allow-python flag.")
 
     # Process python directives
     if allow_python:
-        result = re.sub(python_pattern, replace_python, protected_content, flags=re.DOTALL)
+        result = re.sub(
+            python_pattern, replace_python, protected_content, flags=re.DOTALL
+        )
     else:
         result = protected_content
 

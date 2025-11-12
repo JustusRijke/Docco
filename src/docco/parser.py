@@ -5,7 +5,12 @@ import re
 import glob
 from docco.core import parse_frontmatter, markdown_to_html, wrap_html, setup_logger
 from docco.inline import process_inlines
-from docco.translation import apply_po_to_html, extract_html_to_pot, get_po_stats
+from docco.translation import (
+    apply_po_to_html,
+    extract_html_to_pot,
+    get_po_stats,
+    check_po_sync,
+)
 from docco.toc import process_toc
 from docco.page_layout import process_page_layout
 from docco.pdf import collect_css_content, html_to_pdf
@@ -47,7 +52,7 @@ def process_directives_iteratively(content, base_dir, allow_python):
     iteration = 0
     while has_directives(content) and iteration < MAX_ITERATIONS:
         iteration += 1
-        logger.info(f"Directive processing iteration {iteration}")
+        logger.debug(f"Directive processing iteration {iteration}")
 
         # Inline expansion (which also handles Python)
         content = process_inlines(content, base_dir, allow_python)
@@ -57,7 +62,7 @@ def process_directives_iteratively(content, base_dir, allow_python):
             f"Max iterations ({MAX_ITERATIONS}) exceeded in directive processing"
         )
 
-    logger.info(f"Directive processing completed in {iteration} iteration(s)")
+    logger.debug(f"Directive processing completed in {iteration} iteration(s)")
     return content
 
 
@@ -82,7 +87,9 @@ def process_markdown_to_html(markdown_body, css_content="", external_css=None):
     body_html = markdown_to_html(markdown_body)
     body_html = process_toc(body_html)
     body_html = process_page_layout(body_html)
-    return wrap_html(body_html, css_content=css_content, external_css=external_css or [])
+    return wrap_html(
+        body_html, css_content=css_content, external_css=external_css or []
+    )
 
 
 def _generate_single_pdf(
@@ -129,7 +136,7 @@ def _generate_single_pdf(
     md_path = os.path.join(output_dir, md_filename)
     with open(md_path, "w") as f:
         f.write(body)
-    logger.info(f"Wrote intermediate: {md_filename}")
+    logger.debug(f"Wrote intermediate: {md_filename}")
 
     # Convert markdown to complete HTML with embedded CSS and external CSS URLs
     html_wrapped = process_markdown_to_html(
@@ -138,13 +145,13 @@ def _generate_single_pdf(
 
     # Apply translation to wrapped HTML
     if po_file:
-        logger.info(f"Applying translations from {po_file}")
+        logger.debug(f"Applying translations from {po_file}")
         html_wrapped = apply_po_to_html(html_wrapped, po_file)
 
     html_path = os.path.join(output_dir, html_filename)
     with open(html_path, "w") as f:
         f.write(html_wrapped)
-    logger.info(f"Wrote HTML: {html_filename}")
+    logger.debug(f"Wrote HTML: {html_filename}")
 
     # Convert to PDF
     pdf_path = os.path.join(output_dir, pdf_filename)
@@ -154,10 +161,8 @@ def _generate_single_pdf(
     if not keep_intermediate:
         if os.path.exists(md_path):
             os.remove(md_path)
-            logger.info(f"Removed intermediate: {os.path.basename(md_path)}")
         if os.path.exists(html_path):
             os.remove(html_path)
-            logger.info(f"Removed intermediate: {os.path.basename(html_path)}")
 
     return pdf_path
 
@@ -204,7 +209,7 @@ def _generate_multilingual_pdfs(
     # Step 2: Extract POT file from wrapped HTML to translations subfolder
     pot_path = os.path.join(translations_dir, f"{input_basename}.pot")
     extract_html_to_pot(wrapped_html, pot_path)
-    logger.info(f"Extracted POT for multilingual: {pot_path}")
+    logger.debug(f"Extracted POT for multilingual: {pot_path}")
 
     pdf_paths = []
 
@@ -230,9 +235,16 @@ def _generate_multilingual_pdfs(
         lang_code = os.path.splitext(os.path.basename(po_file))[0].upper()
         logger.info(f"Processing language: {lang_code}")
 
+        # Check if PO file is in sync with current POT
+        if not check_po_sync(pot_path, po_file):
+            logger.warning(
+                f"PO file out of sync for {lang_code}: "
+                f"document has changed. Run: docco extract to update translations"
+            )
+
         # Check translation status
         stats = get_po_stats(po_file)
-        if stats['untranslated'] > 0 or stats['fuzzy'] > 0:
+        if stats["untranslated"] > 0 or stats["fuzzy"] > 0:
             logger.warning(
                 f"Translation incomplete for {lang_code}: "
                 f"{stats['untranslated']} untranslated, {stats['fuzzy']} fuzzy"
@@ -296,7 +308,7 @@ def parse_markdown(
 
     # Step 1: Parse frontmatter
     metadata, body = parse_frontmatter(content)
-    logger.info(f"Parsed frontmatter: {metadata}")
+    logger.debug(f"Parsed frontmatter: {metadata}")
 
     # Determine base directory for inline resolution
     base_dir = os.path.dirname(os.path.abspath(input_file))

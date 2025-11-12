@@ -26,10 +26,10 @@ def process_page_layout(html_content):
     """
     # Replace pagebreak directives with div (only at line start, allowing leading whitespace)
     html_content = re.sub(
-        build_html_directive_pattern(r'pagebreak\s*-->'),
+        build_html_directive_pattern(r"pagebreak\s*-->"),
         '<div class="pagebreak"></div>',
         html_content,
-        flags=re.MULTILINE
+        flags=re.MULTILINE,
     )
 
     # Split content by orientation directives
@@ -39,12 +39,12 @@ def process_page_layout(html_content):
     current_orientation = "portrait"
 
     # Find all orientation directives (only at line start, allowing leading whitespace)
-    orientation_pattern = build_html_directive_pattern(r'(landscape|portrait)\s*-->')
+    orientation_pattern = build_html_directive_pattern(r"(landscape|portrait)\s*-->")
 
     for match in re.finditer(orientation_pattern, html_content, flags=re.MULTILINE):
         # Save content before this directive
         if match.start() > current_pos:
-            section_content = html_content[current_pos:match.start()].strip()
+            section_content = html_content[current_pos : match.start()].strip()
             if section_content:
                 sections.append((current_orientation, section_content))
 
@@ -64,10 +64,15 @@ def process_page_layout(html_content):
         wrapped = f'<div class="section-wrapper {orientation}">\n{content}\n</div>'
         wrapped_sections.append(wrapped)
 
-    result = '\n'.join(wrapped_sections)
+    result = "\n".join(wrapped_sections)
 
     # Remove remaining orientation directives (shouldn't be any left)
-    result = re.sub(build_html_directive_pattern(r'(landscape|portrait)\s*-->'), '', result, flags=re.MULTILINE)
+    result = re.sub(
+        build_html_directive_pattern(r"(landscape|portrait)\s*-->"),
+        "",
+        result,
+        flags=re.MULTILINE,
+    )
 
-    logger.info("Processed page layout directives")
+    logger.debug("Processed page layout directives")
     return result

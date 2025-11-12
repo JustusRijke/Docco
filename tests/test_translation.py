@@ -3,7 +3,13 @@
 import os
 import tempfile
 import pytest
-from docco.translation import extract_html_to_pot, apply_po_to_html, get_po_stats, update_po_files
+from docco.translation import (
+    extract_html_to_pot,
+    apply_po_to_html,
+    get_po_stats,
+    update_po_files,
+    check_po_sync,
+)
 from docco.core import markdown_to_html
 
 
@@ -228,21 +234,20 @@ msgstr ""
         assert stats['untranslated'] == 0
 
 
-def test_update_po_files_no_existing_po(caplog):
-    """Test update_po_files with no existing PO files."""
+def test_update_po_files_no_existing_po():
+    """Test update_po_files with no existing PO files (should not crash)."""
     with tempfile.TemporaryDirectory() as tmpdir:
         pot_path = os.path.join(tmpdir, "test.pot")
         with open(pot_path, "w") as f:
-            f.write("""
+            f.write(
+                """
 msgid "Hello"
 msgstr ""
-""")
+"""
+            )
 
-        # Call update_po_files with empty directory
+        # Call update_po_files with empty directory - should not raise an error
         update_po_files(pot_path, tmpdir)
-
-        # Should log that no files were found
-        assert "No existing PO files to update" in caplog.text
 
 
 def test_update_po_files_preserves_translations():
@@ -324,3 +329,139 @@ msgstr "Welt"
         assert updated_stats['total'] == 3
         assert updated_stats['translated'] == 2  # Preserved
         assert updated_stats['untranslated'] == 1  # New string
+
+
+def test_check_po_sync_in_sync():
+    """Test check_po_sync returns True when POT and PO match."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        pot_path = os.path.join(tmpdir, "test.pot")
+        po_path = os.path.join(tmpdir, "test.po")
+
+        # Create POT
+        with open(pot_path, "w") as f:
+            f.write(
+                """
+msgid "Hello"
+msgstr ""
+
+msgid "World"
+msgstr ""
+"""
+            )
+
+        # Create PO with same strings
+        with open(po_path, "w") as f:
+            f.write(
+                """
+msgid "Hello"
+msgstr "Hallo"
+
+msgid "World"
+msgstr "Welt"
+"""
+            )
+
+        # Should be in sync
+        assert check_po_sync(pot_path, po_path) is True
+
+
+def test_check_po_sync_out_of_sync_new_string():
+    """Test check_po_sync returns False when POT has new string."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        pot_path = os.path.join(tmpdir, "test.pot")
+        po_path = os.path.join(tmpdir, "test.po")
+
+        # Create POT with 3 strings
+        with open(pot_path, "w") as f:
+            f.write(
+                """
+msgid "Hello"
+msgstr ""
+
+msgid "World"
+msgstr ""
+
+msgid "New"
+msgstr ""
+"""
+            )
+
+        # Create PO with only 2 strings
+        with open(po_path, "w") as f:
+            f.write(
+                """
+msgid "Hello"
+msgstr "Hallo"
+
+msgid "World"
+msgstr "Welt"
+"""
+            )
+
+        # Should be out of sync
+        assert check_po_sync(pot_path, po_path) is False
+
+
+def test_check_po_sync_out_of_sync_removed_string():
+    """Test check_po_sync returns False when string is removed from POT."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        pot_path = os.path.join(tmpdir, "test.pot")
+        po_path = os.path.join(tmpdir, "test.po")
+
+        # Create POT with 1 string
+        with open(pot_path, "w") as f:
+            f.write(
+                """
+msgid "Hello"
+msgstr ""
+"""
+            )
+
+        # Create PO with 2 strings
+        with open(po_path, "w") as f:
+            f.write(
+                """
+msgid "Hello"
+msgstr "Hallo"
+
+msgid "Removed"
+msgstr "Entfernt"
+"""
+            )
+
+        # Should be out of sync
+        assert check_po_sync(pot_path, po_path) is False
+
+
+def test_check_po_sync_out_of_sync_changed_string():
+    """Test check_po_sync returns False when string content changes."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        pot_path = os.path.join(tmpdir, "test.pot")
+        po_path = os.path.join(tmpdir, "test.po")
+
+        # Create POT with modified string
+        with open(pot_path, "w") as f:
+            f.write(
+                """
+msgid "Hello World"
+msgstr ""
+
+msgid "Test"
+msgstr ""
+"""
+            )
+
+        # Create PO with original string (before change)
+        with open(po_path, "w") as f:
+            f.write(
+                """
+msgid "Hello"
+msgstr "Hallo"
+
+msgid "Test"
+msgstr "Prüfung"
+"""
+            )
+
+        # Should be out of sync (different strings)
+        assert check_po_sync(pot_path, po_path) is False
