@@ -4,8 +4,8 @@ import argparse
 import os
 import sys
 import logging
-import colorlog
 from docco.parser import parse_markdown
+from docco.logging_config import setup_logging
 
 logger = logging.getLogger(__name__)
 
@@ -43,24 +43,8 @@ def main():
 
     args = parser.parse_args()
 
-    # Set up colorized logging
-    log_level = logging.DEBUG if args.verbose else logging.INFO
-    handler = colorlog.StreamHandler()
-    handler.setFormatter(
-        colorlog.ColoredFormatter(
-            "%(log_color)s%(levelname)-8s%(reset)s %(message)s",
-            log_colors={
-                "DEBUG": "cyan",
-                "INFO": "green",
-                "WARNING": "yellow",
-                "ERROR": "red",
-                "CRITICAL": "red,bg_white",
-            },
-        )
-    )
-    root_logger = logging.getLogger()
-    root_logger.addHandler(handler)
-    root_logger.setLevel(log_level)
+    # Set up logging and get counter
+    counter = setup_logging(verbose=args.verbose)
 
     try:
         input_file = args.input_file
@@ -81,9 +65,21 @@ def main():
             po_file=args.po,
         )
 
-        logger.info(f"Generated {len(output_files)} output file(s)")
         for output_file in output_files:
             print(output_file)
+
+        # Print summary
+        if counter.error_count > 0 or counter.warning_count > 0:
+            parts = []
+            if counter.error_count > 0:
+                parts.append(f"{counter.error_count} error(s)")
+            if counter.warning_count > 0:
+                parts.append(f"{counter.warning_count} warning(s)")
+            logger.warning(f"Completed with {', '.join(parts)}")
+        else:
+            logger.info(
+                f"Successfully generated {len(output_files)} output file(s)"
+            )
     except Exception as e:
         logger.error(f"Error: {e}", exc_info=True)
         sys.exit(1)
