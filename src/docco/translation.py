@@ -4,11 +4,35 @@ import os
 import glob
 import subprocess
 import logging
+import polib
 from translate.convert import html2po, po2html
 from translate.storage import po
 from docco.core import html_temp_file
 
 logger = logging.getLogger(__name__)
+
+
+def clean_po_file(po_path):
+    """
+    Remove bloat from PO/POT file for VCS-friendly format.
+
+    Removes unnecessary metadata, location references, and sorts entries.
+
+    Args:
+        po_path: Path to PO or POT file to clean
+    """
+    po_file = polib.pofile(po_path)
+
+    # Clear all metadata and keep only essential
+    po_file.metadata = {}
+    po_file.metadata["Content-Type"] = "text/plain; charset=UTF-8"
+
+    # Remove location references and sort entries
+    for entry in po_file:
+        entry.occurrences = []
+
+    po_file.sort()
+    po_file.save(po_path)
 
 
 def extract_html_to_pot(html_content, output_path):
@@ -32,6 +56,9 @@ def extract_html_to_pot(html_content, output_path):
             open(output_path, "wb") as pot_file,
         ):
             html2po.converthtml(html_file, pot_file, None, pot=True)
+
+        # Clean bloat from POT file for VCS
+        clean_po_file(output_path)
 
         logger.debug(f"Extracted to POT: {output_path}")
         return output_path
@@ -164,6 +191,9 @@ def update_po_files(pot_path, translations_dir):
 
             # Replace old PO with merged version
             os.replace(temp_po, po_file)
+
+            # Clean bloat from PO file for VCS
+            clean_po_file(po_file)
 
             # Report statistics
             stats = get_po_stats(po_file)
