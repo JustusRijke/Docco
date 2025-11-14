@@ -147,10 +147,7 @@ def _build_toc_html(headings):
             current_level = _open_lists_down_to(toc_lines, current_level, level)
 
         # Wrap number in span for independent CSS styling
-        if number:
-            toc_lines.append(f'<li><a href="#{heading_id}"><span class="toc-number">{number}</span>{display_text}</a>')
-        else:
-            toc_lines.append(f'<li><a href="#{heading_id}">{display_text}</a>')
+        toc_lines.append(f'<li><a href="#{heading_id}"><span class="toc-number">{number}</span>{display_text}</a>')
         li_open = True
 
     # Close remaining open items
