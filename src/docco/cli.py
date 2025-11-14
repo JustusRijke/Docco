@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 def extract_pot(input_file, output_dir, allow_python):
     """Extract translatable strings from markdown to POT file."""
-    with open(input_file, "r") as f:
+    with open(input_file, "r", encoding="utf-8") as f:
         content = f.read()
 
     metadata, body, base_dir = preprocess_document(content, input_file, allow_python)

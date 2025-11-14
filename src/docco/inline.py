@@ -121,7 +121,7 @@ def process_inlines(content, base_dir=".", allow_python=False):
             raise FileNotFoundError(f"Inline file not found: {filepath}")
 
         # Read file content
-        with open(full_path, "r") as f:
+        with open(full_path, "r", encoding="utf-8") as f:
             file_content = f.read()
 
         logger.debug(f"Inlining: {filepath}")

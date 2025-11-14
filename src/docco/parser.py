@@ -152,7 +152,7 @@ def _generate_single_pdf(
 
     # Write intermediate MD
     md_path = os.path.join(output_dir, md_filename)
-    with open(md_path, "w") as f:
+    with open(md_path, "w", encoding="utf-8") as f:
         f.write(body)
     logger.debug(f"Wrote intermediate: {md_filename}")
 
@@ -167,7 +167,7 @@ def _generate_single_pdf(
         html_wrapped = apply_po_to_html(html_wrapped, po_file)
 
     html_path = os.path.join(output_dir, html_filename)
-    with open(html_path, "w") as f:
+    with open(html_path, "w", encoding="utf-8") as f:
         f.write(html_wrapped)
     logger.debug(f"Wrote HTML: {html_filename}")
 
@@ -321,7 +321,7 @@ def parse_markdown(
     logger.info(f"Processing markdown: {input_file}")
 
     # Read file
-    with open(input_file, "r") as f:
+    with open(input_file, "r", encoding="utf-8") as f:
         content = f.read()
 
     # Step 1 & 2: Preprocess document (parse frontmatter and process directives)

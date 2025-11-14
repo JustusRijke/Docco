@@ -82,7 +82,7 @@ def html_to_pdf(html_content, output_path, base_url=None):
         _html_to_pdf_with_executable(html_content, output_path, base_url)
     else:
         logger.debug("Using WeasyPrint Python module for PDF generation")
-        html_obj = HTML(string=html_content, base_url=base_url)
+        html_obj = HTML(string=html_content, base_url=base_url, encoding="utf-8")
         html_obj.write_pdf(output_path)
 
     logger.info(f"Generated PDF: {output_path}")
@@ -125,4 +125,5 @@ def _html_to_pdf_with_executable(
 
         # Call weasyprint executable
         result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-        logger.error(result.stderr)
+        if result.stderr:
+            logger.error(result.stderr)
