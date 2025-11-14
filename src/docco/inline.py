@@ -28,19 +28,21 @@ def extract_code_blocks(content):
         original = match.group(0)
         # Store the code block content (strip the captured newlines from match)
         # We'll preserve them in the replacement
-        has_leading_newline = original.startswith('\n')
-        has_trailing_newline = original.endswith('\n')
+        has_leading_newline = original.startswith("\n")
+        has_trailing_newline = original.endswith("\n")
 
         placeholder = f"___FENCED_CODE_BLOCK_{counter[0]}___"
-        code_blocks[placeholder] = original.strip('\n')  # Store without the captured newlines
+        code_blocks[placeholder] = original.strip(
+            "\n"
+        )  # Store without the captured newlines
         counter[0] += 1
 
         # Preserve the structural newlines in the replacement
         result = placeholder
         if has_leading_newline:
-            result = '\n' + result
+            result = "\n" + result
         if has_trailing_newline:
-            result = result + '\n'
+            result = result + "\n"
         return result
 
     def replace_inline(match):
@@ -52,15 +54,26 @@ def extract_code_blocks(content):
     # First protect fenced code blocks (```...```)
     # Must start on a new line and end on a new line
     # Use DOTALL to match across newlines
-    temp_content = re.sub(r'(?:^|\n)```.*?```(?:\n|$)', replace_fenced, content, flags=re.DOTALL | re.MULTILINE)
+    temp_content = re.sub(
+        r"(?:^|\n)```.*?```(?:\n|$)",
+        replace_fenced,
+        content,
+        flags=re.DOTALL | re.MULTILINE,
+    )
 
     # Then protect inline code
     # Markdown inline code: n backticks open, content (can contain < n backticks), n backticks close
     # Match 1, 2, 3, or 4+ backticks (handle common cases explicitly for correctness)
-    temp_content = re.sub(r'````[^`]*````', replace_inline, temp_content)  # 4 backticks
-    temp_content = re.sub(r'```(?!`).*?```(?!`)', replace_inline, temp_content)  # 3 backticks (not 4)
-    temp_content = re.sub(r'``(?!`).*?``(?!`)', replace_inline, temp_content)  # 2 backticks (not 3)
-    temp_content = re.sub(r'`(?!`).*?`(?!`)', replace_inline, temp_content)  # 1 backtick (not 2)
+    temp_content = re.sub(r"````[^`]*````", replace_inline, temp_content)  # 4 backticks
+    temp_content = re.sub(
+        r"```(?!`).*?```(?!`)", replace_inline, temp_content
+    )  # 3 backticks (not 4)
+    temp_content = re.sub(
+        r"``(?!`).*?``(?!`)", replace_inline, temp_content
+    )  # 2 backticks (not 3)
+    temp_content = re.sub(
+        r"`(?!`).*?`(?!`)", replace_inline, temp_content
+    )  # 1 backtick (not 2)
 
     return temp_content, code_blocks
 
@@ -107,7 +120,7 @@ def process_inlines(content, base_dir=".", allow_python=False):
     # Pattern to match inline directives
     pattern = r'<!--\s*inline\s*:\s*"([^"]+)"(.*?)-->'
     # Pattern to match python directives
-    python_pattern = r'<!--\s*python\s*-->(.*?)<!--\s*/python\s*-->'
+    python_pattern = r"<!--\s*python\s*-->(.*?)<!--\s*/python\s*-->"
 
     def replace_inline(match):
         filepath = match.group(1)
@@ -153,7 +166,7 @@ def process_inlines(content, base_dir=".", allow_python=False):
         finally:
             sys.stdout = old_stdout
 
-        return output
+        return output.strip()
 
     # Check if python directives exist when not allowed
     if not allow_python and re.search(
