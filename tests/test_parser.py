@@ -255,3 +255,87 @@ css: style.css
         if width_300 and width_no_dpi:
             assert width_300 < width_no_dpi
             assert height_300 < height_no_dpi
+
+
+@pytest.mark.skipif(not PYMUPDF_AVAILABLE, reason="PyMuPDF not available")
+def test_dpi_validation_warns_on_low_dpi_images(caplog):
+    """Test that low DPI images trigger warnings when DPI is set."""
+    try:
+        from PIL import Image
+    except ImportError:
+        pytest.skip("PIL/Pillow not available")
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Create a small low-resolution image
+        img = Image.new('RGB', (100, 100), color='blue')
+        img_path = os.path.join(tmpdir, "lowres.png")
+        img.save(img_path)
+
+        # Create markdown with DPI setting
+        input_file = os.path.join(tmpdir, "test.md")
+        with open(input_file, "w", encoding="utf-8") as f:
+            f.write("""---
+dpi: 300
+---
+
+# Test
+
+![Low res](lowres.png)
+""")
+
+        # Generate PDF
+        outputs = parse_markdown(input_file, tmpdir)
+        assert len(outputs) == 1
+
+        # Should have warned about low DPI
+        assert "below 300 DPI" in caplog.text
+
+
+@pytest.mark.skipif(not PYMUPDF_AVAILABLE, reason="PyMuPDF not available")
+def test_dpi_validation_multilingual_base_only(caplog):
+    """Test that DPI validation only runs for base language in multilingual mode."""
+    try:
+        from PIL import Image
+    except ImportError:
+        pytest.skip("PIL/Pillow not available")
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Create a small low-resolution image
+        img = Image.new('RGB', (100, 100), color='green')
+        img_path = os.path.join(tmpdir, "lowres.png")
+        img.save(img_path)
+
+        # Create markdown with multilingual and DPI
+        input_file = os.path.join(tmpdir, "test.md")
+        with open(input_file, "w", encoding="utf-8") as f:
+            f.write("""---
+multilingual: true
+base_language: en
+dpi: 300
+---
+
+# Test Document
+
+![Low res](lowres.png)
+""")
+
+        # Create translations directory with a DE translation
+        translations_dir = os.path.join(tmpdir, "test")
+        os.makedirs(translations_dir, exist_ok=True)
+
+        de_po = os.path.join(translations_dir, "de.po")
+        with open(de_po, "w", encoding="utf-8") as f:
+            f.write("""# German translations
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\\n"
+""")
+
+        # Generate PDFs (EN and DE)
+        outputs = parse_markdown(input_file, tmpdir)
+        assert len(outputs) == 2  # EN and DE
+
+        # Should only warn once (for base language EN)
+        # Count occurrences of the warning
+        warning_count = caplog.text.count("below 300 DPI")
+        assert warning_count == 1  # Only base language validated

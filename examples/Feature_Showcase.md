@@ -78,6 +78,8 @@ img {
 }
 ```
 
+**Automatic Validation:** When you specify a `dpi` value, Docco automatically validates the generated PDF and warns if any images fall below the specified DPI threshold. This helps ensure your PDFs meet quality requirements before printing. For multilingual documents, only the base language PDF is validated.
+
 This setting applies to all raster images (PNG, JPEG, etc.) embedded in the document. It does not affect vector graphics (SVG). If images are already at or below the specified DPI, they remain unchanged.
 
 # Core Concepts

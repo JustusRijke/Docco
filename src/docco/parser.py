@@ -16,6 +16,7 @@ from docco.translation import (
 from docco.toc import process_toc
 from docco.page_layout import process_page_layout
 from docco.pdf import collect_css_content, html_to_pdf
+from docco.pdf_validation import validate_and_warn_pdf_images
 
 logger = logging.getLogger(__name__)
 MAX_ITERATIONS = 10
@@ -122,6 +123,7 @@ def _generate_single_pdf(
     allow_python,
     lang_suffix=None,
     po_file=None,
+    validate_images=True,
 ):
     """
     Generate a single PDF from processed markdown body.
@@ -137,6 +139,7 @@ def _generate_single_pdf(
         allow_python: Allow python code execution in directives
         lang_suffix: Optional language suffix for filenames (e.g., "_de")
         po_file: Optional PO file for translations (applied to combined HTML before TOC/layout)
+        validate_images: Validate image DPI if DPI frontmatter is set (default: True)
 
     Returns:
         str: Path to generated PDF file
@@ -176,6 +179,10 @@ def _generate_single_pdf(
     pdf_path = os.path.join(output_dir, pdf_filename)
     dpi = metadata.get("dpi")
     html_to_pdf(html_wrapped, pdf_path, base_url=base_dir, dpi=dpi)
+
+    # Validate PDF image quality if DPI was specified and validation enabled
+    if validate_images and dpi:
+        validate_and_warn_pdf_images(pdf_path, threshold=dpi)
 
     # Clean up intermediate files if not keeping them
     if not keep_intermediate:
@@ -236,7 +243,7 @@ def _generate_multilingual_pdfs(
 
     pdf_paths = []
 
-    # Step 3: Generate PDF for base language
+    # Step 3: Generate PDF for base language (with image validation)
     base_lang_code = base_language.upper()
     logger.info(f"Processing base language: {base_lang_code}")
     pdf_path = _generate_single_pdf(
@@ -249,6 +256,7 @@ def _generate_multilingual_pdfs(
         keep_intermediate,
         allow_python,
         lang_suffix=f"_{base_lang_code}",
+        validate_images=True,
     )
     pdf_paths.append(pdf_path)
 
@@ -273,7 +281,7 @@ def _generate_multilingual_pdfs(
                 f"{stats['untranslated']} untranslated, {stats['fuzzy']} fuzzy"
             )
 
-        # Generate PDF with translation (po_file parameter passed to _generate_single_pdf)
+        # Generate PDF with translation (skip image validation for non-base languages)
         pdf_path = _generate_single_pdf(
             body,
             metadata,
@@ -285,6 +293,7 @@ def _generate_multilingual_pdfs(
             allow_python,
             lang_suffix=f"_{lang_code}",
             po_file=po_file,
+            validate_images=False,
         )
         pdf_paths.append(pdf_path)
 
