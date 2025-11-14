@@ -348,33 +348,36 @@ This generates a single PDF with the specified translation applied.
 
 Docco integrates with professional translation tools and services for enterprise workflows.
 
-### Step 1: Extract Translatable Strings
+### Step 1: Enable Multilingual Mode
 
-```bash
-docco extract myfile.md -o translations/
+Add to your frontmatter:
+```yaml
+---
+multilingual: true
+base_language: en
+---
 ```
 
-This generates a `myfile.pot` file containing all translatable strings from the markdown:
+### Step 2: Generate Initial PDFs and POT File
 
+```bash
+docco myfile.md -o output/
+```
+
+This automatically:
+- Generates `myfile_EN.pdf` (base language)
+- Creates `myfile/myfile.pot` (translation template)
+
+File structure:
 ```
 myfile.md
 myfile/
   └── myfile.pot        (template)
+output/
+  └── myfile_EN.pdf
 ```
 
-**Automatic Translation Updates:** If PO files already exist in the output directory, they are automatically updated with new/changed strings:
-
-```
-Extracted to POT: translations/myfile.pot
-Updating de.po with new POT...
-Updated de.po: 40 translated, 2 fuzzy, 5 untranslated
-Updating fr.po with new POT...
-Updated fr.po: 38 translated, 1 fuzzy, 6 untranslated
-```
-
-Translations are preserved; only new strings appear as untranslated and changed strings may be marked for review.
-
-### Step 2: Create Language-Specific Translations
+### Step 3: Create Language-Specific Translations
 
 Translators create `.po` files for each language using professional tools:
 - **poedit** (desktop application)
@@ -382,7 +385,7 @@ Translators create `.po` files for each language using professional tools:
 - **Crowdin, Lokalise, POEditor** (professional translation platforms)
 - Any gettext-compatible tool
 
-File structure:
+Place them in the `myfile/` directory:
 ```
 myfile.md
 myfile/
@@ -392,46 +395,46 @@ myfile/
   └── nl.po             (Dutch translation)
 ```
 
-### Step 3: Generate Multilingual PDFs
-
-With `multilingual: true` in frontmatter:
-```bash
-docco myfile.md -o output/
-```
-
-This generates one PDF per language automatically.
-
-Or manually for specific translations:
-```bash
-docco myfile.md --po translations/de.po -o output/de/
-```
-
-### Step 4: Monitor Translation Status
-
-When building PDFs with multilingual mode, Docco automatically checks translation completeness:
+### Step 4: Generate Multilingual PDFs
 
 ```bash
 docco myfile.md -o output/
-# Building multilingual PDFs:
-#   EN.pdf ✓
-#   DE.pdf ⚠ (2 fuzzy, 5 untranslated)
-#   FR.pdf ⚠ (1 fuzzy, 6 untranslated)
 ```
 
-Warnings are logged for incomplete translations so you can track which languages need translator attention.
+This automatically:
+- Updates POT file
+- Updates all existing PO files with new/changed strings
+- Generates PDFs for all languages
+
+```
+Extracted POT: myfile/myfile.pot
+Updated de.po: 40 translated, 2 fuzzy, 5 untranslated
+Updated fr.po: 38 translated, 1 fuzzy, 6 untranslated
+Updated nl.po: 45 translated, 0 fuzzy, 0 untranslated
+Processing base language: EN
+Processing language: DE
+WARNING - Translation incomplete for DE: 5 untranslated, 2 fuzzy
+Processing language: FR
+WARNING - Translation incomplete for FR: 6 untranslated, 1 fuzzy
+Processing language: NL
+Generated 4 output file(s)
+```
 
 ### Translation Maintenance
 
-When the source document changes, simply run `docco extract` again:
+When the source document changes, simply run the same command:
 
 ```bash
-docco extract myfile.md -o translations/
+docco myfile.md -o output/
 ```
 
-Existing PO files are automatically updated with:
-- New strings (appear as untranslated)
-- Changed strings (may be marked for review)
-- Preserved translations (existing translations are kept)
+Docco automatically:
+- Updates POT file with new content
+- Merges changes into all existing PO files
+- Preserves existing translations
+- Marks new strings as untranslated
+- Marks changed strings for review (fuzzy)
+- Regenerates all PDFs
 
 This allows translators to focus only on new/modified content rather than re-translating the entire document.
 

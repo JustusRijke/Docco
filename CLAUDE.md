@@ -42,20 +42,29 @@ The `collect_css_content()` function in `pdf.py` separates CSS sources:
 
 ### Translation Workflow
 
-For professional translations using POT/PO files:
+**Single-language documents:**
+- Generate PDF: `docco input.md -o output/`
+- With translation: `docco input.md --po translations/de.po -o output/`
 
-1. **Extraction**: `docco extract input.md -o translations/` generates a POT file from final HTML
-   - If PO files exist in the output directory, they are automatically updated with new/changed strings
-   - Statistics reported for each language: `Updated de.po: 40 translated, 2 fuzzy, 3 untranslated`
-2. **Translation**: Translators create/update language-specific PO files (e.g., `de.po`, `fr.po`) using standard translation tools. msgids contain HTML tags (not markdown); translators must preserve them.
-3. **Build**: Generate translated PDFs with `docco build input.md --po translations/de.po -o output/`
-   - In multilingual mode, warnings shown for incomplete translations: `WARNING - Translation incomplete for DE: 5 untranslated, 2 fuzzy`
+**Multilingual documents** (with `multilingual: true` in frontmatter):
+- Simply run: `docco input.md -o output/`
+- Automatically extracts POT file to `<basename>/<basename>.pot`
+- Automatically updates all existing PO files in that directory with new/changed strings
+- Generates PDFs for base language + all translated languages
+- Reports translation completeness: `Updated de.po: 40 translated, 2 fuzzy, 3 untranslated`
+- Warns about incomplete translations: `WARNING - Translation incomplete for DE: 5 untranslated, 2 fuzzy`
 
-This workflow:
-- Extracts strings from final HTML, enabling translation of dynamic content (TOC numbers, page elements)
+**Translation process:**
+1. Set `multilingual: true` and `base_language: en` in frontmatter
+2. Run `docco input.md -o output/` - generates POT file and base language PDF
+3. Translators create/update language-specific PO files (e.g., `de.po`, `fr.po`) in the `<basename>/` directory using CAT tools
+4. Run `docco input.md -o output/` again - automatically updates PO files and generates all language PDFs
+
+Notes:
+- POT/PO files contain HTML (not Markdown) - translators must preserve HTML tags
+- Extracts strings from final HTML, enabling translation of dynamic content (TOC, page elements)
 - Applies translations before TOC generation so headings are numbered in target language
 - Integrates with CAT tools supporting HTML
-- Automatically tracks translation completeness and alerts users to untranslated/fuzzy strings
 
 ## Development Commands
 
@@ -68,23 +77,24 @@ pip install -e ".[dev]"
 ### Running
 
 ```bash
-# Build a single PDF
-docco build input.md -o output_dir
+# Generate PDF
+docco input.md -o output_dir
 
 # Verbose output
-docco build input.md -o output_dir -v
+docco input.md -o output_dir -v
 
 # Keep intermediate files (for debugging)
-docco build input.md -o output_dir --keep-intermediate
+docco input.md -o output_dir --keep-intermediate
 
-# Extract translatable strings
-docco extract input.md -o translations/
-
-# Build with translation
-docco build input.md --po translations/de.po -o output/
+# With translation (single-language mode)
+docco input.md --po translations/de.po -o output/
 
 # Allow Python code execution (security-sensitive)
-docco build input.md --allow-python -o output/
+docco input.md --allow-python -o output/
+
+# Multilingual mode (set multilingual: true in frontmatter)
+# Automatically extracts POT, updates PO files, generates all language PDFs
+docco input.md -o output/
 ```
 
 ### Testing
@@ -103,8 +113,8 @@ pytest tests/test_frontmatter.py
 pytest --cov=src/docco --cov-report=term-missing
 
 # Build example PDFs
-docco build examples/Feature_Showcase.md -o output/ --allow-python
-docco build examples/Multilingual_Document_Example.md -o output/ --allow-python
+docco examples/Feature_Showcase.md -o output/ --allow-python
+docco examples/Multilingual_Document_Example.md -o output/ --allow-python
 ```
 
 ## Dependencies
@@ -131,8 +141,8 @@ docco build examples/Multilingual_Document_Example.md -o output/ --allow-python
   - [translate-toolkit docs](https://docs.translatehouse.org/projects/translate-toolkit/en/latest/)
 - **Important**: After any feature change, update `examples/Feature_Showcase.md` and rebuild regression test baselines:
   ```bash
-  docco build examples/Feature_Showcase.md -o tests/output/ --allow-python
-  docco build examples/Multilingual_Document_Example.md -o tests/output/ --allow-python
+  docco examples/Feature_Showcase.md -o tests/output/ --allow-python
+  docco examples/Multilingual_Document_Example.md -o tests/output/ --allow-python
   cp tests/output/*.pdf tests/baselines/
   ```
 - Prefer fail-fast: avoid over-defensive exception handling

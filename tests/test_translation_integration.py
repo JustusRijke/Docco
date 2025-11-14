@@ -5,7 +5,7 @@ import os
 import tempfile
 import pytest
 from docco.parser import parse_markdown
-from docco.translation import extract_html_to_pot
+from docco.translation import extract_html_to_pot, get_po_stats
 from docco.core import parse_frontmatter, markdown_to_html
 
 
@@ -193,3 +193,84 @@ Hello world"""
         assert len(output_files) == 1
         assert os.path.exists(output_files[0])
         assert "_EN.pdf" in output_files[0]
+
+
+def test_multilingual_auto_updates_po_files():
+    """Test that multilingual mode automatically updates existing PO files."""
+    # Create initial markdown with multilingual flag
+    initial_content = """---
+multilingual: true
+base_language: en
+---
+# Hello
+
+Original content."""
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        md_path = os.path.join(tmpdir, "test.md")
+        with open(md_path, "w", encoding="utf-8") as f:
+            f.write(initial_content)
+
+        output_dir = os.path.join(tmpdir, "output")
+        os.makedirs(output_dir)
+
+        # First build: creates POT file
+        output_files = parse_markdown(md_path, output_dir, allow_python=False)
+        assert len(output_files) == 1  # Base language only
+
+        # Verify POT file was created
+        translations_dir = os.path.join(tmpdir, "test")
+        pot_path = os.path.join(translations_dir, "test.pot")
+        assert os.path.exists(pot_path)
+
+        # Create a PO file by copying POT and adding translations
+        po_path = os.path.join(translations_dir, "de.po")
+        import subprocess
+        subprocess.run(["msginit", "--no-translator", "-i", pot_path, "-o", po_path, "-l", "de"], check=True)
+
+        # Now manually translate some strings in the PO file
+        with open(po_path, "r", encoding="utf-8") as f:
+            po_lines = f.readlines()
+
+        # Find and translate the "Hello" heading
+        with open(po_path, "w", encoding="utf-8") as f:
+            for i, line in enumerate(po_lines):
+                f.write(line)
+                if 'msgid "<h1>Hello</h1>"' in line:
+                    # Skip the msgstr line and replace it
+                    if i + 1 < len(po_lines):
+                        f.write('msgstr "<h1>Hallo</h1>"\n')
+                        # Skip the original msgstr
+                        po_lines[i + 1] = ""
+
+        # Update markdown with new content
+        updated_content = """---
+multilingual: true
+base_language: en
+---
+# Hello
+
+Original content.
+
+New paragraph added."""
+
+        with open(md_path, "w", encoding="utf-8") as f:
+            f.write(updated_content)
+
+        # Second build: should auto-update PO file with new strings
+        output_files = parse_markdown(md_path, output_dir, allow_python=False)
+        assert len(output_files) == 2  # Base + German
+
+        # Verify PO file still exists and was updated
+        assert os.path.exists(po_path)
+        with open(po_path, "r", encoding="utf-8") as f:
+            po_content = f.read()
+
+        # Check that new string is in PO file
+        assert "New paragraph added" in po_content
+
+        # Check that the PO file has some untranslated strings (the new content)
+        stats = get_po_stats(po_path)
+        assert stats["total"] > 0
+        # Since we added new content, there should be at least one untranslated string
+        assert stats["untranslated"] > 0 or stats["fuzzy"] > 0

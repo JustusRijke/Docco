@@ -11,6 +11,7 @@ from docco.translation import (
     extract_html_to_pot,
     get_po_stats,
     check_po_sync,
+    update_po_files,
 )
 from docco.toc import process_toc
 from docco.page_layout import process_page_layout
@@ -229,6 +230,9 @@ def _generate_multilingual_pdfs(
     extract_html_to_pot(wrapped_html, pot_path)
     logger.debug(f"Extracted POT for multilingual: {pot_path}")
 
+    # Step 2.5: Update existing PO files with new POT content
+    update_po_files(pot_path, translations_dir)
+
     pdf_paths = []
 
     # Step 3: Generate PDF for base language
@@ -257,7 +261,7 @@ def _generate_multilingual_pdfs(
         if not check_po_sync(pot_path, po_file):
             logger.warning(
                 f"PO file out of sync for {lang_code}: "
-                f"document has changed. Run: docco extract to update translations"
+                f"document has changed. PO files are automatically updated on each build."
             )
 
         # Check translation status
