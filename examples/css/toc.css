@@ -73,3 +73,23 @@ h6 {
 .toc a::after {
     content: leader('.') target-counter(attr(href), page);
 }
+
+/* Heading and TOC number styling
+ * Numbers are wrapped in <span> elements for independent CSS control.
+ * Customize spacing, color, font-weight, or hide numbers entirely.
+ */
+.toc-number, .heading-number {
+    margin-right: 0.5em;  /* Space between number and title (adjustable) */
+}
+
+/* Example customizations (uncomment to use):
+.toc-number {
+    font-weight: bold;
+    color: #666;
+}
+
+.heading-number {
+    color: #333;
+    font-weight: 600;
+}
+*/

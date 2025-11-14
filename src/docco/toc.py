@@ -146,7 +146,11 @@ def _build_toc_html(headings):
         elif current_level < level:
             current_level = _open_lists_down_to(toc_lines, current_level, level)
 
-        toc_lines.append(f'<li><a href="#{heading_id}">{number}{display_text}</a>')
+        # Wrap number in span for independent CSS styling
+        if number:
+            toc_lines.append(f'<li><a href="#{heading_id}"><span class="toc-number">{number}</span>{display_text}</a>')
+        else:
+            toc_lines.append(f'<li><a href="#{heading_id}">{display_text}</a>')
         li_open = True
 
     # Close remaining open items
@@ -190,9 +194,9 @@ def _number_headings(html_content, headings):
         if id_match:
             heading_id = id_match.group(1)
             if heading_id in heading_numbers:
-                # Add number to beginning of text
+                # Add number to beginning of text, wrapped in span for CSS styling
                 number = heading_numbers[heading_id]
-                return f'<{tag}{attrs}>{number}{text}</{tag}>'
+                return f'<{tag}{attrs}><span class="heading-number">{number}</span>{text}</{tag}>'
 
         # Return unchanged if no ID or not in our list
         return match.group(0)

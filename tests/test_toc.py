@@ -74,7 +74,7 @@ def test_hierarchical_toc_structure():
     assert '<nav class="toc">' in toc_html
     assert 'toc-level-1' in toc_html
     assert 'toc-level-2' in toc_html
-    assert '<a href="#h1">1 Chapter 1</a>' in toc_html
+    assert '<a href="#h1"><span class="toc-number">1 </span>Chapter 1</a>' in toc_html
 
 
 def test_toc_with_no_headings():
@@ -106,8 +106,8 @@ def test_toc_links_to_headings():
     """Test that TOC contains links to heading IDs."""
     html = "<!-- TOC -->\n<h1>Introduction</h1>\n<h2>Background</h2>"
     result = process_toc(html)
-    assert '<a href="#introduction">1 Introduction</a>' in result
-    assert '<a href="#background">1.1 Background</a>' in result
+    assert '<a href="#introduction"><span class="toc-number">1 </span>Introduction</a>' in result
+    assert '<a href="#background"><span class="toc-number">1.1 </span>Background</a>' in result
     assert 'id="introduction"' in result
     assert 'id="background"' in result
 
@@ -124,7 +124,7 @@ def test_toc_strips_html_from_display():
     """Test that TOC display text has HTML tags stripped."""
     html = "<!-- TOC -->\n<h1><strong>Bold</strong> Heading</h1>"
     result = process_toc(html)
-    assert '<a href="#bold-heading">1 Bold Heading</a>' in result
+    assert '<a href="#bold-heading"><span class="toc-number">1 </span>Bold Heading</a>' in result
 
 
 def test_empty_heading_id():
@@ -189,10 +189,10 @@ def test_toc_numbering_in_html():
         (1, "h4", "Chapter 2"),
     ]
     toc_html = _build_toc_html(headings)
-    assert '<a href="#h1">1 Chapter 1</a>' in toc_html
-    assert '<a href="#h2">1.1 Section 1.1</a>' in toc_html
-    assert '<a href="#h3">1.2 Section 1.2</a>' in toc_html
-    assert '<a href="#h4">2 Chapter 2</a>' in toc_html
+    assert '<a href="#h1"><span class="toc-number">1 </span>Chapter 1</a>' in toc_html
+    assert '<a href="#h2"><span class="toc-number">1.1 </span>Section 1.1</a>' in toc_html
+    assert '<a href="#h3"><span class="toc-number">1.2 </span>Section 1.2</a>' in toc_html
+    assert '<a href="#h4"><span class="toc-number">2 </span>Chapter 2</a>' in toc_html
 
 
 def test_multiple_toc_excludes():
@@ -218,7 +218,7 @@ def test_excluded_heading_not_numbered():
     # Excluded heading should not have a number
     assert '<h1 id="excluded">Excluded</h1>' in result
     # First numbered heading starts at 1
-    assert '<h2 id="first">1 First</h2>' in result
+    assert '<h2 id="first"><span class="heading-number">1 </span>First</h2>' in result
     assert len(_extract_headings(html)[1]) == 1  # Only one heading in TOC list
 
 
@@ -232,10 +232,10 @@ def test_excluded_first_heading_numbering_sync():
     result = process_toc(html)
 
     # TOC should have "1 Section 1" and "2 Section 2"
-    assert '<a href="#section-1">1 Section 1</a>' in result
-    assert '<a href="#section-2">2 Section 2</a>' in result
+    assert '<a href="#section-1"><span class="toc-number">1 </span>Section 1</a>' in result
+    assert '<a href="#section-2"><span class="toc-number">2 </span>Section 2</a>' in result
 
     # Document headings should match TOC numbering
     assert '<h1 id="title">Title</h1>' in result  # No number
-    assert '<h2 id="section-1">1 Section 1</h2>' in result
-    assert '<h2 id="section-2">2 Section 2</h2>' in result
+    assert '<h2 id="section-1"><span class="heading-number">1 </span>Section 1</h2>' in result
+    assert '<h2 id="section-2"><span class="heading-number">2 </span>Section 2</h2>' in result
