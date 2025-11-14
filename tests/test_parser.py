@@ -160,6 +160,85 @@ msgstr "<h1>Hallo</h1>"
         assert "Translation incomplete for DE" in caplog.text
 
 
+def test_multilingual_po_sync_warning(caplog):
+    """Test that out-of-sync PO files trigger sync warnings in multilingual mode."""
+    from unittest.mock import patch
+    import subprocess
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Create markdown file
+        input_file = os.path.join(tmpdir, "test.md")
+        with open(input_file, "w") as f:
+            f.write("""---
+multilingual: true
+base_language: en
+---
+
+# New Content
+
+This has changed.
+""")
+
+        # Create translations directory with old PO file
+        translations_dir = os.path.join(tmpdir, "test")
+        os.makedirs(translations_dir, exist_ok=True)
+
+        # Create a PO file with old content that won't match new POT
+        de_po = os.path.join(translations_dir, "de.po")
+        with open(de_po, "w", encoding="utf-8") as f:
+            f.write("""# German translations
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\\n"
+
+msgid "<h1>Old Content</h1>"
+msgstr "<h1>Alter Inhalt</h1>"
+""")
+
+        # Mock pot2po to fail so PO file doesn't get updated
+        original_run = subprocess.run
+
+        def mock_run(cmd, *args, **kwargs):
+            if "pot2po" in cmd:
+                # Simulate failure
+                class FailedResult:
+                    returncode = 1
+                    stderr = "Mocked failure"
+                    stdout = ""
+                return FailedResult()
+            return original_run(cmd, *args, **kwargs)
+
+        with patch('subprocess.run', side_effect=mock_run):
+            # Build multilingual PDF
+            outputs = parse_markdown(input_file, tmpdir)
+
+            # Should still generate PDFs
+            assert len(outputs) >= 1
+
+            # Should have logged warning about out-of-sync PO file
+            assert "out of sync for DE" in caplog.text or "Failed to update" in caplog.text
+
+
+def test_multilingual_missing_base_language():
+    """Test that multilingual mode requires base_language in frontmatter."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Create markdown file without base_language
+        input_file = os.path.join(tmpdir, "test.md")
+        with open(input_file, "w") as f:
+            f.write("""---
+multilingual: true
+---
+
+# Test Document
+
+This should fail.
+""")
+
+        # Should raise ValueError
+        with pytest.raises(ValueError, match="Multilingual mode requires 'base_language'"):
+            parse_markdown(input_file, tmpdir)
+
+
 def test_dpi_frontmatter_parameter(fixture_dir):
     """Test that DPI frontmatter parameter is extracted and used."""
     with tempfile.TemporaryDirectory() as tmpdir:
