@@ -4,6 +4,7 @@ import argparse
 import os
 import sys
 import logging
+import colorlog
 from docco.parser import parse_markdown, preprocess_document, process_markdown_to_html
 from docco.translation import extract_html_to_pot, update_po_files
 
@@ -90,12 +91,24 @@ def main():
 
     args = parser.parse_args()
 
-    # Set up logging
+    # Set up colorized logging
     log_level = logging.DEBUG if args.verbose else logging.INFO
-    logging.basicConfig(
-        level=log_level,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    handler = colorlog.StreamHandler()
+    handler.setFormatter(
+        colorlog.ColoredFormatter(
+            "%(log_color)s%(levelname)-8s%(reset)s %(message)s",
+            log_colors={
+                "DEBUG": "cyan",
+                "INFO": "green",
+                "WARNING": "yellow",
+                "ERROR": "red",
+                "CRITICAL": "red,bg_white",
+            },
+        )
     )
+    root_logger = logging.getLogger()
+    root_logger.addHandler(handler)
+    root_logger.setLevel(log_level)
 
     try:
         input_file = args.input_file
