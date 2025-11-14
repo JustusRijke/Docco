@@ -63,7 +63,7 @@ def collect_css_content(markdown_file, metadata):
     return {"inline": "\n".join(css_content), "external": external_urls}
 
 
-def html_to_pdf(html_content, output_path, base_url=None):
+def html_to_pdf(html_content, output_path, base_url=None, dpi=None):
     """
     Convert HTML to PDF.
 
@@ -73,24 +73,29 @@ def html_to_pdf(html_content, output_path, base_url=None):
         html_content: HTML content string
         output_path: Path for output PDF file
         base_url: Base URL for resolving relative paths in HTML (optional)
+        dpi: Maximum image resolution in DPI (optional, default: no limit)
 
     Returns:
         str: Path to generated PDF file
     """
     if USE_EXECUTABLE:  # pragma: no cover
         logger.debug("Using weasyprint executable for PDF generation")
-        _html_to_pdf_with_executable(html_content, output_path, base_url)
+        _html_to_pdf_with_executable(html_content, output_path, base_url, dpi)
     else:
         logger.debug("Using WeasyPrint Python module for PDF generation")
         html_obj = HTML(string=html_content, base_url=base_url, encoding="utf-8")
-        html_obj.write_pdf(output_path)
+        if dpi:
+            logger.debug(f"Setting maximum image DPI to {dpi}")
+            html_obj.write_pdf(output_path, dpi=dpi)
+        else:
+            html_obj.write_pdf(output_path)
 
     logger.info(f"Generated PDF: {output_path}")
     return output_path
 
 
 def _html_to_pdf_with_executable(
-    html_content, output_path, base_url=None
+    html_content, output_path, base_url=None, dpi=None
 ):  # pragma: no cover
     """
     Convert HTML to PDF using weasyprint executable (fallback for Windows).
@@ -99,6 +104,7 @@ def _html_to_pdf_with_executable(
         html_content: HTML content string
         output_path: Path for output PDF file
         base_url: Base URL for resolving relative paths (optional)
+        dpi: Maximum image resolution in DPI (optional)
 
     Raises:
         RuntimeError: If weasyprint executable not found in PATH
@@ -120,6 +126,11 @@ def _html_to_pdf_with_executable(
         # Add base URL if provided
         if base_url:
             cmd.extend(["-u", base_url])
+
+        # Add DPI if provided
+        if dpi:
+            cmd.extend(["--dpi", str(dpi)])
+            logger.debug(f"Setting maximum image DPI to {dpi} (executable mode)")
 
         cmd.extend([html_tmp_path, str(output_path)])
 

@@ -57,6 +57,29 @@ File paths are relative to the markdown file and are embedded in the generated H
 
 **`base_language`** - The language code of the source document (required when `multilingual: true`). Example: `base_language: en`. This will be used as the suffix for the base language PDF (e.g., `Document_EN.pdf`).
 
+**`dpi`** - Maximum image resolution in dots per inch (integer, optional). Controls image downsampling in the generated PDF:
+- Default (no `dpi` specified): Preserves original image resolution. High-quality images remain full resolution, which is excellent for print but may result in larger file sizes.
+- `dpi: 300`: Recommended for professional printing. Images are downsampled to a maximum of 300 DPI, which is the industry standard for high-quality print output while keeping file sizes reasonable.
+- `dpi: 150`: Suitable for screen viewing and digital distribution. Produces smaller files with adequate quality for on-screen reading.
+
+Example:
+```yaml
+---
+css: "style.css"
+dpi: 300
+---
+```
+
+**Note:** The DPI setting works most effectively when images have CSS constraints. For optimal file size reduction, include CSS rules like:
+```css
+img {
+    max-width: 100%;
+    height: auto;
+}
+```
+
+This setting applies to all raster images (PNG, JPEG, etc.) embedded in the document. It does not affect vector graphics (SVG). If images are already at or below the specified DPI, they remain unchanged.
+
 # Core Concepts
 
 ## Understanding Directives

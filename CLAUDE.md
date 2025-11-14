@@ -167,3 +167,4 @@ examples/
   header.html, footer.html            - Page template examples
   inline/                             - Reusable inline content
 ```
+- When adding new dependencies (python libraries), make sure they are recently maintained

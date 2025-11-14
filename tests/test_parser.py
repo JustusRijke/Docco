@@ -5,6 +5,12 @@ import tempfile
 import pytest
 from docco.parser import parse_markdown, process_directives_iteratively, MAX_ITERATIONS
 
+try:
+    import fitz  # PyMuPDF
+    PYMUPDF_AVAILABLE = True
+except ImportError:
+    PYMUPDF_AVAILABLE = False
+
 
 @pytest.fixture
 def fixture_dir():
@@ -152,3 +158,100 @@ msgstr "<h1>Hallo</h1>"
         # Should have logged warning about incomplete translation
         # After auto-update, the PO file will have fuzzy and/or untranslated strings
         assert "Translation incomplete for DE" in caplog.text
+
+
+def test_dpi_frontmatter_parameter(fixture_dir):
+    """Test that DPI frontmatter parameter is extracted and used."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Create markdown with DPI setting
+        input_file = os.path.join(tmpdir, "test_dpi.md")
+        with open(input_file, "w", encoding="utf-8") as f:
+            f.write("""---
+dpi: 300
+---
+
+# Test Document
+
+This document has a DPI setting in frontmatter.
+""")
+
+        # Generate PDF
+        outputs = parse_markdown(input_file, tmpdir)
+        assert len(outputs) == 1
+        assert os.path.exists(outputs[0])
+
+        # Verify PDF was created
+        assert outputs[0].endswith("test_dpi.pdf")
+
+
+@pytest.mark.skipif(not PYMUPDF_AVAILABLE, reason="PyMuPDF not available")
+def test_dpi_frontmatter_with_image():
+    """Test DPI frontmatter with actual image downsampling."""
+    try:
+        from PIL import Image
+    except ImportError:
+        pytest.skip("PIL/Pillow not available")
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Create a high-resolution test image
+        img = Image.new('RGB', (3000, 2000), color='red')
+        img_path = os.path.join(tmpdir, "test_image.png")
+        img.save(img_path, dpi=(600, 600))
+
+        # Create CSS file with image sizing
+        css_path = os.path.join(tmpdir, "style.css")
+        with open(css_path, "w") as f:
+            f.write("img { max-width: 100%; height: auto; }")
+
+        # Create markdown with DPI and image
+        input_file = os.path.join(tmpdir, "test.md")
+        with open(input_file, "w", encoding="utf-8") as f:
+            f.write("""---
+css: style.css
+dpi: 300
+---
+
+# Image Test
+
+![Test Image](test_image.png)
+""")
+
+        # Generate PDF with DPI=300
+        outputs_300 = parse_markdown(input_file, tmpdir)
+        assert len(outputs_300) == 1
+
+        # Generate PDF without DPI
+        input_file_no_dpi = os.path.join(tmpdir, "test_no_dpi.md")
+        with open(input_file_no_dpi, "w", encoding="utf-8") as f:
+            f.write("""---
+css: style.css
+---
+
+# Image Test
+
+![Test Image](test_image.png)
+""")
+
+        outputs_no_dpi = parse_markdown(input_file_no_dpi, tmpdir)
+        assert len(outputs_no_dpi) == 1
+
+        # Extract and compare image dimensions using PyMuPDF
+        def get_image_dims(pdf_path):
+            doc = fitz.open(pdf_path)
+            for page in doc:
+                images = page.get_images()
+                if images:
+                    xref = images[0][0]
+                    img_dict = doc.extract_image(xref)
+                    doc.close()
+                    return img_dict['width'], img_dict['height']
+            doc.close()
+            return None, None
+
+        width_300, height_300 = get_image_dims(outputs_300[0])
+        width_no_dpi, height_no_dpi = get_image_dims(outputs_no_dpi[0])
+
+        # Image with DPI=300 should be downsampled compared to no-DPI version
+        if width_300 and width_no_dpi:
+            assert width_300 < width_no_dpi
+            assert height_300 < height_no_dpi

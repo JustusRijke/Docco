@@ -174,7 +174,8 @@ def _generate_single_pdf(
 
     # Convert to PDF
     pdf_path = os.path.join(output_dir, pdf_filename)
-    html_to_pdf(html_wrapped, pdf_path, base_url=base_dir)
+    dpi = metadata.get("dpi")
+    html_to_pdf(html_wrapped, pdf_path, base_url=base_dir, dpi=dpi)
 
     # Clean up intermediate files if not keeping them
     if not keep_intermediate:
