@@ -21,7 +21,7 @@ def html_temp_file(content):
         str: Path to temporary HTML file
     """
     with tempfile.NamedTemporaryFile(
-        mode='w', suffix='.html', delete=False, encoding='utf-8'
+        mode="w", suffix=".html", delete=False, encoding="utf-8"
     ) as f:
         f.write(content)
         path = f.name
@@ -93,6 +93,7 @@ def wrap_html(html_content, css_content="", external_css=None):
     wrapped = f"""<!DOCTYPE html>
 <html>
 <head>
+<meta charset="UTF-8">
 {link_tags}{style_tag}</head>
 <body>
 {html_content}
