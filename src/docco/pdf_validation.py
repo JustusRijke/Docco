@@ -20,7 +20,7 @@ def check_pdf_image_dpi(pdf_path, threshold=300):
     """
     try:
         import fitz  # PyMuPDF
-    except ImportError:
+    except ImportError:  # pragma: no cover
         logger.debug("PyMuPDF not available, skipping DPI validation")
         return None
 
@@ -42,11 +42,11 @@ def check_pdf_image_dpi(pdf_path, threshold=300):
                 total_images += 1
 
                 # Get image dimensions
-                width_px = img_info['width']
-                height_px = img_info['height']
+                width_px = img_info["width"]
+                height_px = img_info["height"]
 
                 # Get display size on page
-                bbox = img_info['bbox']
+                bbox = img_info["bbox"]
                 width_points = bbox[2] - bbox[0]
                 height_points = bbox[3] - bbox[1]
 
@@ -60,23 +60,25 @@ def check_pdf_image_dpi(pdf_path, threshold=300):
                 min_dpi = min(effective_dpi_x, effective_dpi_y)
 
                 if min_dpi < threshold:
-                    low_dpi_images.append({
-                        'page': page_num + 1,
-                        'index': img_idx + 1,
-                        'width_px': width_px,
-                        'height_px': height_px,
-                        'width_inches': width_inches,
-                        'height_inches': height_inches,
-                        'dpi_x': effective_dpi_x,
-                        'dpi_y': effective_dpi_y,
-                        'min_dpi': min_dpi,
-                    })
+                    low_dpi_images.append(
+                        {
+                            "page": page_num + 1,
+                            "index": img_idx + 1,
+                            "width_px": width_px,
+                            "height_px": height_px,
+                            "width_inches": width_inches,
+                            "height_inches": height_inches,
+                            "dpi_x": effective_dpi_x,
+                            "dpi_y": effective_dpi_y,
+                            "min_dpi": min_dpi,
+                        }
+                    )
     finally:
         doc.close()
 
     return {
-        'total_images': total_images,
-        'low_dpi_images': low_dpi_images,
+        "total_images": total_images,
+        "low_dpi_images": low_dpi_images,
     }
 
 
@@ -90,19 +92,17 @@ def validate_and_warn_pdf_images(pdf_path, threshold=300):
     """
     result = check_pdf_image_dpi(pdf_path, threshold)
 
-    if result is None:
-        # Validation skipped (PyMuPDF not available or error)
-        return
-
-    if result['low_dpi_images']:
+    if result["low_dpi_images"]:
         logger.warning(
             f"PDF contains {len(result['low_dpi_images'])} image(s) below {threshold} DPI"
         )
-        for img in result['low_dpi_images']:
+        for img in result["low_dpi_images"]:
             logger.warning(
                 f"  Page {img['page']}, Image #{img['index']}: "
                 f"{img['width_px']}x{img['height_px']} @ {img['min_dpi']:.0f} DPI "
-                f"(displayed at {img['width_inches']:.2f}\" x {img['height_inches']:.2f}\")"
+                f'(displayed at {img["width_inches"]:.2f}" x {img["height_inches"]:.2f}")'
             )
     else:
-        logger.debug(f"All {result['total_images']} image(s) meet {threshold} DPI threshold")
+        logger.debug(
+            f"All {result['total_images']} image(s) meet {threshold} DPI threshold"
+        )
