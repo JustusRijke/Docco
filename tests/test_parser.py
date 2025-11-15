@@ -4,12 +4,7 @@ import os
 import tempfile
 import pytest
 from docco.parser import parse_markdown, process_directives_iteratively, MAX_ITERATIONS
-
-try:
-    import fitz  # PyMuPDF
-    PYMUPDF_AVAILABLE = True
-except ImportError:
-    PYMUPDF_AVAILABLE = False
+import fitz  # PyMuPDF
 
 
 @pytest.fixture
@@ -63,8 +58,6 @@ After""")
         assert os.path.exists(outputs[0])
 
 
-
-
 def test_output_file_naming_simple(fixture_dir):
     """Test that output files are named correctly for simple docs."""
     input_file = os.path.join(fixture_dir, "simple.md")
@@ -104,12 +97,14 @@ def test_max_iterations_exceeded_self_referencing():
         # Create a markdown file that references itself
         self_ref_file = os.path.join(tmpdir, "self_ref.md")
         with open(self_ref_file, "w") as f:
-            f.write("# Self Reference\n<!-- inline:\"self_ref.md\" -->")
+            f.write('# Self Reference\n<!-- inline:"self_ref.md" -->')
 
         # Create content that inlines the self-referencing file
-        content = "# Main\n<!-- inline:\"self_ref.md\" -->"
+        content = '# Main\n<!-- inline:"self_ref.md" -->'
 
-        with pytest.raises(ValueError, match=f"Max iterations \\({MAX_ITERATIONS}\\) exceeded"):
+        with pytest.raises(
+            ValueError, match=f"Max iterations \\({MAX_ITERATIONS}\\) exceeded"
+        ):
             process_directives_iteratively(content, tmpdir, False)
 
 
@@ -205,10 +200,11 @@ msgstr "<h1>Alter Inhalt</h1>"
                     returncode = 1
                     stderr = "Mocked failure"
                     stdout = ""
+
                 return FailedResult()
             return original_run(cmd, *args, **kwargs)
 
-        with patch('subprocess.run', side_effect=mock_run):
+        with patch("subprocess.run", side_effect=mock_run):
             # Build multilingual PDF
             outputs = parse_markdown(input_file, tmpdir)
 
@@ -216,7 +212,9 @@ msgstr "<h1>Alter Inhalt</h1>"
             assert len(outputs) >= 1
 
             # Should have logged warning about out-of-sync PO file
-            assert "out of sync for DE" in caplog.text or "Failed to update" in caplog.text
+            assert (
+                "out of sync for DE" in caplog.text or "Failed to update" in caplog.text
+            )
 
 
 def test_multilingual_missing_base_language():
@@ -235,7 +233,9 @@ This should fail.
 """)
 
         # Should raise ValueError
-        with pytest.raises(ValueError, match="Multilingual mode requires 'base_language'"):
+        with pytest.raises(
+            ValueError, match="Multilingual mode requires 'base_language'"
+        ):
             parse_markdown(input_file, tmpdir)
 
 
@@ -263,7 +263,6 @@ This document has a DPI setting in frontmatter.
         assert outputs[0].endswith("test_dpi.pdf")
 
 
-@pytest.mark.skipif(not PYMUPDF_AVAILABLE, reason="PyMuPDF not available")
 def test_dpi_frontmatter_with_image():
     """Test DPI frontmatter with actual image downsampling."""
     try:
@@ -273,7 +272,7 @@ def test_dpi_frontmatter_with_image():
 
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create a high-resolution test image
-        img = Image.new('RGB', (3000, 2000), color='red')
+        img = Image.new("RGB", (3000, 2000), color="red")
         img_path = os.path.join(tmpdir, "test_image.png")
         img.save(img_path, dpi=(600, 600))
 
@@ -323,7 +322,7 @@ css: style.css
                     xref = images[0][0]
                     img_dict = doc.extract_image(xref)
                     doc.close()
-                    return img_dict['width'], img_dict['height']
+                    return img_dict["width"], img_dict["height"]
             doc.close()
             return None, None
 
@@ -336,7 +335,6 @@ css: style.css
             assert height_300 < height_no_dpi
 
 
-@pytest.mark.skipif(not PYMUPDF_AVAILABLE, reason="PyMuPDF not available")
 def test_dpi_validation_warns_on_low_dpi_images(caplog):
     """Test that low DPI images trigger warnings when DPI is set."""
     try:
@@ -346,7 +344,7 @@ def test_dpi_validation_warns_on_low_dpi_images(caplog):
 
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create a small low-resolution image
-        img = Image.new('RGB', (100, 100), color='blue')
+        img = Image.new("RGB", (100, 100), color="blue")
         img_path = os.path.join(tmpdir, "lowres.png")
         img.save(img_path)
 
@@ -370,7 +368,6 @@ dpi: 300
         assert "below 300 DPI" in caplog.text
 
 
-@pytest.mark.skipif(not PYMUPDF_AVAILABLE, reason="PyMuPDF not available")
 def test_dpi_validation_multilingual_base_only(caplog):
     """Test that DPI validation only runs for base language in multilingual mode."""
     try:
@@ -380,7 +377,7 @@ def test_dpi_validation_multilingual_base_only(caplog):
 
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create a small low-resolution image
-        img = Image.new('RGB', (100, 100), color='green')
+        img = Image.new("RGB", (100, 100), color="green")
         img_path = os.path.join(tmpdir, "lowres.png")
         img.save(img_path)
 

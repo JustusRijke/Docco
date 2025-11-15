@@ -145,7 +145,9 @@ docco examples/Multilingual_Document_Example.md -o output/ --allow-python
   docco examples/Multilingual_Document_Example.md -o tests/output/ --allow-python
   cp tests/output/*.pdf tests/baselines/
   ```
-- Prefer fail-fast: avoid over-defensive exception handling
+- Prefer fail-fast: avoid over-defensive exception handling. Silently failing code is unacceptable.
+- When adding new dependencies (python libraries), make sure they are recently maintained
+- Keep git commit messages clean and concise, not more than 2 lines
 
 ## File Structure
 
@@ -167,6 +169,3 @@ examples/
   header.html, footer.html            - Page template examples
   inline/                             - Reusable inline content
 ```
-- When adding new dependencies (python libraries), make sure they are recently maintained
-- Keep git commit messages clean and concise, not more than 2 lines
-- Silently failing code is unacceptable
