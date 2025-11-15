@@ -3,20 +3,12 @@
 import os
 import tempfile
 import pytest
+from PIL import Image
 
 # Import the module to test
 from docco.pdf_validation import check_pdf_image_dpi, validate_and_warn_pdf_images
 
-try:
-    import fitz  # PyMuPDF  # noqa: F401
-    from PIL import Image
 
-    DEPENDENCIES_AVAILABLE = True
-except ImportError:
-    DEPENDENCIES_AVAILABLE = False
-
-
-@pytest.mark.skipif(not DEPENDENCIES_AVAILABLE, reason="PyMuPDF or PIL not available")
 def test_check_pdf_image_dpi_with_low_dpi_images():
     """Test detection of low DPI images."""
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -59,7 +51,6 @@ def test_check_pdf_image_dpi_with_low_dpi_images():
         assert low_img["min_dpi"] < 300
 
 
-@pytest.mark.skipif(not DEPENDENCIES_AVAILABLE, reason="PyMuPDF or PIL not available")
 def test_check_pdf_image_dpi_with_high_dpi_images():
     """Test that high DPI images are not flagged."""
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -99,7 +90,6 @@ img {{ max-width: 100%; height: auto; }}
         assert len(result["low_dpi_images"]) == 0
 
 
-@pytest.mark.skipif(not DEPENDENCIES_AVAILABLE, reason="PyMuPDF or PIL not available")
 def test_check_pdf_image_dpi_no_images():
     """Test PDF with no images."""
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -146,7 +136,6 @@ def test_check_pdf_image_dpi_nonexistent_file():
         check_pdf_image_dpi("/nonexistent/file.pdf")
 
 
-@pytest.mark.skipif(not DEPENDENCIES_AVAILABLE, reason="PyMuPDF or PIL not available")
 def test_validate_and_warn_pdf_images_with_warnings(caplog):
     """Test that warnings are logged for low DPI images."""
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -181,7 +170,47 @@ def test_validate_and_warn_pdf_images_with_warnings(caplog):
         assert "Image #" in caplog.text
 
 
-@pytest.mark.skipif(not DEPENDENCIES_AVAILABLE, reason="PyMuPDF or PIL not available")
+def test_check_pdf_image_dpi_at_threshold():
+    """Test that images exactly at threshold DPI are not flagged."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Create a 39x39 image (will be rendered at 39x39 in PDF)
+        img = Image.new("RGB", (39, 39), color="red")
+        img_path = os.path.join(tmpdir, "test.png")
+        img.save(img_path)
+
+        # Create HTML with image sized to exactly 0.52 inches (39 pixels / 75 DPI)
+        # This should result in exactly 75 DPI
+        html_path = os.path.join(tmpdir, "test.html")
+        with open(html_path, "w") as f:
+            f.write(f"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+img {{ width: 0.52in; height: 0.52in; }}
+</style>
+</head>
+<body>
+<img src="file://{img_path}" alt="test">
+</body>
+</html>""")
+
+        # Generate PDF
+        pdf_path = os.path.join(tmpdir, "test.pdf")
+        from weasyprint import HTML
+
+        HTML(html_path).write_pdf(pdf_path)
+
+        # Check DPI - threshold is 75, image should be at 75 DPI
+        result = check_pdf_image_dpi(pdf_path, threshold=75)
+
+        assert result is not None
+        assert result["total_images"] >= 1
+        # Image at exactly threshold should NOT be flagged
+        assert len(result["low_dpi_images"]) == 0, \
+            f"Image at exactly {75} DPI should not be flagged. Got: {result['low_dpi_images']}"
+
+
 def test_validate_and_warn_pdf_images_no_warnings(caplog):
     """Test that no warnings are logged when all images meet threshold."""
     with tempfile.TemporaryDirectory() as tmpdir:
