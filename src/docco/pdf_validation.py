@@ -85,13 +85,16 @@ def validate_and_warn_pdf_images(pdf_path, threshold=300):
 
     if result["low_dpi_images"]:
         logger.warning(
-            f"PDF contains {len(result['low_dpi_images'])} image(s) below {threshold} DPI"
+            f"PDF contains {len(result['low_dpi_images'])} image(s) below {threshold} DPI (expected)"
         )
         for img in result["low_dpi_images"]:
+            # Calculate expected resolution in pixels
+            expected_width_px = int(img["width_inches"] * threshold)
+            expected_height_px = int(img["height_inches"] * threshold)
             logger.warning(
                 f"  Page {img['page']}, Image #{img['index']}: "
-                f"{img['width_px']}x{img['height_px']} @ {img['min_dpi']:.0f} DPI "
-                f'(displayed at {img["width_inches"]:.2f}" x {img["height_inches"]:.2f}")'
+                f"{img['width_px']}x{img['height_px']} @ {img['min_dpi']:.0f} DPI (actual), "
+                f"expected {expected_width_px}x{expected_height_px} @ {threshold} DPI"
             )
     else:
         logger.debug(
