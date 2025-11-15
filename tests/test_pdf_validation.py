@@ -134,18 +134,16 @@ def test_check_pdf_image_dpi_invalid_pdf():
         with open(invalid_pdf, "w") as f:
             f.write("This is not a PDF")
 
-        result = check_pdf_image_dpi(invalid_pdf)
-
-        # Should return None when PDF cannot be opened
-        assert result is None
+        # Should raise an exception when PDF cannot be opened
+        with pytest.raises(Exception):
+            check_pdf_image_dpi(invalid_pdf)
 
 
 def test_check_pdf_image_dpi_nonexistent_file():
     """Test behavior with nonexistent file."""
-    result = check_pdf_image_dpi("/nonexistent/file.pdf")
-
-    # Should return None when file doesn't exist
-    assert result is None
+    # Should raise an exception when file doesn't exist
+    with pytest.raises(Exception):
+        check_pdf_image_dpi("/nonexistent/file.pdf")
 
 
 @pytest.mark.skipif(not DEPENDENCIES_AVAILABLE, reason="PyMuPDF or PIL not available")

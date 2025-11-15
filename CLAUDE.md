@@ -169,3 +169,4 @@ examples/
 ```
 - When adding new dependencies (python libraries), make sure they are recently maintained
 - Keep git commit messages clean and concise, not more than 2 lines
+- Silently failing code is unacceptable

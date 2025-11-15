@@ -7,5 +7,4 @@
 - use git version tag and/or branch+commit id instead of hardcoded version info (both pyproject.toml and the cli version info), or suggest a better way (best practice)
 - coverage: GitHub dependabot/actions (win&deb)
 - laat Claude inspireren door [GitHub - ljpengelen/markdown-to-pdf: A script to convert Markdown to PDF](https://github.com/ljpengelen/markdown-to-pdf)
-- zie sectie over image optimalisation [Common Use Cases - WeasyPrint 66.0 documentation](https://doc.courtbouillon.org/weasyprint/stable/common_use_cases.html)
 - comments mogelijk maken, en optioneel zichtbaar in pdf (geel gearceerde) en log output

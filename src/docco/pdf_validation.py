@@ -18,17 +18,9 @@ def check_pdf_image_dpi(pdf_path, threshold=300):
             - total_images: int
             - low_dpi_images: list of dicts with image details
     """
-    try:
-        import fitz  # PyMuPDF
-    except ImportError:  # pragma: no cover
-        logger.debug("PyMuPDF not available, skipping DPI validation")
-        return None
+    import fitz  # PyMuPDF
 
-    try:
-        doc = fitz.open(str(pdf_path))
-    except Exception as e:
-        logger.warning(f"Could not open PDF for validation: {e}")
-        return None
+    doc = fitz.open(str(pdf_path))
 
     low_dpi_images = []
     total_images = 0
@@ -75,11 +67,10 @@ def check_pdf_image_dpi(pdf_path, threshold=300):
                     )
     finally:
         doc.close()
-
-    return {
-        "total_images": total_images,
-        "low_dpi_images": low_dpi_images,
-    }
+        return {
+            "total_images": total_images,
+            "low_dpi_images": low_dpi_images,
+        }
 
 
 def validate_and_warn_pdf_images(pdf_path, threshold=300):
