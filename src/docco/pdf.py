@@ -79,10 +79,10 @@ def html_to_pdf(html_content, output_path, base_url=None, dpi=None):
         str: Path to generated PDF file
     """
     if USE_EXECUTABLE:  # pragma: no cover
-        logger.debug("Using weasyprint executable for PDF generation")
+        logger.info("Using weasyprint executable for PDF generation")
         _html_to_pdf_with_executable(html_content, output_path, base_url, dpi)
     else:
-        logger.debug("Using WeasyPrint Python module for PDF generation")
+        logger.info("Using WeasyPrint Python module for PDF generation")
         html_obj = HTML(string=html_content, base_url=base_url, encoding="utf-8")
         if dpi:
             logger.debug(f"Setting maximum image DPI to {dpi}")

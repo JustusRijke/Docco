@@ -133,7 +133,7 @@ docco examples/Multilingual_Document_Example.md -o output/ --allow-python
 - Minimize code: KISS & DRY principles
 - Sparse comments (complex logic only); minimal docstrings
 - Target 100% test coverage
-- Short, concise commit messages (1-2 lines)
+- Short, concise commit messages (1-2 lines), omit "Generated with" and "Co-Authored-By" Claude bloat.
 - No edge case tests unless critical
 - References:
   - [markdown-it docs](https://markdown-it-py.readthedocs.io/)

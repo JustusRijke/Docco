@@ -51,7 +51,9 @@ def check_pdf_image_dpi(pdf_path, threshold=300):
                 effective_dpi_y = height_px / height_inches if height_inches > 0 else 0
                 min_dpi = min(effective_dpi_x, effective_dpi_y)
 
-                if min_dpi < threshold - 0.5:
+                if min_dpi < (
+                    threshold * 0.95
+                ):  # 5% tolerance to compensate for rounding errors
                     low_dpi_images.append(
                         {
                             "page": page_num + 1,
