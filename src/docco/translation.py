@@ -55,7 +55,9 @@ def extract_html_to_pot(html_content, output_path):
             open(html_tmp_path, "rb") as html_file,
             open(output_path, "wb") as pot_file,
         ):
-            html2po.converthtml(html_file, pot_file, None, pot=True)
+            html2po.converthtml(
+                html_file, pot_file, None, pot=True, duplicatestyle="merge"
+            )
 
         # Clean bloat from POT file for VCS
         clean_po_file(output_path)
