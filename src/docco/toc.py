@@ -105,9 +105,10 @@ def _close_lists_up_to(toc_lines, current_level, target_level, li_open):
     while current_level > target_level:
         if li_open:
             toc_lines.append('</li>')
-            li_open = False
         toc_lines.append('</ul>')
         current_level -= 1
+        # After closing a nested list, the parent li is still open
+        li_open = True if current_level > 0 else False
     return current_level, li_open
 
 
@@ -134,16 +135,21 @@ def _build_toc_html(headings):
         number = _update_counters(counters, level)
 
         # Handle level changes
-        current_level, li_open = _close_lists_up_to(toc_lines, current_level, level, li_open)
+        if current_level > level:
+            # Moving up levels - close nested lists
+            current_level, li_open = _close_lists_up_to(toc_lines, current_level, level, li_open)
 
         if current_level == level and li_open:
+            # Same level - close previous li
             toc_lines.append('</li>')
             li_open = False
 
         if current_level == 0:
+            # Start first list
             toc_lines.append(f'<ul class="toc-level-{level}">')
             current_level = level
         elif current_level < level:
+            # Moving down levels - open nested lists
             current_level = _open_lists_down_to(toc_lines, current_level, level)
 
         # Wrap number in span for independent CSS styling
@@ -151,11 +157,15 @@ def _build_toc_html(headings):
         li_open = True
 
     # Close remaining open items
-    if li_open:
-        toc_lines.append('</li>')
     while current_level > 0:
+        if li_open:
+            toc_lines.append('</li>')
+            li_open = False
         toc_lines.append('</ul>')
         current_level -= 1
+        # After closing a list, parent li is still open (if not at root)
+        if current_level > 0:
+            li_open = True
 
     toc_lines.append('</nav>')
     return '\n'.join(toc_lines)

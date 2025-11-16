@@ -239,3 +239,51 @@ def test_excluded_first_heading_numbering_sync():
     assert '<h1 id="title">Title</h1>' in result  # No number
     assert '<h2 id="section-1"><span class="heading-number">1 </span>Section 1</h2>' in result
     assert '<h2 id="section-2"><span class="heading-number">2 </span>Section 2</h2>' in result
+
+
+def test_multilevel_toc_balanced_html_tags():
+    """Test that multi-level TOC has properly balanced <li> and <ul> tags."""
+    import re
+
+    # Complex multi-level structure with various nesting patterns
+    headings = [
+        (1, "chapter-1", "Chapter 1"),
+        (2, "section-11", "Section 1.1"),
+        (3, "subsection-111", "Subsection 1.1.1"),
+        (2, "section-12", "Section 1.2"),
+        (1, "chapter-2", "Chapter 2"),
+        (2, "section-21", "Section 2.1"),
+        (3, "subsection-211", "Subsection 2.1.1"),
+        (3, "subsection-212", "Subsection 2.1.2"),
+        (2, "section-22", "Section 2.2"),
+        (1, "chapter-3", "Chapter 3"),
+    ]
+
+    toc_html = _build_toc_html(headings)
+
+    # Count opening and closing tags
+    li_open = len(re.findall(r'<li>', toc_html))
+    li_close = len(re.findall(r'</li>', toc_html))
+    ul_open = len(re.findall(r'<ul', toc_html))
+    ul_close = len(re.findall(r'</ul>', toc_html))
+
+    # Verify all tags are balanced
+    assert li_open == li_close, f"<li> tags not balanced: {li_open} open, {li_close} close"
+    assert ul_open == ul_close, f"<ul> tags not balanced: {ul_open} open, {ul_close} close"
+
+    # Verify expected tag counts (10 headings = 10 list items)
+    assert li_open == 10
+    assert li_close == 10
+
+    # Verify structure contains expected nesting
+    assert '<nav class="toc">' in toc_html
+    assert 'toc-level-1' in toc_html
+    assert 'toc-level-2' in toc_html
+    assert 'toc-level-3' in toc_html
+
+    # Test specific case: parent with children should have </li> after nested </ul>
+    # Example: Chapter 1 has children, so structure should be:
+    # <li><a>Chapter 1</a>
+    #   <ul>...children...</ul>
+    # </li>
+    assert '<a href="#chapter-1"><span class="toc-number">1 </span>Chapter 1</a>' in toc_html
