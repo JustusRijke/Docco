@@ -258,3 +258,44 @@ def test_inline_unknown_file_type_warning(fixture_dir, caplog):
     assert "This is a text file with unknown type." in result
     # Warning should be logged
     assert "Unknown file type" in caplog.text
+
+
+def test_inline_unused_arguments_warning(fixture_dir, caplog):
+    """Test warning for unused arguments in inline directive."""
+    content = """# Document
+
+<!-- inline:"tests/fixtures/inline_target.md" name="TestName" unused="NotUsed" extra="AlsoNotUsed" -->"""
+    result = process_inlines(content, ".")
+    # Arguments should still be processed
+    assert "TestName" in result
+    # Warning should be logged for unused arguments
+    assert "Unused arguments" in caplog.text
+    assert "extra" in caplog.text
+    assert "unused" in caplog.text
+
+
+def test_inline_unfulfilled_placeholders_warning(fixture_dir, caplog):
+    """Test warning for unfulfilled placeholders in inlined file."""
+    content = """# Document
+
+<!-- inline:"tests/fixtures/inline_target.md" name="TestName" -->"""
+    result = process_inlines(content, ".")
+    # Name should be replaced
+    assert "TestName" in result
+    # Warning should be logged for unfulfilled placeholder
+    assert "Unfulfilled placeholders" in caplog.text
+    assert "value" in caplog.text
+
+
+def test_inline_all_args_used_no_warning(fixture_dir, caplog):
+    """Test no warnings when all arguments are used and all placeholders fulfilled."""
+    content = """# Document
+
+<!-- inline:"tests/fixtures/inline_target.md" name="TestName" value="TestValue" -->"""
+    result = process_inlines(content, ".")
+    # Both should be replaced
+    assert "TestName" in result
+    assert "TestValue" in result
+    # No warnings should be logged
+    assert "Unused arguments" not in caplog.text
+    assert "Unfulfilled placeholders" not in caplog.text

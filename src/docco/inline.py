@@ -144,7 +144,7 @@ def process_inlines(content, base_dir=".", allow_python=False):
 
         logger.debug(f"Inlining: {filepath}")
 
-        if file_type == '.py':
+        if file_type == ".py":
             # For Python files: execute directly (arguments via sys.argv)
             return execute_python_file(full_path, base_dir, allow_python, args)
         else:
@@ -152,13 +152,35 @@ def process_inlines(content, base_dir=".", allow_python=False):
             with open(full_path, "r", encoding="utf-8") as f:
                 file_content = f.read()
 
+            # Find all placeholders in the file
+            placeholders = find_placeholders(file_content)
+
             # Replace placeholders with argument values
+            used_args = set()
             for key, value in args.items():
                 placeholder = f"{{{{{key}}}}}"
-                file_content = file_content.replace(placeholder, value)
+                if placeholder in file_content:
+                    used_args.add(key)
+                    file_content = file_content.replace(placeholder, value)
+
+            # Warn about unused arguments
+            unused_args = set(args.keys()) - used_args
+            if unused_args:
+                logger.warning(
+                    f"Unused arguments in inline directive for {filepath}: {', '.join(sorted(unused_args))}"
+                )
+
+            # Warn about unfulfilled placeholders
+            unfulfilled = placeholders - used_args
+            if unfulfilled:
+                logger.warning(
+                    f"Unfulfilled placeholders in {filepath}: {', '.join(sorted(unfulfilled))}"
+                )
 
             # Apply file-type specific post-processing
-            return post_process_content(file_content, full_path, base_dir, allow_python, args)
+            return post_process_content(
+                file_content, full_path, base_dir, allow_python, args
+            )
 
     # Process inline directives
     result = re.sub(pattern, replace_inline, protected_content)
@@ -167,6 +189,21 @@ def process_inlines(content, base_dir=".", allow_python=False):
     result = restore_code_blocks(result, code_blocks)
 
     return result
+
+
+def find_placeholders(content):
+    """
+    Find all placeholder patterns in content.
+
+    Args:
+        content: File content to scan
+
+    Returns:
+        set: Set of placeholder names (e.g., {'name', 'value'})
+    """
+    pattern = r"\{\{(\w+)\}\}"
+    matches = re.findall(pattern, content)
+    return set(matches)
 
 
 def parse_inline_args(args_str):
@@ -197,17 +234,16 @@ def get_file_type(filepath):
 
 def trim_html_lines(content):
     """Trim leading/trailing whitespace from all lines, preserve empty lines."""
-    lines = content.split('\n')
+    lines = content.split("\n")
     trimmed = [line.strip() for line in lines]
-    return '\n'.join(trimmed)
+    return "\n".join(trimmed)
 
 
 def execute_python_file(filepath, base_dir, allow_python, args_dict):
     """Execute Python file and return stdout."""
     if not allow_python:
         raise ValueError(
-            f"Python file execution not allowed: {filepath}. "
-            "Use --allow-python flag."
+            f"Python file execution not allowed: {filepath}. Use --allow-python flag."
         )
 
     # Build sys.argv list
@@ -228,10 +264,10 @@ def execute_python_file(filepath, base_dir, allow_python, args_dict):
         sys.argv = argv_list
 
         # Read and execute the file
-        with open(filepath, 'r', encoding='utf-8') as f:
+        with open(filepath, "r", encoding="utf-8") as f:
             code = f.read()
 
-        exec(code, {'__file__': filepath})
+        exec(code, {"__file__": filepath})
         output = sys.stdout.getvalue()
     except Exception as e:
         raise ValueError(f"Python execution error in {filepath}: {e}")
@@ -240,17 +276,19 @@ def execute_python_file(filepath, base_dir, allow_python, args_dict):
         sys.argv = old_argv
         sys.stdout = old_stdout
 
-    return output
+    return output.strip()
 
 
 def post_process_content(content, file_path, base_dir, allow_python, args_dict):
     """Apply file-type specific post-processing for non-Python files."""
     file_type = get_file_type(file_path)
 
-    if file_type == '.md':
+    if file_type == ".md":
         return content
-    elif file_type == '.html':
+    elif file_type == ".html":
         return trim_html_lines(content)
     else:
-        logger.warning(f"Unknown file type '{file_type}' for {file_path}, inserting as-is")
+        logger.warning(
+            f"Unknown file type '{file_type}' for {file_path}, inserting as-is"
+        )
         return content
