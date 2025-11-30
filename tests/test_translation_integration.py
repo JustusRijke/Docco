@@ -48,21 +48,27 @@ def test_extract_pot_file_from_html(translation_files):
     _, body = parse_frontmatter(content)
     html_content = markdown_to_html(body)
 
-    # Extract POT from HTML
-    pot_path = translation_files["pot"]
-    result = extract_html_to_pot(html_content, pot_path)
+    # Write HTML to file
+    with tempfile.TemporaryDirectory() as tmpdir:
+        html_path = os.path.join(tmpdir, "test.html")
+        with open(html_path, "w", encoding="utf-8") as f:
+            f.write(html_content)
 
-    # Verify POT file was created
-    assert os.path.exists(result)
-    assert result == pot_path
+        # Extract POT from HTML file
+        pot_path = translation_files["pot"]
+        result = extract_html_to_pot(html_path, pot_path)
 
-    # Verify POT file has content
-    with open(pot_path, "r") as f:
-        pot_content = f.read()
+        # Verify POT file was created
+        assert os.path.exists(result)
+        assert result == pot_path
 
-    assert "msgid" in pot_content
-    assert "Hello World" in pot_content
-    assert len(pot_content) > 0
+        # Verify POT file has content
+        with open(pot_path, "r") as f:
+            pot_content = f.read()
+
+        assert "msgid" in pot_content
+        assert "Hello World" in pot_content
+        assert len(pot_content) > 0
 
 
 def test_translation_workflow_all_languages(translation_files, baselines_dir):

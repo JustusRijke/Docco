@@ -4,7 +4,6 @@ import os
 import shutil
 import subprocess
 import logging
-from docco.core import html_temp_file
 
 logger = logging.getLogger(__name__)
 
@@ -63,14 +62,14 @@ def collect_css_content(markdown_file, metadata):
     return {"inline": "\n".join(css_content), "external": external_urls}
 
 
-def html_to_pdf(html_content, output_path, base_url=None, dpi=None):
+def html_to_pdf(html_path, output_path, base_url=None, dpi=None):
     """
-    Convert HTML to PDF.
+    Convert HTML file to PDF.
 
     CSS should be embedded in the HTML via <style> tags.
 
     Args:
-        html_content: HTML content string
+        html_path: Path to HTML file to convert
         output_path: Path for output PDF file
         base_url: Base URL for resolving relative paths in HTML (optional)
         dpi: Maximum image resolution in DPI (optional, default: no limit)
@@ -80,10 +79,10 @@ def html_to_pdf(html_content, output_path, base_url=None, dpi=None):
     """
     if USE_EXECUTABLE:  # pragma: no cover
         logger.info("Using weasyprint executable for PDF generation")
-        _html_to_pdf_with_executable(html_content, output_path, base_url, dpi)
+        _html_to_pdf_with_executable(html_path, output_path, base_url, dpi)
     else:
         logger.info("Using WeasyPrint Python module for PDF generation")
-        html_obj = HTML(string=html_content, base_url=base_url, encoding="utf-8")
+        html_obj = HTML(filename=html_path, base_url=base_url, encoding="utf-8")
         if dpi:
             logger.debug(f"Setting maximum image DPI to {dpi}")
             html_obj.write_pdf(output_path, dpi=dpi)
@@ -95,13 +94,13 @@ def html_to_pdf(html_content, output_path, base_url=None, dpi=None):
 
 
 def _html_to_pdf_with_executable(
-    html_content, output_path, base_url=None, dpi=None
+    html_path, output_path, base_url=None, dpi=None
 ):  # pragma: no cover
     """
     Convert HTML to PDF using weasyprint executable (fallback for Windows).
 
     Args:
-        html_content: HTML content string
+        html_path: Path to HTML file to convert
         output_path: Path for output PDF file
         base_url: Base URL for resolving relative paths (optional)
         dpi: Maximum image resolution in DPI (optional)
@@ -118,23 +117,21 @@ def _html_to_pdf_with_executable(
             "Install WeasyPrint: https://doc.courtbouillon.org/weasyprint/stable/first_steps.html"
         )
 
-    # Create temp file for HTML
-    with html_temp_file(html_content) as html_tmp_path:
-        # Build command
-        cmd = [weasyprint_cmd]
+    # Build command
+    cmd = [weasyprint_cmd]
 
-        # Add base URL if provided
-        if base_url:
-            cmd.extend(["-u", base_url])
+    # Add base URL if provided
+    if base_url:
+        cmd.extend(["-u", base_url])
 
-        # Add DPI if provided
-        if dpi:
-            cmd.extend(["--dpi", str(dpi)])
-            logger.debug(f"Setting maximum image DPI to {dpi} (executable mode)")
+    # Add DPI if provided
+    if dpi:
+        cmd.extend(["--dpi", str(dpi)])
+        logger.debug(f"Setting maximum image DPI to {dpi} (executable mode)")
 
-        cmd.extend([html_tmp_path, str(output_path)])
+    cmd.extend([html_path, str(output_path)])
 
-        # Call weasyprint executable
-        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-        if result.stderr:
-            logger.error(result.stderr)
+    # Call weasyprint executable
+    result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+    if result.stderr:
+        logger.error(result.stderr)

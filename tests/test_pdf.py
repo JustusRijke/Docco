@@ -132,9 +132,13 @@ def test_collect_css_empty_metadata(tmp_md):
 def test_html_to_pdf_creates_file(tmp_path):
     """Test that PDF file is created."""
     html_content = "<!DOCTYPE html><html><body><p>Test</p></body></html>"
+    html_path = tmp_path / "test.html"
     output_path = tmp_path / "test.pdf"
 
-    result = html_to_pdf(html_content, str(output_path))
+    with open(html_path, "w", encoding="utf-8") as f:
+        f.write(html_content)
+
+    result = html_to_pdf(str(html_path), str(output_path))
 
     assert os.path.exists(str(output_path))
     assert result == str(output_path)
@@ -152,9 +156,13 @@ p { font-size: 14px; }
 </head>
 <body><p>Test</p></body>
 </html>"""
+    html_path = tmp_path / "test.html"
     output_path = tmp_path / "test.pdf"
 
-    result = html_to_pdf(html_content, str(output_path))
+    with open(html_path, "w", encoding="utf-8") as f:
+        f.write(html_content)
+
+    result = html_to_pdf(str(html_path), str(output_path))
 
     assert os.path.exists(str(output_path))
     assert result == str(output_path)
@@ -163,9 +171,13 @@ p { font-size: 14px; }
 def test_html_to_pdf_without_css(tmp_path):
     """Test PDF generation without CSS."""
     html_content = "<!DOCTYPE html><html><body><p>Test</p></body></html>"
+    html_path = tmp_path / "test.html"
     output_path = tmp_path / "test.pdf"
 
-    result = html_to_pdf(html_content, str(output_path))
+    with open(html_path, "w", encoding="utf-8") as f:
+        f.write(html_content)
+
+    result = html_to_pdf(str(html_path), str(output_path))
 
     assert os.path.exists(str(output_path))
     assert result == str(output_path)
@@ -186,24 +198,31 @@ def test_html_to_pdf_with_base_url(tmp_path):
 
     # HTML with relative image path
     html_content = "<!DOCTYPE html><html><body><img src='test.png'/></body></html>"
+    html_path = tmp_path / "test.html"
     output_path_with_base = tmp_path / "with_base.pdf"
     output_path_without_base = tmp_path / "without_base.pdf"
 
+    with open(html_path, "w", encoding="utf-8") as f:
+        f.write(html_content)
+
     # Generate PDF with base_url - should succeed and include the image
     result_with_base = html_to_pdf(
-        html_content, str(output_path_with_base), base_url=str(tmp_path)
+        str(html_path), str(output_path_with_base), base_url=str(tmp_path)
     )
     assert os.path.exists(str(output_path_with_base))
     assert result_with_base == str(output_path_with_base)
     size_with_base = os.path.getsize(str(output_path_with_base))
 
-    # Generate PDF without base_url - image won't resolve but PDF should still be created
-    html_to_pdf(html_content, str(output_path_without_base))
+    # When HTML is provided as a file, WeasyPrint uses the file's directory as base_url by default
+    # So even without explicit base_url, the relative image will resolve
+    html_to_pdf(str(html_path), str(output_path_without_base))
     assert os.path.exists(str(output_path_without_base))
     size_without_base = os.path.getsize(str(output_path_without_base))
 
-    # PDF with base_url should be larger (contains embedded image)
-    assert size_with_base > size_without_base
+    # Both PDFs should contain the image (both have same size) since HTML file location provides base path
+    assert size_with_base == size_without_base
+    # Verify PDF is not empty (contains image)
+    assert size_with_base > 1000
 
 
 def test_html_to_pdf_dpi_with_basic_img_tag(tmp_path, highres_image):
@@ -225,14 +244,18 @@ img {{
 </body>
 </html>"""
 
+    html_path = tmp_path / "test.html"
     output_300dpi = tmp_path / "test_300dpi.pdf"
     output_no_dpi = tmp_path / "test_no_dpi.pdf"
 
+    with open(html_path, "w", encoding="utf-8") as f:
+        f.write(html_content)
+
     # Generate with DPI limit
-    html_to_pdf(html_content, str(output_300dpi), dpi=300)
+    html_to_pdf(str(html_path), str(output_300dpi), dpi=300)
 
     # Generate without DPI limit
-    html_to_pdf(html_content, str(output_no_dpi))
+    html_to_pdf(str(html_path), str(output_no_dpi))
 
     # Extract image info
     images_300dpi = get_pdf_image_info(output_300dpi)
@@ -269,8 +292,13 @@ def test_html_to_pdf_dpi_with_css_styled_images(tmp_path, highres_image):
 </body>
 </html>"""
 
+        html_path = tmp_path / f"test_{test_name}.html"
         output_path = tmp_path / f"test_{test_name}.pdf"
-        html_to_pdf(html_content, str(output_path), dpi=300)
+
+        with open(html_path, "w", encoding="utf-8") as f:
+            f.write(html_content)
+
+        html_to_pdf(str(html_path), str(output_path), dpi=300)
 
         assert os.path.exists(str(output_path))
 
@@ -303,8 +331,13 @@ figure img {{
 </body>
 </html>"""
 
+    html_path = tmp_path / "test_figure.html"
     output_path = tmp_path / "test_figure.pdf"
-    html_to_pdf(html_content, str(output_path), dpi=300)
+
+    with open(html_path, "w", encoding="utf-8") as f:
+        f.write(html_content)
+
+    html_to_pdf(str(html_path), str(output_path), dpi=300)
 
     assert os.path.exists(str(output_path))
 
@@ -342,8 +375,13 @@ img {{
 </body>
 </html>"""
 
+    html_path = tmp_path / "test_multiple.html"
     output_path = tmp_path / "test_multiple.pdf"
-    html_to_pdf(html_content, str(output_path), dpi=300)
+
+    with open(html_path, "w", encoding="utf-8") as f:
+        f.write(html_content)
+
+    html_to_pdf(str(html_path), str(output_path), dpi=300)
 
     assert os.path.exists(str(output_path))
 
@@ -358,10 +396,14 @@ img {{
 def test_html_to_pdf_without_dpi_parameter(tmp_path):
     """Test that PDF generation works without DPI parameter."""
     html_content = "<!DOCTYPE html><html><body><p>Test</p></body></html>"
+    html_path = tmp_path / "test_no_dpi.html"
     output_path = tmp_path / "test_no_dpi.pdf"
 
+    with open(html_path, "w", encoding="utf-8") as f:
+        f.write(html_content)
+
     # Test without DPI parameter (default behavior)
-    result = html_to_pdf(html_content, str(output_path))
+    result = html_to_pdf(str(html_path), str(output_path))
 
     assert os.path.exists(str(output_path))
     assert result == str(output_path)

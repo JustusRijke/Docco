@@ -7,7 +7,6 @@ import logging
 import polib
 from translate.convert import html2po, po2html
 from translate.storage import po
-from docco.core import html_temp_file
 
 logger = logging.getLogger(__name__)
 
@@ -35,70 +34,65 @@ def clean_po_file(po_path):
     po_file.save(po_path)
 
 
-def extract_html_to_pot(html_content, output_path):
+def extract_html_to_pot(html_path, output_path):
     """
-    Extract translatable strings from HTML content to POT file.
+    Extract translatable strings from HTML file to POT file.
 
     Args:
-        html_content: HTML content to extract from
+        html_path: Path to HTML file to extract from
         output_path: Path to write POT file to
 
     Returns:
         str: Path to generated POT file
     """
-    logger.debug(f"Extracting translatable strings from HTML to {output_path}")
+    logger.debug(f"Extracting translatable strings from {html_path} to {output_path}")
 
-    # Create temporary HTML file for translate-toolkit
-    with html_temp_file(html_content) as html_tmp_path:
-        # Convert HTML to POT using file objects
-        with (
-            open(html_tmp_path, "rb") as html_file,
-            open(output_path, "wb") as pot_file,
-        ):
-            html2po.converthtml(
-                html_file, pot_file, None, pot=True, duplicatestyle="merge"
-            )
+    # Convert HTML to POT using file objects
+    with (
+        open(html_path, "rb") as html_file,
+        open(output_path, "wb") as pot_file,
+    ):
+        html2po.converthtml(
+            html_file, pot_file, None, pot=True, duplicatestyle="merge"
+        )
 
-        # Clean bloat from POT file for VCS
-        clean_po_file(output_path)
+    # Clean bloat from POT file for VCS
+    clean_po_file(output_path)
 
-        logger.debug(f"Extracted to POT: {output_path}")
-        return output_path
+    logger.debug(f"Extracted to POT: {output_path}")
+    return output_path
 
 
-def apply_po_to_html(html_content, po_path):
+def apply_po_to_html(html_input_path, po_path, html_output_path):
     """
-    Apply PO file translations to HTML content.
+    Apply PO file translations to HTML file.
 
     Args:
-        html_content: HTML content to translate
+        html_input_path: Path to HTML file to translate
         po_path: Path to PO file with translations
+        html_output_path: Path to write translated HTML file
 
     Returns:
-        str: HTML content with translations applied
+        str: Path to translated HTML file (same as html_output_path)
     """
     logger.debug(f"Applying translations from {po_path}")
 
     if not os.path.exists(po_path):
         raise FileNotFoundError(f"PO file not found: {po_path}")
 
-    # Create temporary files for translate-toolkit
-    with html_temp_file(html_content) as html_tmp_path:
-        with html_temp_file("") as out_tmp_path:
-            # Convert PO to HTML using file objects
-            with (
-                open(po_path, "rb") as po_file,
-                open(html_tmp_path, "rb") as html_file,
-                open(out_tmp_path, "wb") as out_file,
-            ):
-                po2html.converthtml(po_file, out_file, html_file)
+    if not os.path.exists(html_input_path):
+        raise FileNotFoundError(f"HTML input file not found: {html_input_path}")
 
-            # Read the translated HTML
-            with open(out_tmp_path, "r", encoding="utf-8") as f:
-                translated_html = f.read()
+    # Convert PO to HTML using file objects
+    with (
+        open(po_path, "rb") as po_file,
+        open(html_input_path, "rb") as html_file,
+        open(html_output_path, "wb") as out_file,
+    ):
+        po2html.converthtml(po_file, out_file, html_file)
 
-            logger.debug(f"Applied translations from {po_path}")
-            return translated_html
+    logger.debug(f"Applied translations from {po_path}")
+    return html_output_path
 
 
 def get_po_stats(po_path):

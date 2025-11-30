@@ -161,20 +161,23 @@ def _generate_single_pdf(
         body, css_content=css_result["inline"], external_css=css_result["external"]
     )
 
-    # Apply translation to wrapped HTML
-    if po_file:
-        logger.debug(f"Applying translations from {po_file}")
-        html_wrapped = apply_po_to_html(html_wrapped, po_file)
-
+    # Write HTML to file
     html_path = os.path.join(output_dir, html_filename)
     with open(html_path, "w", encoding="utf-8") as f:
         f.write(html_wrapped)
     logger.debug(f"Wrote HTML: {html_filename}")
 
+    # Apply translation if needed (overwrites the HTML file in-place)
+    if po_file:
+        temp_output = os.path.join(output_dir, f"{html_filename}.tmp")
+        apply_po_to_html(html_path, po_file, temp_output)
+        os.replace(temp_output, html_path)
+        logger.debug(f"Applied translations to: {html_filename}")
+
     # Convert to PDF
     pdf_path = os.path.join(output_dir, pdf_filename)
     dpi = metadata.get("dpi")
-    html_to_pdf(html_wrapped, pdf_path, base_url=base_dir, dpi=dpi)
+    html_to_pdf(html_path, pdf_path, base_url=base_dir, dpi=dpi)
 
     # Validate PDF image quality if DPI was specified and validation enabled
     if validate_images and dpi:
@@ -224,22 +227,11 @@ def _generate_multilingual_pdfs(
 
     input_basename = os.path.splitext(os.path.basename(input_file))[0]
     translations_dir = os.path.join(base_dir, input_basename)
-
-    # Step 1: Generate HTML for POT extraction
     os.makedirs(translations_dir, exist_ok=True)
-    wrapped_html = process_markdown_to_html(body)
-
-    # Step 2: Extract POT file from wrapped HTML to translations subfolder
-    pot_path = os.path.join(translations_dir, f"{input_basename}.pot")
-    extract_html_to_pot(wrapped_html, pot_path)
-    logger.debug(f"Extracted POT for multilingual: {pot_path}")
-
-    # Step 2.5: Update existing PO files with new POT content
-    update_po_files(pot_path, translations_dir)
 
     pdf_paths = []
 
-    # Step 3: Generate PDF for base language (with image validation)
+    # Step 1: Generate PDF for base language (keeping intermediate files for POT extraction)
     base_lang_code = base_language.upper()
     logger.info(f"Processing base language: {base_lang_code}")
     pdf_path = _generate_single_pdf(
@@ -249,12 +241,29 @@ def _generate_multilingual_pdfs(
         input_basename,
         output_dir,
         base_dir,
-        keep_intermediate,
-        allow_python,
+        keep_intermediate=True,  # Always keep intermediate for base language (need HTML for POT)
+        allow_python=allow_python,
         lang_suffix=f"_{base_lang_code}",
         validate_images=True,
     )
     pdf_paths.append(pdf_path)
+
+    # Step 2: Extract POT file from base language HTML to translations subfolder
+    base_html_path = os.path.join(output_dir, f"{input_basename}_{base_lang_code}.html")
+    pot_path = os.path.join(translations_dir, f"{input_basename}.pot")
+    extract_html_to_pot(base_html_path, pot_path)
+    logger.debug(f"Extracted POT for multilingual: {pot_path}")
+
+    # Step 3: Update existing PO files with new POT content
+    update_po_files(pot_path, translations_dir)
+
+    # Clean up base language intermediate files if not keeping them
+    if not keep_intermediate:
+        base_md_path = os.path.join(output_dir, f"{input_basename}_{base_lang_code}_intermediate.md")
+        if os.path.exists(base_md_path):
+            os.remove(base_md_path)
+        if os.path.exists(base_html_path):
+            os.remove(base_html_path)
 
     # Step 4: Find and process .po files in translations subfolder
     po_files = sorted(glob.glob(os.path.join(translations_dir, "*.po")))
