@@ -2,17 +2,13 @@
 - allow multiple .po files (so i can add translations for inlined stuff, like standard dislaimers etc)
 - na afronden PT manual, zooi overnemen naar examples
 -- documenteren downloaden fonts
-- bug: 0 dpi resultaat
+- bug: 0 dpi resultaat (svg?)
 - <span> meuk in pot files vermijden (dubbele toc titels -> extra werk)
 - losse nummers vermijden in pot files (of single characters?)
+- check if PDF file is open (can be written), weasyprint melding lelijk
 
 # Nice to have
-- <!-- python --> directive verwijden er vervangen door include, includes bewust maken van bestandsformaat:
--- md: geen postprocessing
--- html: alle strings trimmen, empty lines verwijderen
--- python: script uitvoeren
---- bovenstaande in documentatie toevoegen en claude o.b.v. laten implementeren
-- synta aanpassen directives, aan laten sluiten op functies markdown-py, pandoc, quarto, ...
+- syntax aanpassen directives, aan laten sluiten op functies markdown-py, pandoc, quarto, ...
 - html tester (valid html?), ook toepassen op inlines
 - pdf beveiligen (geen copy/paste? flatten?)
 

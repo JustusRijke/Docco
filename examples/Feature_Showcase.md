@@ -278,15 +278,15 @@ Docco relies on [MarkdownIt](https://markdown-it-py.readthedocs.io/en/latest/) f
 
 Add images using standard Markdown syntax and use `{}` attributes for styling:
 
-`![](images/idea.svg){.icon}`
-
-This defines an image with CSS class `icon` (styled in `css/fancy.css`):
+`![](images/idea.svg){.icon}` defines an image with CSS class `icon` (styled in `css/fancy.css`):
 
 ![](images/idea.svg){.icon}
 
 Or define styles directly: `![](images/idea.svg){style="width:2cm"}`
 
 ![](images/idea.svg){style="width:2cm"}
+
+<!-- inline:"inline/callout.html" icon="images/idea.svg" content="Or, add an image with texxt using an inline function `examples/inline/callout.html`"-->
 
 ## Tables
 

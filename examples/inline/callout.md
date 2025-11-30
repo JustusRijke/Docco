@@ -1,6 +1,0 @@
-<table style="border:none;">
-<tr>
-<td style="border:none; width:60px; vertical-align:middle; padding-right:10px;"><img src="images/{{icon}}" style="width:50px;" /></td>
-<td style="border:none; vertical-align:middle;">{{content}}</td>
-</tr>
-</table>
