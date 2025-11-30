@@ -1,34 +1,9 @@
 """Core utilities: logging, frontmatter parsing, HTML wrapping."""
 
 import logging
-import tempfile
-from pathlib import Path
-from contextlib import contextmanager
 import frontmatter
 from markdown_it import MarkdownIt
 from mdit_py_plugins.attrs import attrs_block_plugin, attrs_plugin
-
-
-@contextmanager
-def html_temp_file(content):
-    """
-    Write HTML content to temp file, yield path, auto-cleanup.
-
-    Args:
-        content: HTML content string
-
-    Yields:
-        str: Path to temporary HTML file
-    """
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".html", delete=False, encoding="utf-8"
-    ) as f:
-        f.write(content)
-        path = f.name
-    try:
-        yield path
-    finally:
-        Path(path).unlink(missing_ok=True)
 
 
 def parse_frontmatter(content):

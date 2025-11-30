@@ -3,14 +3,13 @@
 - na afronden PT manual, zooi overnemen naar examples
 -- documenteren downloaden fonts
 - bug: 0 dpi resultaat (svg?)
-- <span> meuk in pot files vermijden (dubbele toc titels -> extra werk)
-- losse nummers vermijden in pot files (of single characters?)
 - check if PDF file is open (can be written), weasyprint melding lelijk
 
 # Nice to have
 - syntax aanpassen directives, aan laten sluiten op functies markdown-py, pandoc, quarto, ...
 - html tester (valid html?), ook toepassen op inlines
 - pdf beveiligen (geen copy/paste? flatten?)
+- if/endif directives icm arguments gebruiken uit frontmatter, tbv meerdere modellen maken met 1 md file
 
 # Won't have
 - add cli option "watch", where docco will watch for changes in a folder in the given md/css file, and regenerate the pdf immediately, or (must more complex) create a vscode plugin

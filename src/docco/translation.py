@@ -52,9 +52,7 @@ def extract_html_to_pot(html_path, output_path):
         open(html_path, "rb") as html_file,
         open(output_path, "wb") as pot_file,
     ):
-        html2po.converthtml(
-            html_file, pot_file, None, pot=True, duplicatestyle="merge"
-        )
+        html2po.converthtml(html_file, pot_file, None, pot=True, duplicatestyle="merge")
 
     # Clean bloat from POT file for VCS
     clean_po_file(output_path)
@@ -80,7 +78,7 @@ def apply_po_to_html(html_input_path, po_path, html_output_path):
     if not os.path.exists(po_path):
         raise FileNotFoundError(f"PO file not found: {po_path}")
 
-    if not os.path.exists(html_input_path):
+    if not os.path.exists(html_input_path):  # pragma: no cover
         raise FileNotFoundError(f"HTML input file not found: {html_input_path}")
 
     # Convert PO to HTML using file objects

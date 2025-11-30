@@ -82,32 +82,6 @@ def process_directives_iteratively(content, base_dir, allow_python):
     return content
 
 
-def process_markdown_to_html(markdown_body, css_content="", external_css=None):
-    """
-    Convert markdown to complete HTML document.
-
-    Pipeline:
-    1. Markdown → HTML
-    2. Process TOC (generate and number headings)
-    3. Process page layout
-    4. Wrap in HTML document with embedded CSS and external CSS links
-
-    Args:
-        markdown_body: Markdown content
-        css_content: CSS content to embed in <style> tag (optional)
-        external_css: List of external CSS URLs (optional)
-
-    Returns:
-        str: Complete HTML document
-    """
-    body_html = markdown_to_html(markdown_body)
-    body_html = process_toc(body_html)
-    body_html = process_page_layout(body_html)
-    return wrap_html(
-        body_html, css_content=css_content, external_css=external_css or []
-    )
-
-
 def _generate_single_pdf(
     body,
     metadata,
@@ -134,7 +108,7 @@ def _generate_single_pdf(
         keep_intermediate: Keep intermediate HTML/MD files if True
         allow_python: Allow python code execution in directives
         lang_suffix: Optional language suffix for filenames (e.g., "_de")
-        po_file: Optional PO file for translations (applied to combined HTML before TOC/layout)
+        po_file: Optional PO file for translations (applied before TOC/layout)
         validate_images: Validate image DPI if DPI frontmatter is set (default: True)
 
     Returns:
@@ -156,23 +130,53 @@ def _generate_single_pdf(
         f.write(body)
     logger.debug(f"Wrote intermediate: {md_filename}")
 
-    # Convert markdown to complete HTML with embedded CSS and external CSS URLs
-    html_wrapped = process_markdown_to_html(
-        body, css_content=css_result["inline"], external_css=css_result["external"]
+    # Convert markdown to body HTML (no TOC/layout yet)
+    body_html = markdown_to_html(body)
+
+    # Apply translation if needed (before TOC generation)
+    if po_file:
+        temp_body_path = os.path.join(output_dir, f"{html_filename}.body_temp")
+        temp_translated_path = os.path.join(
+            output_dir, f"{html_filename}.translated_temp"
+        )
+
+        # Wrap body HTML temporarily for translation
+        temp_wrapped = wrap_html(body_html, css_content="", external_css=[])
+        with open(temp_body_path, "w", encoding="utf-8") as f:
+            f.write(temp_wrapped)
+
+        # Apply translation
+        apply_po_to_html(temp_body_path, po_file, temp_translated_path)
+
+        # Extract translated body from wrapped HTML
+        with open(temp_translated_path, "r", encoding="utf-8") as f:
+            translated_html = f.read()
+        # Extract body content (between <body> and </body>)
+        import re
+
+        body_match = re.search(r"<body>\s*(.*?)\s*</body>", translated_html, re.DOTALL)
+        if body_match:
+            body_html = body_match.group(1)
+
+        # Clean up temp files
+        os.remove(temp_body_path)
+        os.remove(temp_translated_path)
+        logger.debug("Applied translations before TOC")
+
+    # Process TOC and layout (on potentially translated body HTML)
+    body_html = process_toc(body_html)
+    body_html = process_page_layout(body_html)
+
+    # Wrap in complete HTML document with CSS
+    html_wrapped = wrap_html(
+        body_html, css_content=css_result["inline"], external_css=css_result["external"]
     )
 
-    # Write HTML to file
+    # Write final HTML to file
     html_path = os.path.join(output_dir, html_filename)
     with open(html_path, "w", encoding="utf-8") as f:
         f.write(html_wrapped)
     logger.debug(f"Wrote HTML: {html_filename}")
-
-    # Apply translation if needed (overwrites the HTML file in-place)
-    if po_file:
-        temp_output = os.path.join(output_dir, f"{html_filename}.tmp")
-        apply_po_to_html(html_path, po_file, temp_output)
-        os.replace(temp_output, html_path)
-        logger.debug(f"Applied translations to: {html_filename}")
 
     # Convert to PDF
     pdf_path = os.path.join(output_dir, pdf_filename)
@@ -230,10 +234,33 @@ def _generate_multilingual_pdfs(
     os.makedirs(translations_dir, exist_ok=True)
 
     pdf_paths = []
-
-    # Step 1: Generate PDF for base language (keeping intermediate files for POT extraction)
     base_lang_code = base_language.upper()
     logger.info(f"Processing base language: {base_lang_code}")
+
+    # Step 1: Generate HTML without TOC for POT extraction
+    css_result = collect_css_content(input_file, metadata)
+    body_html = markdown_to_html(body)
+    html_for_pot = wrap_html(
+        body_html, css_content=css_result["inline"], external_css=css_result["external"]
+    )
+
+    # Write HTML for POT extraction (without TOC/layout)
+    pot_html_path = os.path.join(output_dir, f"{input_basename}_for_pot.html")
+    with open(pot_html_path, "w", encoding="utf-8") as f:
+        f.write(html_for_pot)
+
+    # Step 2: Extract POT file from pre-TOC HTML to translations subfolder
+    pot_path = os.path.join(translations_dir, f"{input_basename}.pot")
+    extract_html_to_pot(pot_html_path, pot_path)
+    logger.debug(f"Extracted POT for multilingual: {pot_path}")
+
+    # Clean up POT HTML
+    os.remove(pot_html_path)
+
+    # Step 3: Update existing PO files with new POT content
+    update_po_files(pot_path, translations_dir)
+
+    # Step 4: Generate PDF for base language (with TOC/layout)
     pdf_path = _generate_single_pdf(
         body,
         metadata,
@@ -241,31 +268,14 @@ def _generate_multilingual_pdfs(
         input_basename,
         output_dir,
         base_dir,
-        keep_intermediate=True,  # Always keep intermediate for base language (need HTML for POT)
+        keep_intermediate=keep_intermediate,
         allow_python=allow_python,
         lang_suffix=f"_{base_lang_code}",
         validate_images=True,
     )
     pdf_paths.append(pdf_path)
 
-    # Step 2: Extract POT file from base language HTML to translations subfolder
-    base_html_path = os.path.join(output_dir, f"{input_basename}_{base_lang_code}.html")
-    pot_path = os.path.join(translations_dir, f"{input_basename}.pot")
-    extract_html_to_pot(base_html_path, pot_path)
-    logger.debug(f"Extracted POT for multilingual: {pot_path}")
-
-    # Step 3: Update existing PO files with new POT content
-    update_po_files(pot_path, translations_dir)
-
-    # Clean up base language intermediate files if not keeping them
-    if not keep_intermediate:
-        base_md_path = os.path.join(output_dir, f"{input_basename}_{base_lang_code}_intermediate.md")
-        if os.path.exists(base_md_path):
-            os.remove(base_md_path)
-        if os.path.exists(base_html_path):
-            os.remove(base_html_path)
-
-    # Step 4: Find and process .po files in translations subfolder
+    # Step 5: Find and process .po files in translations subfolder
     po_files = sorted(glob.glob(os.path.join(translations_dir, "*.po")))
     for po_file in po_files:
         lang_code = os.path.splitext(os.path.basename(po_file))[0].upper()

@@ -15,7 +15,7 @@ msgid "Hello World"
 msgstr "Hallo Wereld"
 
 msgid "Page"
-msgstr ""
+msgstr "Pagina"
 
 msgid "This is a simple multilingual document example."
 msgstr "Dit is een eenvoudig meertalig documentvoorbeeld."
