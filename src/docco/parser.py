@@ -41,30 +41,26 @@ def preprocess_document(content, input_file, allow_python=False):
 
 
 def has_directives(content):
-    """Check if content contains inline or python directives (excluding code blocks)."""
+    """Check if content contains inline directives (excluding code blocks)."""
     # Protect code blocks before checking for directives
     protected_content, _ = extract_code_blocks(content)
-    return bool(
-        re.search(r"<!--\s*inline\s*:", protected_content)
-        or re.search(r"<!--\s*python\s*-->", protected_content)
-    )
+    return bool(re.search(r"<!--\s*inline\s*:", protected_content))
 
 
 def process_directives_iteratively(content, base_dir, allow_python):
     """
-    Iteratively process inline and python directives until none remain.
+    Iteratively process inline directives until none remain.
 
-    Processing order per iteration:
-    1. Inline expansion
-    2. Python execution (handled within process_inlines)
+    Inline directives can include .py files that output more inline directives,
+    requiring multiple iterations.
 
     Args:
         content: Markdown content
         base_dir: Base directory for inline resolution
-        allow_python: Allow python directive execution
+        allow_python: Allow python file execution via inline directive
 
     Returns:
-        str: Processed content with no inline/python directives
+        str: Processed content with no inline directives
 
     Raises:
         ValueError: If max iterations exceeded

@@ -150,83 +150,111 @@ def test_inline_with_spaces_around_keyword(fixture_dir):
     assert "# Inlined Content" in result
 
 
-def test_python_directive_not_allowed_by_default(fixture_dir):
-    """Test that python directives raise error if not explicitly allowed."""
+def test_inline_md_file_no_processing(fixture_dir):
+    """Test .md files have no post-processing."""
     content = """# Document
 
-<!-- python -->
-for i in range(3):
-    print(i)
-<!-- /python -->"""
-    with pytest.raises(ValueError, match="Python code execution not allowed"):
+<!-- inline:"tests/fixtures/simple.md" -->"""
+    result = process_inlines(content, ".")
+    # MD files should preserve exact content
+    assert "This is a simple markdown document" in result
+
+
+def test_inline_html_file_trimming(fixture_dir):
+    """Test .html files have lines trimmed."""
+    content = """# Document
+
+<!-- inline:"tests/fixtures/simple.html" -->"""
+    result = process_inlines(content, ".")
+    # Lines should be trimmed (no leading spaces)
+    assert "<div>" in result
+    assert "<p>This is indented HTML</p>" in result
+    assert "    <div>" not in result  # Original had leading spaces
+
+
+def test_inline_html_empty_lines_preserved(fixture_dir):
+    """Test .html trimming preserves empty lines."""
+    content = """# Document
+
+<!-- inline:"tests/fixtures/simple.html" -->"""
+    result = process_inlines(content, ".")
+    # Should contain trimmed content with preserved line structure
+    lines = result.split('\n')
+    assert any(line == '' for line in lines)  # Empty lines preserved
+
+
+def test_inline_html_with_placeholders(fixture_dir):
+    """Test placeholders work before trimming."""
+    content = """# Document
+
+<!-- inline:"tests/fixtures/placeholder.html" name="Alice" count="42" -->"""
+    result = process_inlines(content, ".")
+    # Placeholders should be replaced
+    assert "Alice" in result
+    assert "42" in result
+    assert "{{name}}" not in result
+    assert "{{count}}" not in result
+    # And lines should be trimmed
+    assert "<div>" in result
+    assert "    <div>" not in result
+
+
+def test_inline_py_file_execution(fixture_dir):
+    """Test .py files are executed."""
+    content = """# Document
+
+<!-- inline:"tests/fixtures/simple.py" -->"""
+    result = process_inlines(content, ".", allow_python=True)
+    assert "Hello from Python!" in result
+    assert "Line 2" in result
+
+
+def test_inline_py_file_with_arguments(fixture_dir):
+    """Test inline arguments passed via sys.argv."""
+    content = """# Document
+
+<!-- inline:"tests/fixtures/args.py" count="10" name="test" -->"""
+    result = process_inlines(content, ".", allow_python=True)
+    # Arguments should be in key=value format
+    assert "count=10" in result
+    assert "name=test" in result
+
+
+def test_inline_py_file_requires_allow_python(fixture_dir):
+    """Test .py files require --allow-python flag."""
+    content = """# Document
+
+<!-- inline:"tests/fixtures/simple.py" -->"""
+    with pytest.raises(ValueError, match="Python file execution not allowed"):
         process_inlines(content, ".", allow_python=False)
 
 
-def test_python_directive_simple_loop(fixture_dir):
-    """Test python directive with simple loop."""
+def test_inline_py_file_execution_error(fixture_dir):
+    """Test .py execution errors fail the build."""
     content = """# Document
 
-<!-- python -->
-for i in range(10):
-    print(i, end='')
-<!-- /python -->"""
-    result = process_inlines(content, ".", allow_python=True)
-    assert "0123456789" in result
-    assert "<!-- python -->" not in result
-    assert "<!-- /python -->" not in result
-
-
-def test_python_directive_with_output(fixture_dir):
-    """Test python directive captures output."""
-    content = """# Document
-
-Before
-
-<!-- python -->
-print("Hello from Python")
-<!-- /python -->
-
-After"""
-    result = process_inlines(content, ".", allow_python=True)
-    assert "Hello from Python" in result
-    assert "Before" in result
-    assert "After" in result
-
-
-def test_python_directive_execution_error(fixture_dir):
-    """Test that python execution errors raise ValueError."""
-    content = """# Document
-
-<!-- python -->
-undefined_variable
-<!-- /python -->"""
+<!-- inline:"tests/fixtures/error.py" -->"""
     with pytest.raises(ValueError, match="Python execution error"):
         process_inlines(content, ".", allow_python=True)
 
 
-def test_python_directive_with_multiple_statements(fixture_dir):
-    """Test python directive with multiple statements."""
+def test_inline_py_output_contains_directives(fixture_dir):
+    """Test .py output can contain inline directives."""
     content = """# Document
 
-<!-- python -->
-x = 5
-y = 10
-print(x + y)
-<!-- /python -->"""
+<!-- inline:"tests/fixtures/nested.py" -->"""
     result = process_inlines(content, ".", allow_python=True)
-    assert "15" in result
+    # Should output the directive (to be processed in next iteration)
+    assert '<!-- inline:"simple.md" -->' in result
 
 
-def test_python_and_inline_directives_together(fixture_dir):
-    """Test that python directives work with inline directives."""
+def test_inline_unknown_file_type_warning(fixture_dir, caplog):
+    """Test unknown file types issue warning."""
     content = """# Document
 
-<!-- python -->
-for i in range(3):
-    print(i, end='')
-<!-- /python -->
-
-<!-- inline:"tests/fixtures/inline_target.md" -->"""
-    result = process_inlines(content, ".", allow_python=True)
-    assert "012" in result
-    assert "# Inlined Content" in result
+<!-- inline:"tests/fixtures/unknown.txt" -->"""
+    result = process_inlines(content, ".")
+    # Content should be inserted as-is
+    assert "This is a text file with unknown type." in result
+    # Warning should be logged
+    assert "Unknown file type" in caplog.text

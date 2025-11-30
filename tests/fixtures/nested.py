@@ -1,0 +1,1 @@
+print('<!-- inline:"simple.md" -->')

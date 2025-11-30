@@ -1,0 +1,2 @@
+This is a text file with unknown type.
+It should be inserted as-is with a warning.

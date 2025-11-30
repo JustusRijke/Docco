@@ -87,11 +87,10 @@ This setting applies to all raster images (PNG, JPEG, etc.) embedded in the docu
 ## Understanding Directives
 
 Docco extends markdown with powerful **directives** - special HTML comments that trigger processing. Directives enable:
-- File inclusion and composition
-- Dynamic content generation
+- File inclusion and composition with file-type awareness (.md, .html, .py)
+- Dynamic content generation (via Python files)
 - Page layout control
 - Placeholder substitution
-- Python code execution
 
 ### General Directive Rule
 
@@ -100,7 +99,7 @@ Docco extends markdown with powerful **directives** - special HTML comments that
 Example (this won't execute):
 ```
 <!-- inline:"file.md" -->
-<!-- python -->print("hello")<!-- /python -->
+<!-- inline:"script.py" -->
 ```
 
 This protection ensures compatibility with standard markdown parsing and allows you to safely demonstrate directive syntax in tutorials and documentation.
@@ -186,7 +185,7 @@ This section returns to **portrait orientation** using the `<!-- portrait -->` d
 
 Docco supports page headers and footers added via **inline directives**. Headers and footers are processed through the same pipeline as the main document, supporting:
 - Placeholder substitution
-- Dynamic content with `<!-- python -->` directives
+- Dynamic content via Python files (`.py`)
 - File inclusion with `<!-- inline -->` directives
 
 ### Adding Headers & Footers
@@ -227,13 +226,13 @@ Docco provides example header and footer HTML files in the `examples/` folder:
 
 Examine these files to understand the structure and create your own headers and footers with placeholders (e.g., `{{title}}`, `{{author}}`) and directives.
 
-## Python Code Execution
+## Dynamic Content via Python Files
 
-The `<!-- python -->` directive executes Python code and inserts stdout output into the markdown. Useful for generating dynamic content.
+Python files (`.py`) can be inlined to generate dynamic content. When you inline a Python file, Docco executes it and inserts the stdout output into the document.
 
-**Syntax:** `<!-- python -->code<!-- /python -->`
+**Syntax:** `<!-- inline:"script.py" -->`
 
-**Important:** Python code execution is disabled by default for security reasons. Use the `--allow-python` flag to enable it:
+**Important:** Python file execution is disabled by default for security reasons. Use the `--allow-python` flag to enable it:
 
 ```bash
 docco input.md -o output/ --allow-python
@@ -241,23 +240,35 @@ docco input.md -o output/ --allow-python
 
 ### Example
 
-This code:
-```
+File `examples/counter.py`:
+```python
 print("_", end='')
 for i in range(10):
     print(i, end='')
 print("_", end='')
 ```
 
-Produces:
-<!-- python -->
-print("_", end='')
-for i in range(10):
-    print(i, end='')
-print("_", end='')
-<!-- /python -->
+Using `<!-- inline:"counter.py" -->` produces:
+<!-- inline:"counter.py" -->
 
 The output can contain other directives (markdown, inline files, etc.), enabling complex dynamic content generation.
+
+### Passing Arguments to Python Scripts
+
+You can pass arguments to Python scripts via the inline directive. Arguments are available in `sys.argv`:
+
+```markdown
+<!-- inline:"script.py" count="10" name="test" -->
+```
+
+In your Python script:
+```python
+import sys
+# sys.argv = ['script.py', 'count=10', 'name=test']
+for arg in sys.argv[1:]:
+    key, value = arg.split('=')
+    print(f"{key}: {value}")
+```
 
 # Document Formatting
 

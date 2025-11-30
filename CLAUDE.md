@@ -23,8 +23,8 @@ Target audience: developers and technical writers familiar with Markdown, HTML, 
 Processing pipeline:
 
 1. **Frontmatter Parsing** (`core.py`): Extracts YAML metadata and document body
-2. **Directive Processing** (`parser.py`): Iteratively processes inline and python directives
-3. **Inline Processing** (`inline.py`): Embeds external markdown via `<!-- inline:"path" -->` directives (recursive, max depth 10)
+2. **Directive Processing** (`parser.py`): Iteratively processes inline directives with file-type aware post-processing
+3. **Inline Processing** (`inline.py`): Embeds external files via `<!-- inline:"path" -->` directives; .md files inlined as-is, .html files trimmed, .py files executed (recursive, max depth 10)
 4. **HTML Conversion** (`core.py`): Converts markdown to HTML; collects CSS from frontmatter (files are embedded in `<style>` tags, external URLs become `<link>` tags)
 5. **Translation Application** (`translation.py`): Optionally applies PO file translations to HTML
 6. **TOC Generation** (`toc.py`): Generates table of contents with automatic heading numbering
@@ -155,7 +155,7 @@ docco examples/Multilingual_Document_Example.md -o output/ --allow-python
 src/docco/
   cli.py              - CLI argument parsing and commands
   parser.py           - Main pipeline orchestration (includes preprocess_document)
-  inline.py           - Directive processing (inline, python, code block protection)
+  inline.py           - Inline directive processing with file-type aware handlers (.md, .html, .py)
   core.py             - Frontmatter, markdown/HTML conversion, temp file utilities
   pdf.py              - CSS collection and HTML to PDF rendering
   toc.py              - Table of contents generation with heading numbering
