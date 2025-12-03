@@ -2,6 +2,8 @@
 css:
   - "css/page.css"
   - "css/header_footer.css"
+  - "css/fonts.css"
+  - "css/fancy.css"
 multilingual: true
 base_language: en
 ---

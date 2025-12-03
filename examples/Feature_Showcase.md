@@ -3,8 +3,8 @@ css:
   - "css/page.css"
   - "css/toc.css"
   - "css/header_footer.css"
+  - "css/fonts.css"
   - "css/fancy.css"
-  - "https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&family=Montserrat:wght@700&display=swap"
 ---
 <!-- inline:"header.html" title="Docco Feature Showcase" author="Docco Team" -->
 <!-- inline:"footer.html" -->

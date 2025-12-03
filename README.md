@@ -119,16 +119,18 @@ pytest --cov=src/docco --cov-report=term-missing
 # Lint code
 ruff check .
 
-# Build example PDFs
-docco examples/Feature_Showcase.md -o tests/output/ --allow-python
+# Build example PDF
+cd examples
+docco Feature_Showcase.md --allow-python
 ```
 
 ### Testing
 
 The test suite includes regression tests that verify generated PDFs match baseline versions stored in `tests/baselines/`. When adding features or fixing bugs, update baselines by running:
 ```bash
-docco examples/Feature_Showcase.md -o tests/baselines/ --allow-python
-docco examples/Multilingual_Document_Example.md -o tests/baselines/ --allow-python
+cd examples
+docco Feature_Showcase.md -o ../tests/baselines/ --allow-python
+docco Multilingual_Document_Example.md -o ../tests/baselines/ --allow-python
 ```
 
 **Note:** PDFs may render slightly differently across systems due to variations in installed fonts, Pango/Harfbuzz versions, and OS-level font rendering settings. Minor pixel-level differences are expected and normal.
