@@ -33,7 +33,8 @@ jobs:
           libffi-dev \
           libjpeg-dev \
           libopenjp2-7-dev \
-          poppler-utils
+          poppler-utils \
+          gettext
 
     - name: Install Python dependencies
       run: |
