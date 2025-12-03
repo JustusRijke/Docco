@@ -1,79 +1,131 @@
 # Docco
 
-**A CLI tool for generating professional A4 PDFs from Markdown with CSS styling.**
+![Tests](https://github.com/justusrijke/docco/actions/workflows/test.yml/badge.svg)
+
+**A CLI tool for generating professional PDFs from Markdown with CSS styling.**
 
 Docco converts Markdown documents into styled PDFs using WeasyPrint. Specify your content in Markdown, configure styling with CSS, and generate beautiful PDFs with automatic table of contents, section numbering, headers, footers, and multilingual support.
 
 ## Features
 
-- **Markdown to PDF**: Convert Markdown to professional A4 PDFs
+- **Markdown to PDF**: Convert Markdown to professional PDFs with CSS styling
 - **CSS Styling**: Complete layout control via CSS (including external fonts like Google Fonts)
-- **Table of Contents**: Automatically generated and numbered
+- **Table of Contents**: Automatically generated with hierarchical numbering
 - **Page Layout**: Control page breaks and orientation (portrait/landscape)
-- **Headers & Footers**: Customizable page headers and footers
+- **Headers & Footers**: Customizable page headers and footers via HTML templates
 - **Multilingual Support**: Generate language-specific PDFs from POT/PO translation files
-- **Dynamic Content**: Inline file inclusion and Python code execution
-- **YAML Frontmatter**: Configure document settings (CSS, multilingual mode, etc.)
+- **Dynamic Content**: Inline file inclusion with placeholder substitution and Python code execution
+- **YAML Frontmatter**: Configure document settings with validation and warnings for unknown keys
+- **DPI Validation**: Automatic validation of image quality in generated PDFs
+- **Translation Workflow**: Automatic POT extraction and PO file updates in multilingual mode
+
+## Requirements
+
+- Python ≥ 3.10
+- WeasyPrint (for PDF generation)
 
 ## Installation
 
-### Linux
-
 ```bash
-# Install WeasyPrint (system package)
-# Debian/Ubuntu:
-sudo apt install weasyprint
-
-# Arch:
-sudo pacman -S python-weasyprint
-
-# Fedora:
-sudo dnf install weasyprint
-
-# Install Docco
 pip install -e .
 ```
 
-### Windows
+### Note on WeasyPrint
 
-Download the WeasyPrint executable from [GitHub releases](https://github.com/Kozea/WeasyPrint/releases), extract it, and add to PATH.
+WeasyPrint installation varies by platform. See the [WeasyPrint installation guide](https://doc.courtbouillon.org/weasyprint/stable/first_steps.html) for platform-specific instructions.
 
-```bash
-# Install Docco
-pip install -e .
-```
-
-Docco will automatically use the WeasyPrint executable if the Python library is unavailable.
+On Windows, WeasyPrint is not available via pip. Docco will automatically use the WeasyPrint executable if the Python library is unavailable.
 
 ## Quick Start
 
 ```bash
-# Build a PDF
-docco build examples/Feature_Showcase.md -o output/
+# Generate a PDF
+docco input.md -o output/
 
-# Extract translatable strings
-docco extract document.md -o translations/
+# With verbose output
+docco input.md -o output/ -v
 
-# Build with translation
-docco build document.md --po translations/de.po -o output/
+# Keep intermediate files for debugging
+docco input.md -o output/ --keep-intermediate
+
+# Single-language mode with translation
+docco input.md --po translations/de.po -o output/
+
+# Allow Python code execution (security-sensitive)
+docco input.md --allow-python -o output/
 ```
+
+### Multilingual Mode
+
+Set `multilingual: true` in frontmatter to automatically:
+- Extract POT file from HTML content
+- Update all PO files with new/changed strings
+- Generate PDFs for base language + all translations
+
+```yaml
+---
+multilingual: true
+base_language: en
+css: style.css
+---
+```
+
+Then simply run:
+```bash
+docco input.md -o output/
+```
+
+Docco will generate `input_EN.pdf`, `input_DE.pdf`, etc., based on available PO files in the `input/` directory.
+
+## Frontmatter Configuration
+
+Supported frontmatter keys:
+
+- `css`: CSS stylesheet paths or URLs (string or list)
+- `dpi`: Maximum image resolution for PDF output (integer)
+- `multilingual`: Enable multilingual mode (boolean)
+- `base_language`: Base language code for multilingual documents (string)
+
+Unknown keys trigger a warning but don't prevent processing.
 
 ## Learn by Example
 
 See `examples/` for complete working examples:
 
 - **Feature_Showcase.md** - Demonstrates all features with detailed explanations
-- **Multilingual_Document_Example.md** - Multilingual document setup
-- **css/** - Stylesheet examples for layout, headers, footers, and typography
+- **Multilingual_Document_Example.md** - Multilingual document setup and translation workflow
+- **css/** - Stylesheet examples for page layout, headers, footers, and typography
+- **header.html, footer.html** - HTML templates for page headers and footers
+- **inline/** - Reusable content templates with placeholder substitution
 
-The examples directory includes:
-- CSS files for page styling
-- HTML templates for headers and footers
-- Inline content templates for reusable components
+Build the examples:
+```bash
+docco examples/Feature_Showcase.md -o output/ --allow-python
+docco examples/Multilingual_Document_Example.md -o output/ --allow-python
+```
+
+## Development
+
+```bash
+# Install with dev dependencies
+pip install -e ".[dev]"
+
+# Run tests
+pytest
+
+# Run tests with coverage
+pytest --cov=src/docco --cov-report=term-missing
+
+# Lint code
+ruff check .
+
+# Build example PDFs
+docco examples/Feature_Showcase.md -o tests/output/ --allow-python
+```
 
 ## Documentation
 
-- **CLAUDE.md** - Complete technical documentation
+- **CLAUDE.md** - Complete technical documentation for developers
 - **examples/** - Working examples with inline documentation
 
 ## License

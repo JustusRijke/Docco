@@ -22,7 +22,7 @@ Target audience: developers and technical writers familiar with Markdown, HTML, 
 
 Processing pipeline:
 
-1. **Frontmatter Parsing** (`core.py`): Extracts YAML metadata and document body
+1. **Frontmatter Parsing** (`core.py`): Extracts YAML metadata and document body, validates frontmatter keys (warns about unknown keys)
 2. **Directive Processing** (`parser.py`): Iteratively processes inline directives with file-type aware post-processing
 3. **Inline Processing** (`inline.py`): Embeds external files via `<!-- inline:"path" -->` directives; .md files inlined as-is, .html files trimmed, .py files executed (recursive, max depth 10)
 4. **HTML Conversion** (`core.py`): Converts markdown to HTML; collects CSS from frontmatter (files are embedded in `<style>` tags, external URLs become `<link>` tags)
@@ -30,6 +30,7 @@ Processing pipeline:
 6. **TOC Generation** (`toc.py`): Generates table of contents with automatic heading numbering
 7. **Page Layout** (`page_layout.py`): Applies page layout directives (pagebreak, landscape/portrait)
 8. **PDF Generation** (`pdf.py`): Renders HTML to PDF with CSS support (both embedded and external CSS)
+9. **PDF Validation** (`pdf_validation.py`): Optionally validates image DPI in generated PDF (when `dpi` frontmatter is set)
 
 Main entry point: `parse_markdown()` in `parser.py`. CLI orchestration in `cli.py`.
 
@@ -65,6 +66,16 @@ Notes:
 - Extracts strings from final HTML, enabling translation of dynamic content (TOC, page elements)
 - Applies translations before TOC generation so headings are numbered in target language
 - Integrates with CAT tools supporting HTML
+
+### Frontmatter Validation
+
+Known frontmatter keys are validated during parsing:
+- `css` - CSS stylesheet paths or URLs (string or list)
+- `dpi` - Maximum image resolution for PDF output (integer)
+- `multilingual` - Enable multilingual mode (boolean)
+- `base_language` - Base language code for multilingual documents (string)
+
+Unknown keys trigger a warning but don't prevent processing. This allows users to include custom metadata while being notified of potential typos.
 
 ## Development Commands
 
@@ -119,13 +130,41 @@ docco examples/Multilingual_Document_Example.md -o output/ --allow-python
 
 ## Dependencies
 
-- **pyyaml**: YAML frontmatter parsing
+- **python-frontmatter**: YAML frontmatter parsing
+- **pyyaml**: YAML library (used by python-frontmatter)
 - **markdown-it-py**: Markdown to HTML conversion
+- **mdit-py-plugins**: Markdown-it plugins (attributes support)
 - **weasyprint**: HTML to PDF generation
 - **translate-toolkit**: HTML to POT/PO file conversion
+- **polib**: PO file manipulation
+- **colorlog**: Colored terminal output
+- **pymupdf**: PDF image DPI validation
 - **pytest**: Testing framework
 - **pytest-cov**: Coverage measurement
 - **ruff**: Code linting
+
+## File Structure
+
+```
+src/docco/
+  cli.py              - CLI argument parsing and commands
+  parser.py           - Main pipeline orchestration (includes preprocess_document)
+  inline.py           - Inline directive processing with file-type aware handlers (.md, .html, .py)
+  core.py             - Frontmatter parsing, validation, markdown/HTML conversion
+  pdf.py              - CSS collection and HTML to PDF rendering
+  pdf_validation.py   - PDF image DPI validation
+  toc.py              - Table of contents generation with heading numbering
+  page_layout.py      - Page break and orientation directives
+  translation.py      - PO file application and POT extraction
+  logging_config.py   - Colored logging configuration
+
+examples/
+  Feature_Showcase.md                 - Comprehensive feature demo
+  Multilingual_Document_Example.md    - Translation workflow example
+  css/                                - Stylesheet examples
+  header.html, footer.html            - Page template examples
+  inline/                             - Reusable inline content
+```
 
 ## Coding Guidelines
 
@@ -148,24 +187,4 @@ docco examples/Multilingual_Document_Example.md -o output/ --allow-python
 - Prefer fail-fast: avoid over-defensive exception handling. Silently failing code is unacceptable.
 - When adding new dependencies (python libraries), make sure they are recently maintained
 - Keep git commit messages clean and concise, not more than 2 lines
-
-## File Structure
-
-```
-src/docco/
-  cli.py              - CLI argument parsing and commands
-  parser.py           - Main pipeline orchestration (includes preprocess_document)
-  inline.py           - Inline directive processing with file-type aware handlers (.md, .html, .py)
-  core.py             - Frontmatter, markdown/HTML conversion, temp file utilities
-  pdf.py              - CSS collection and HTML to PDF rendering
-  toc.py              - Table of contents generation with heading numbering
-  page_layout.py      - Page break and orientation directives
-  translation.py      - PO file application and POT extraction
-
-examples/
-  Feature_Showcase.md                 - Comprehensive feature demo
-  Multilingual_Document_Example.md    - Translation workflow example
-  css/                                - Stylesheet examples
-  header.html, footer.html            - Page template examples
-  inline/                             - Reusable inline content
-```
+- When committing, always ask before reverting changes
