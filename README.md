@@ -131,6 +131,8 @@ docco examples/Feature_Showcase.md -o tests/baselines/ --allow-python
 docco examples/Multilingual_Document_Example.md -o tests/baselines/ --allow-python
 ```
 
+**Note:** PDFs may render slightly differently across systems due to variations in installed fonts, Pango/Harfbuzz versions, and OS-level font rendering settings. Minor pixel-level differences are expected and normal.
+
 ## Documentation
 
 - **CLAUDE.md** - Complete technical documentation for developers
