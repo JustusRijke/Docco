@@ -2,7 +2,6 @@
 - allow multiple .po files (so i can add translations for inlined stuff, like standard dislaimers etc)
 - na afronden PT manual, zooi overnemen naar examples
 -- documenteren downloaden fonts
-- bug: 0 dpi resultaat (svg?)
 
 # Nice to have
 - syntax aanpassen directives, aan laten sluiten op functies markdown-py, pandoc, quarto, ...

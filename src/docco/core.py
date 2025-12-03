@@ -5,6 +5,30 @@ import frontmatter
 from markdown_it import MarkdownIt
 from mdit_py_plugins.attrs import attrs_block_plugin, attrs_plugin
 
+logger = logging.getLogger(__name__)
+
+# Known frontmatter keys that docco understands
+KNOWN_FRONTMATTER_KEYS = {
+    "css",
+    "dpi",
+    "multilingual",
+    "base_language",
+}
+
+
+def _validate_frontmatter(metadata):
+    """
+    Warn about unknown frontmatter keys.
+
+    Args:
+        metadata: Parsed frontmatter metadata dict
+    """
+    unknown_keys = set(metadata.keys()) - KNOWN_FRONTMATTER_KEYS
+    if unknown_keys:
+        logger.warning(
+            f"Unknown frontmatter declaration(s): {', '.join(sorted(unknown_keys))}"
+        )
+
 
 def parse_frontmatter(content):
     """
@@ -21,6 +45,7 @@ def parse_frontmatter(content):
     """
     try:
         post = frontmatter.loads(content)
+        _validate_frontmatter(post.metadata)
         return post.metadata, post.content
     except Exception as e:
         raise ValueError(f"Invalid YAML in frontmatter: {e}")

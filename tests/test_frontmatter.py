@@ -1,6 +1,7 @@
 """Tests for frontmatter parsing."""
 
 import pytest
+import logging
 from docco.core import parse_frontmatter
 
 
@@ -45,3 +46,34 @@ title: My Document
 # Content"""
     with pytest.raises(ValueError):
         parse_frontmatter(content)
+
+
+def test_parse_frontmatter_unknown_keys(caplog):
+    """Test that unknown frontmatter keys trigger a warning."""
+    content = """---
+css: style.css
+unknown_field: value
+another_unknown: 123
+---
+# Content"""
+    with caplog.at_level(logging.WARNING):
+        metadata, body = parse_frontmatter(content)
+    assert "Unknown frontmatter declaration(s): another_unknown, unknown_field" in caplog.text
+    assert metadata["unknown_field"] == "value"
+    assert metadata["another_unknown"] == 123
+
+
+def test_parse_frontmatter_known_keys_no_warning(caplog):
+    """Test that known frontmatter keys do not trigger warnings."""
+    content = """---
+css: style.css
+dpi: 300
+multilingual: true
+base_language: en
+---
+# Content"""
+    with caplog.at_level(logging.WARNING):
+        metadata, body = parse_frontmatter(content)
+    assert "Unknown frontmatter declaration" not in caplog.text
+    assert metadata["css"] == "style.css"
+    assert metadata["dpi"] == 300
