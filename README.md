@@ -92,7 +92,7 @@ Unknown keys trigger a warning but don't prevent processing.
 
 See `examples/` for complete working examples:
 
-- **Feature_Showcase.md** - Demonstrates all features with detailed explanations
+- **Feature_Showcase.md** - Demonstrates all features with detailed explanations ([view PDF](tests/baselines/Feature_Showcase.pdf))
 - **Multilingual_Document_Example.md** - Multilingual document setup and translation workflow
 - **css/** - Stylesheet examples for page layout, headers, footers, and typography
 - **header.html, footer.html** - HTML templates for page headers and footers
@@ -121,6 +121,14 @@ ruff check .
 
 # Build example PDFs
 docco examples/Feature_Showcase.md -o tests/output/ --allow-python
+```
+
+### Testing
+
+The test suite includes regression tests that verify generated PDFs match baseline versions stored in `tests/baselines/`. When adding features or fixing bugs, update baselines by running:
+```bash
+docco examples/Feature_Showcase.md -o tests/baselines/ --allow-python
+docco examples/Multilingual_Document_Example.md -o tests/baselines/ --allow-python
 ```
 
 ## Documentation
