@@ -7,6 +7,28 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
+def _check_file_writable(file_path):  # pragma: no cover
+    """
+    Check if output file can be written (not open in another process).
+    Works on Windows and Linux.
+
+    Raises:
+        RuntimeError: If file is locked or inaccessible
+    """
+    try:
+        with open(file_path, "w"):
+            pass
+    except (PermissionError, OSError):
+        raise RuntimeError(
+            f"Cannot write to PDF file: {file_path}\n"
+            "The file may be open in another application. "
+            "Please close it and try again."
+        )
+    except Exception as e:
+        raise RuntimeError(f"Error accessing PDF file {file_path}: {e}")
+
+
 # Check if WeasyPrint Python library is available
 try:
     from weasyprint import HTML
@@ -77,6 +99,8 @@ def html_to_pdf(html_path, output_path, base_url=None, dpi=None):
     Returns:
         str: Path to generated PDF file
     """
+    _check_file_writable(output_path)
+
     if USE_EXECUTABLE:  # pragma: no cover
         logger.info("Using weasyprint executable for PDF generation")
         _html_to_pdf_with_executable(html_path, output_path, base_url, dpi)

@@ -3,7 +3,6 @@
 - na afronden PT manual, zooi overnemen naar examples
 -- documenteren downloaden fonts
 - bug: 0 dpi resultaat (svg?)
-- check if PDF file is open (can be written), weasyprint melding lelijk
 
 # Nice to have
 - syntax aanpassen directives, aan laten sluiten op functies markdown-py, pandoc, quarto, ...
