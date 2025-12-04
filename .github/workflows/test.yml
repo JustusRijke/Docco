@@ -52,6 +52,14 @@ jobs:
       - name: Run tests with coverage
         run: pytest --cov=src/docco --cov-report=term-missing --cov-report=xml
 
+      - name: Upload test output on failure
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: test-output-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: tests/output/
+          retention-days: 7
+
       - name: Upload coverage to Codecov
         if: matrix.python-version == '3.11' && runner.os == 'Linux'
         uses: codecov/codecov-action@v5
