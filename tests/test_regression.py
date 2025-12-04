@@ -73,7 +73,7 @@ def test_regression_example_pdfs():
             if diff_dir.exists():
                 shutil.rmtree(diff_dir)
             diff_dir.mkdir()
-            diff_pages = pdfdiff_pages(pdf_file, baseline_pdf, tempdir=diff_dir)
+            diff_pages = pdfdiff_pages(pdf_file, baseline_pdf, tempdir=diff_dir, dpi=150)
 
             if not diff_pages:
                 logger.info(f"✓ Visual match (checksum differs): {filename}")
