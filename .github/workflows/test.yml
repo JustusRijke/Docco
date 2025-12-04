@@ -7,11 +7,10 @@ on:
     branches: [main]
 
 jobs:
-  test:
-    runs-on: ${{ matrix.os }}
+  test-linux:
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
         python-version: ["3.11", "3.x"]
 
     steps:
@@ -23,23 +22,56 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
 
-      - name: Install system dependencies (Ubuntu)
-        if: runner.os == 'Linux'
+      - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y gettext imagemagick poppler-utils
 
-      - name: Install system dependencies (Windows)
-        if: runner.os == 'Windows'
+      - name: Install Python dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Run tests with coverage
+        run: pytest --cov=src/docco --cov-report=term-missing --cov-report=xml
+
+      - name: Upload test output on failure
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: test-output-ubuntu-py${{ matrix.python-version }}
+          path: tests/output/
+          retention-days: 7
+
+      - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.11'
+        uses: codecov/codecov-action@v5
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
+
+  test-windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.x"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install system dependencies
         run: |
           choco install imagemagick poppler -y
 
-      - name: Download and extract WeasyPrint executable (Windows)
-        if: runner.os == 'Windows'
+      - name: Download and extract WeasyPrint executable
         shell: pwsh
         run: |
           $version = "66.0"
-          $url = "https://github.com/CourtBouillon/weasyprint-wheels/releases/download/v${version}/weasyprint-${version}-win64.zip"
+          $url = "https://github.com/Kozea/WeasyPrint/releases/download/v${version}/weasyprint-windows.zip"
           $outfile = "weasyprint.zip"
           Invoke-WebRequest -Uri $url -OutFile $outfile
           Expand-Archive -Path $outfile -DestinationPath "weasyprint-extract"
@@ -56,13 +88,6 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v5
         with:
-          name: test-output-${{ matrix.os }}-py${{ matrix.python-version }}
+          name: test-output-windows-py${{ matrix.python-version }}
           path: tests/output/
           retention-days: 7
-
-      - name: Upload coverage to Codecov
-        if: matrix.python-version == '3.11' && runner.os == 'Linux'
-        uses: codecov/codecov-action@v5
-        with:
-          file: ./coverage.xml
-          fail_ci_if_error: false
