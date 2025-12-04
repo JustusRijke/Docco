@@ -128,6 +128,13 @@ docco examples/Feature_Showcase.md -o output/ --allow-python
 docco examples/Multilingual_Document_Example.md -o output/ --allow-python
 ```
 
+**Regression Testing:**
+- Uses two-tier comparison: MD5 checksum (primary) + visual comparison (fallback)
+- Visual comparison requires: `pip install diff-pdf-visually` + system dependencies
+- System deps: `sudo apt-get install imagemagick poppler-utils`
+- Checksum differences across platforms are expected and handled via visual comparison
+- Test output distinguishes: perfect match, visual match, or actual regression
+
 ## Dependencies
 
 - **python-frontmatter**: YAML frontmatter parsing
@@ -142,6 +149,8 @@ docco examples/Multilingual_Document_Example.md -o output/ --allow-python
 - **pytest**: Testing framework
 - **pytest-cov**: Coverage measurement
 - **ruff**: Code linting
+- **diff-pdf-visually**: Visual PDF comparison for regression tests (dev dependency only)
+  - System dependencies: ImageMagick, Poppler (pdftocairo)
 
 ## File Structure
 

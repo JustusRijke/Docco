@@ -24,6 +24,24 @@ Docco converts Markdown documents into styled PDFs using WeasyPrint. Specify you
 - Python ≥ 3.10
 - WeasyPrint (for PDF generation)
 
+### Development Dependencies
+
+For visual PDF regression testing:
+- ImageMagick (for PDF visual comparison)
+- Poppler (pdftocairo for PDF rasterization)
+
+Install on Ubuntu/Debian:
+```bash
+sudo apt-get install imagemagick poppler-utils
+```
+
+Install on macOS:
+```bash
+brew install imagemagick poppler
+```
+
+On Windows: Download from [ImageMagick](https://imagemagick.org/script/download.php#windows) and [Poppler](https://github.com/oschwartz10612/poppler-windows/releases)
+
 ## Installation
 
 ```bash
@@ -126,14 +144,20 @@ docco Feature_Showcase.md --allow-python
 
 ### Testing
 
-The test suite includes regression tests that verify generated PDFs match baseline versions stored in `tests/baselines/`. When adding features or fixing bugs, update baselines by running:
+The test suite includes regression tests that verify generated PDFs match baseline versions stored in `tests/baselines/`.
+
+**Regression Test Behavior:**
+1. Primary: MD5 checksum comparison (fast, deterministic)
+2. Fallback: Visual comparison if checksums differ (requires ImageMagick + Poppler)
+
+PDFs may render with different checksums across systems due to font/library variations, but visual comparison ensures content is identical. This addresses cross-platform testing issues.
+
+When adding features or fixing bugs, update baselines by running:
 ```bash
 cd examples
 docco Feature_Showcase.md -o ../tests/baselines/ --allow-python
 docco Multilingual_Document_Example.md -o ../tests/baselines/ --allow-python
 ```
-
-**Note:** PDFs may render slightly differently across systems due to variations in installed fonts, Pango/Harfbuzz versions, and OS-level font rendering settings. Minor pixel-level differences are expected and normal.
 
 ## Documentation
 

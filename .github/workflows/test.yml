@@ -25,7 +25,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y gettext
+          sudo apt-get install -y gettext imagemagick poppler-utils
         
       - name: Install Python dependencies
         run: pip install -e ".[dev]"
