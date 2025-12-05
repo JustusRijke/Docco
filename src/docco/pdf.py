@@ -69,7 +69,9 @@ def collect_css_content(markdown_file, metadata):
 
     # Separate URLs from file paths
     for css_path in frontmatter_css:
-        if css_path.startswith("http://") or css_path.startswith("https://"):
+        if css_path.startswith("http://") or css_path.startswith(
+            "https://"
+        ):  # pragma: no cover
             external_urls.append(css_path)
             logger.debug(f"Using external CSS: {css_path}")
         else:

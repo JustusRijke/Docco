@@ -5,7 +5,8 @@ import tempfile
 import pytest
 from PIL import Image
 
-# Import the module to test
+# Import the modules to test
+from docco.pdf import html_to_pdf
 from docco.pdf_validation import check_pdf_image_dpi, validate_and_warn_pdf_images
 
 
@@ -30,9 +31,7 @@ def test_check_pdf_image_dpi_with_low_dpi_images():
 
         # Generate PDF
         pdf_path = os.path.join(tmpdir, "test.pdf")
-        from weasyprint import HTML
-
-        HTML(html_path).write_pdf(pdf_path)
+        html_to_pdf(html_path, pdf_path)
 
         # Check DPI
         result = check_pdf_image_dpi(pdf_path, threshold=300)
@@ -77,9 +76,7 @@ img {{ max-width: 100%; height: auto; }}
 
         # Generate PDF with DPI limit
         pdf_path = os.path.join(tmpdir, "test.pdf")
-        from weasyprint import HTML
-
-        HTML(html_path).write_pdf(pdf_path, dpi=300)
+        html_to_pdf(html_path, pdf_path, dpi=300)
 
         # Check DPI
         result = check_pdf_image_dpi(pdf_path, threshold=300)
@@ -104,9 +101,7 @@ def test_check_pdf_image_dpi_no_images():
 
         # Generate PDF
         pdf_path = os.path.join(tmpdir, "test.pdf")
-        from weasyprint import HTML
-
-        HTML(html_path).write_pdf(pdf_path)
+        html_to_pdf(html_path, pdf_path)
 
         # Check DPI
         result = check_pdf_image_dpi(pdf_path, threshold=300)
@@ -157,9 +152,7 @@ def test_validate_and_warn_pdf_images_with_warnings(caplog):
 
         # Generate PDF
         pdf_path = os.path.join(tmpdir, "test.pdf")
-        from weasyprint import HTML
-
-        HTML(html_path).write_pdf(pdf_path)
+        html_to_pdf(html_path, pdf_path)
 
         # Validate
         validate_and_warn_pdf_images(pdf_path, threshold=300)
@@ -197,9 +190,7 @@ img {{ width: 0.52in; height: 0.52in; }}
 
         # Generate PDF
         pdf_path = os.path.join(tmpdir, "test.pdf")
-        from weasyprint import HTML
-
-        HTML(html_path).write_pdf(pdf_path)
+        html_to_pdf(html_path, pdf_path)
 
         # Check DPI - threshold is 75, image should be at 75 DPI
         result = check_pdf_image_dpi(pdf_path, threshold=75)
@@ -237,9 +228,7 @@ img {{ max-width: 100%; height: auto; }}
 
         # Generate PDF with DPI limit
         pdf_path = os.path.join(tmpdir, "test.pdf")
-        from weasyprint import HTML
-
-        HTML(html_path).write_pdf(pdf_path, dpi=300)
+        html_to_pdf(html_path, pdf_path, dpi=300)
 
         # Clear caplog before validation
         caplog.clear()
