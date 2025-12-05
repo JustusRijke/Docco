@@ -193,7 +193,7 @@ def test_get_po_stats_all_translated():
     """Test get_po_stats with fully translated PO file."""
     with tempfile.TemporaryDirectory() as tmpdir:
         po_path = os.path.join(tmpdir, "test.po")
-        with open(po_path, "w") as f:
+        with open(po_path, "w", encoding="utf-8") as f:
             f.write("""# German Translation
 msgid "Hello"
 msgstr "Hallo"
@@ -495,7 +495,7 @@ msgstr ""
             )
 
         # Create PO with original string (before change)
-        with open(po_path, "w") as f:
+        with open(po_path, "w", encoding="utf-8") as f:
             f.write(
                 """
 msgid "Hello"

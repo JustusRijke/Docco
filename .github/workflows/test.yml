@@ -68,6 +68,15 @@ jobs:
         run: |
           choco install poppler -y
           choco install imagemagick --version=6.9.11.62 --force -y
+          choco install poedit -y
+
+      - name: Add Poedit gettext tools to PATH
+        shell: pwsh
+        run: |
+          $poeditPath = "C:\Program Files (x86)\Poedit\Gettexttools\bin"
+          if (Test-Path $poeditPath) {
+            echo "$poeditPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          }
 
       - name: Download and extract WeasyPrint executable
         shell: pwsh

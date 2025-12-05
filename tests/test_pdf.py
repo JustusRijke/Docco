@@ -2,7 +2,13 @@
 
 import os
 import pytest
+from pathlib import Path
 from docco.pdf import collect_css_content, html_to_pdf
+
+
+def path_to_file_url(file_path):
+    """Convert file path to proper file:// URL (cross-platform)."""
+    return Path(file_path).as_uri()
 
 
 def get_pdf_image_info(pdf_path):
@@ -240,7 +246,7 @@ img {{
 </style>
 </head>
 <body>
-<img src="file://{highres_image}" alt="test">
+<img src="{path_to_file_url(highres_image)}" alt="test">
 </body>
 </html>"""
 
@@ -288,7 +294,7 @@ def test_html_to_pdf_dpi_with_css_styled_images(tmp_path, highres_image):
 <html>
 <head><meta charset="UTF-8"></head>
 <body>
-<img src="file://{highres_image}" alt="test" style="{css_style}">
+<img src="{path_to_file_url(highres_image)}" alt="test" style="{css_style}">
 </body>
 </html>"""
 
@@ -325,7 +331,7 @@ figure img {{
 </head>
 <body>
 <figure>
-    <img src="file://{highres_image}" alt="High-res image">
+    <img src="{path_to_file_url(highres_image)}" alt="High-res image">
     <figcaption>This is a test image</figcaption>
 </figure>
 </body>
@@ -364,13 +370,13 @@ img {{
 </head>
 <body>
 <div>
-    <img src="file://{highres_image}" alt="image 1">
+    <img src="{path_to_file_url(highres_image)}" alt="image1">
 </div>
 <div>
-    <img src="file://{highres_image}" alt="image 2">
+    <img src="{path_to_file_url(highres_image)}" alt="image2">
 </div>
 <div>
-    <img src="file://{highres_image}" alt="image 3">
+    <img src="{path_to_file_url(highres_image)}" alt="image3">
 </div>
 </body>
 </html>"""
