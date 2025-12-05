@@ -71,7 +71,7 @@ jobs:
       - name: Download and install Poppler
         shell: pwsh
         run: |
-          $url = "https://github.com/oschwartz10612/poppler-windows/archive/refs/tags/v21.11.0-0.zip"
+          $url = "https://github.com/oschwartz10612/poppler-windows/releases/download/v21.11.0-0/Release-21.11.0-0.zip"
           $outfile = "poppler.zip"
           Invoke-WebRequest -Uri $url -OutFile $outfile
           Expand-Archive -Path $outfile -DestinationPath "."
