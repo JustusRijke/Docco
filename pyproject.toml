@@ -28,7 +28,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "ruff==0.14.3",
-    "pytest==8.4.2",
+    "pytest==9.0.1",
     "pytest-cov==7.0.0",
     "radon==6.0.1",
     "diff-pdf-visually==1.8.1",
