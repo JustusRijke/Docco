@@ -71,7 +71,7 @@ jobs:
       - name: Download and extract WeasyPrint executable
         shell: pwsh
         run: |
-          $version = "66.0"
+          $version = "67.0"
           $url = "https://github.com/Kozea/WeasyPrint/releases/download/v${version}/weasyprint-windows.zip"
           $outfile = "weasyprint.zip"
           Invoke-WebRequest -Uri $url -OutFile $outfile
