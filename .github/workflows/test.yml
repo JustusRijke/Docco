@@ -64,10 +64,25 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
 
-      - name: Install system dependencies
+      - name: Download and install ImageMagick
+        shell: pwsh
         run: |
-          choco install imagemagick --version=6.9.11.62 --force -y
+          $url = "https://imagemagick.org/archive/binaries/ImageMagick-6.9.13-34-portable-Q16-x64.7z"
+          $outfile = "ImageMagick.7z"
+          Invoke-WebRequest -Uri $url -OutFile $outfile
+          Expand-7ZipArchive -Path $outfile -DestinationPath "ImageMagick"
+          $binpath = "$PWD\ImageMagick"
+          echo "$binpath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          Write-Host "Added ImageMagick to PATH: $binpath"
 
+          # Verify ImageMagick is available
+          $env:PATH = "$binpath;$env:PATH"
+          $cmd = Get-Command compare -ErrorAction SilentlyContinue
+          if (-not $cmd) {
+            throw "ImageMagick (compare.exe) not found after installation"
+          }
+          Write-Host "Verified: ImageMagick found at $($cmd.Source)"
+          
       - name: Download and install Poppler
         shell: pwsh
         run: |
@@ -81,11 +96,11 @@ jobs:
 
           # Verify pdftocairo is available
           $env:PATH = "$binpath;$env:PATH"
-          $pdftocairo = Get-Command pdftocairo -ErrorAction SilentlyContinue
-          if (-not $pdftocairo) {
+          $cmd = Get-Command pdftocairo -ErrorAction SilentlyContinue
+          if (-not $cmd) {
             throw "pdftocairo not found after installation"
           }
-          Write-Host "Verified: pdftocairo found at $($pdftocairo.Source)"
+          Write-Host "Verified: pdftocairo found at $($cmd.Source)"
 
       - name: Download and install gettext
         shell: pwsh
@@ -100,11 +115,11 @@ jobs:
 
           # Verify msginit is available
           $env:PATH = "$binpath;$env:PATH"
-          $msginit = Get-Command msginit -ErrorAction SilentlyContinue
-          if (-not $msginit) {
+          $cmd = Get-Command msginit -ErrorAction SilentlyContinue
+          if (-not $cmd) {
             throw "msginit not found after installation"
           }
-          Write-Host "Verified: msginit found at $($msginit.Source)"
+          Write-Host "Verified: msginit found at $($cmd.Source)"
 
       - name: Download and extract WeasyPrint executable
         shell: pwsh
@@ -119,11 +134,11 @@ jobs:
 
           # Verify weasyprint is available
           $env:PATH = "$binpath;$env:PATH"
-          $weasyprint = Get-Command weasyprint -ErrorAction SilentlyContinue
-          if (-not $weasyprint) {
+          $cmd = Get-Command weasyprint -ErrorAction SilentlyContinue
+          if (-not $cmd) {
             throw "weasyprint not found after installation"
           }
-          Write-Host "Verified: weasyprint found at $($weasyprint.Source)"
+          Write-Host "Verified: weasyprint found at $($cmd.Source)"
 
       - name: Install Python dependencies
         run: pip install -e ".[dev]"
