@@ -17,3 +17,22 @@
   font-weight: bold;
 
 }
+
+@font-face {
+  font-family: 'DejaVu Sans Mono';
+  src: url('./fonts/DejaVuSansMono.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'DejaVu Sans Mono';
+  src: url('./fonts/DejaVuSansMono-Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+}
+
+/* Code blocks use embedded monospace font */
+code, pre, kbd, samp, tt {
+  font-family: 'DejaVu Sans Mono';
+}
