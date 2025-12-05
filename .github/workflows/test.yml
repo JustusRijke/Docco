@@ -50,7 +50,6 @@ jobs:
 
   test-windows:
     runs-on: windows-latest
-    if: false
     strategy:
       matrix:
         python-version: ["3.11", "3.x"]
