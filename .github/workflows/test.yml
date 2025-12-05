@@ -75,9 +75,17 @@ jobs:
           $outfile = "poppler.zip"
           Invoke-WebRequest -Uri $url -OutFile $outfile
           Expand-Archive -Path $outfile -DestinationPath "."
-          $popplerBin = "$PWD\poppler-windows-21.11.0-0\Library\bin"
-          echo "$popplerBin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          Write-Host "Added Poppler to PATH: $popplerBin"
+          $binpath = "$PWD\poppler-21.11.0\Library\bin"
+          echo "$binpath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          Write-Host "Added Poppler to PATH: $binpath"
+
+          # Verify pdftocairo is available
+          $env:PATH = "$binpath;$env:PATH"
+          $pdftocairo = Get-Command pdftocairo -ErrorAction SilentlyContinue
+          if (-not $pdftocairo) {
+            throw "pdftocairo not found after installation"
+          }
+          Write-Host "Verified: pdftocairo found at $($pdftocairo.Source)"
 
       - name: Download and install gettext
         shell: pwsh
@@ -86,28 +94,36 @@ jobs:
           $outfile = "gettext.zip"
           Invoke-WebRequest -Uri $url -OutFile $outfile
           Expand-Archive -Path $outfile -DestinationPath "gettext"
-          $gettextBin = "$PWD\gettext\bin"
-          echo "$gettextBin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          Write-Host "Added gettext to PATH: $gettextBin"
+          $binpath = "$PWD\gettext\bin"
+          echo "$binpath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          Write-Host "Added gettext to PATH: $binpath"
 
-      - name: Verify tools are in PATH
-        shell: pwsh
-        run: |
-          Write-Host "Checking pdftocairo..."
-          & where.exe pdftocairo
-          Write-Host "Checking msginit..."
-          & where.exe msginit
+          # Verify msginit is available
+          $env:PATH = "$binpath;$env:PATH"
+          $msginit = Get-Command msginit -ErrorAction SilentlyContinue
+          if (-not $msginit) {
+            throw "msginit not found after installation"
+          }
+          Write-Host "Verified: msginit found at $($msginit.Source)"
 
       - name: Download and extract WeasyPrint executable
         shell: pwsh
         run: |
-          $version = "67.0"
-          $url = "https://github.com/Kozea/WeasyPrint/releases/download/v${version}/weasyprint-windows.zip"
+          $url = "https://github.com/Kozea/WeasyPrint/releases/download/v67.0/weasyprint-windows.zip"
           $outfile = "weasyprint.zip"
           Invoke-WebRequest -Uri $url -OutFile $outfile
-          Expand-Archive -Path $outfile -DestinationPath "weasyprint-extract"
-          $exePath = (Get-ChildItem -Path "weasyprint-extract" -Filter "weasyprint.exe" -Recurse).DirectoryName
-          echo "$exePath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          Expand-Archive -Path $outfile -DestinationPath "weasyprint"
+          $binpath = "$PWD\weasyprint\dist"
+          echo "$binpath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          Write-Host "Added WeasyPrint to PATH: $binpath"
+
+          # Verify weasyprint is available
+          $env:PATH = "$binpath;$env:PATH"
+          $weasyprint = Get-Command weasyprint -ErrorAction SilentlyContinue
+          if (-not $weasyprint) {
+            throw "weasyprint not found after installation"
+          }
+          Write-Host "Verified: weasyprint found at $($weasyprint.Source)"
 
       - name: Install Python dependencies
         run: pip install -e ".[dev]"
