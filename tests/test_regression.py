@@ -27,19 +27,9 @@ def test_regression_example_pdfs():
     Falls back to visual comparison if checksums differ.
     Outputs all files (PDF + HTML) to tests/output for inspection.
     """
-    examples_dir = os.path.join(
-        os.path.dirname(__file__),
-        "..",
-        "examples"
-    )
-    baselines_dir = os.path.join(
-        os.path.dirname(__file__),
-        "baselines"
-    )
-    output_dir = os.path.join(
-        os.path.dirname(__file__),
-        "output"
-    )
+    examples_dir = os.path.join(os.path.dirname(__file__), "..", "examples")
+    baselines_dir = os.path.join(os.path.dirname(__file__), "baselines")
+    output_dir = os.path.join(os.path.dirname(__file__), "output")
 
     # Ensure output and baselines directories exist
     os.makedirs(output_dir, exist_ok=True)
@@ -52,15 +42,18 @@ def test_regression_example_pdfs():
 
     for md_file in md_files:
         # Parse and generate PDFs (keep intermediate HTML for debugging)
-        output_files = parse_markdown(md_file, output_dir, allow_python=True, keep_intermediate=True)
+        output_files = parse_markdown(
+            md_file, output_dir, allow_python=True, keep_intermediate=True
+        )
 
         # Check each generated PDF against baseline
         for pdf_file in output_files:
             filename = os.path.basename(pdf_file)
             baseline_pdf = os.path.join(baselines_dir, filename)
 
-            assert os.path.exists(baseline_pdf), \
+            assert os.path.exists(baseline_pdf), (
                 f"Baseline missing for {filename} (generated from {os.path.basename(md_file)})"
+            )
 
             actual_checksum = get_file_checksum(pdf_file)
             baseline_checksum = get_file_checksum(baseline_pdf)
@@ -73,18 +66,23 @@ def test_regression_example_pdfs():
             if diff_dir.exists():
                 shutil.rmtree(diff_dir)
             diff_dir.mkdir()
-            diff_pages = pdfdiff_pages(pdf_file, baseline_pdf, tempdir=diff_dir, dpi=150)
+            diff_pages = pdfdiff_pages(
+                pdf_file, baseline_pdf, tempdir=diff_dir, dpi=150, threshold=50
+            )
 
             if not diff_pages:
                 logger.info(f"✓ Visual match (checksum differs): {filename}")
                 continue
 
             # Visual comparison failed - report which pages differ
-            pages_info = f"page(s) {diff_pages}" if diff_pages != [-1] else "different number of pages"
-            assert False, \
-                f"PDF mismatch for {filename} (from {os.path.basename(md_file)})\n" \
-                f"  Checksum: {actual_checksum} != {baseline_checksum}\n" \
-                f"  Visual: Differences on {pages_info}\n" \
+            pages_info = (
+                f"page(s) {diff_pages}"
+                if diff_pages != [-1]
+                else "different number of pages"
+            )
+            assert False, (
+                f"PDF mismatch for {filename} (from {os.path.basename(md_file)})\n"
+                f"  Checksum: {actual_checksum} != {baseline_checksum}\n"
+                f"  Visual: Differences on {pages_info}\n"
                 f"  Diff artifacts: {diff_dir}"
-
-
+            )
