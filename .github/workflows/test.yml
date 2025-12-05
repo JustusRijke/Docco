@@ -70,13 +70,43 @@ jobs:
           choco install imagemagick --version=6.9.11.62 --force -y
           choco install poedit -y
 
-      - name: Add Poedit gettext tools to PATH
+      - name: Add tools to PATH
         shell: pwsh
         run: |
-          $poeditPath = "C:\Program Files (x86)\Poedit\Gettexttools\bin"
+          # Add Poppler (pdftocairo) to PATH
+          $popplerPath = "C:\ProgramData\chocolatey\lib\poppler\tools\Library\bin"
+          if (Test-Path $popplerPath) {
+            echo "$popplerPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+            Write-Host "Added Poppler to PATH: $popplerPath"
+          } else {
+            Write-Host "Warning: Poppler path not found at $popplerPath"
+            Get-ChildItem "C:\ProgramData\chocolatey\lib\poppler" -Recurse -Filter "pdftocairo.exe" | ForEach-Object { Write-Host "Found at: $($_.DirectoryName)" }
+          }
+
+          # Add Poedit gettext tools to PATH
+          $poeditPath = "C:\Program Files\Poedit\GettextTools\bin"
           if (Test-Path $poeditPath) {
             echo "$poeditPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+            Write-Host "Added Poedit gettext tools to PATH: $poeditPath"
+          } else {
+            # Try x86 path
+            $poeditPath = "C:\Program Files (x86)\Poedit\GettextTools\bin"
+            if (Test-Path $poeditPath) {
+              echo "$poeditPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+              Write-Host "Added Poedit gettext tools to PATH: $poeditPath"
+            } else {
+              Write-Host "Warning: Poedit gettext tools not found"
+              Get-ChildItem "C:\Program Files" -Recurse -Filter "msginit.exe" -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "Found at: $($_.DirectoryName)" }
+            }
           }
+
+      - name: Verify tools are in PATH
+        shell: pwsh
+        run: |
+          Write-Host "Checking pdftocairo..."
+          & where.exe pdftocairo
+          Write-Host "Checking msginit..."
+          & where.exe msginit
 
       - name: Download and extract WeasyPrint executable
         shell: pwsh
