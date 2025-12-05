@@ -67,7 +67,6 @@ jobs:
       - name: Install system dependencies
         run: |
           choco install imagemagick --version=6.9.11.62 --force -y
-          choco install poedit -y
 
       - name: Download and install Poppler
         shell: pwsh
@@ -80,24 +79,16 @@ jobs:
           echo "$popplerBin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           Write-Host "Added Poppler to PATH: $popplerBin"
 
-      - name: Add Poedit gettext tools to PATH
+      - name: Download and install gettext
         shell: pwsh
         run: |
-          $poeditPath = "C:\Program Files\Poedit\GettextTools\bin"
-          if (Test-Path $poeditPath) {
-            echo "$poeditPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-            Write-Host "Added Poedit gettext tools to PATH: $poeditPath"
-          } else {
-            # Try x86 path
-            $poeditPath = "C:\Program Files (x86)\Poedit\GettextTools\bin"
-            if (Test-Path $poeditPath) {
-              echo "$poeditPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-              Write-Host "Added Poedit gettext tools to PATH: $poeditPath"
-            } else {
-              Write-Host "Warning: Poedit gettext tools not found"
-              Get-ChildItem "C:\Program Files" -Recurse -Filter "msginit.exe" -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "Found at: $($_.DirectoryName)" }
-            }
-          }
+          $url = "https://github.com/mlocati/gettext-iconv-windows/releases/download/v0.21-v1.16/gettext0.21-iconv1.16-static-64.zip"
+          $outfile = "gettext.zip"
+          Invoke-WebRequest -Uri $url -OutFile $outfile
+          Expand-Archive -Path $outfile -DestinationPath "gettext"
+          $gettextBin = "$PWD\gettext\bin"
+          echo "$gettextBin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          Write-Host "Added gettext to PATH: $gettextBin"
 
       - name: Verify tools are in PATH
         shell: pwsh
