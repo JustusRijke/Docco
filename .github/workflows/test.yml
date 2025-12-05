@@ -67,7 +67,7 @@ jobs:
       - name: Install system dependencies
         run: |
           choco install poppler -y
-          choco install imagemagick --version=6.9.11.60 -y
+          choco install imagemagick --version=6.9.11.62 --force -y
 
       - name: Download and extract WeasyPrint executable
         shell: pwsh
