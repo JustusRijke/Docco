@@ -58,7 +58,10 @@ another_unknown: 123
 # Content"""
     with caplog.at_level(logging.WARNING):
         metadata, body = parse_frontmatter(content)
-    assert "Unknown frontmatter declaration(s): another_unknown, unknown_field" in caplog.text
+    assert (
+        "Unknown frontmatter declaration(s): another_unknown, unknown_field"
+        in caplog.text
+    )
     assert metadata["unknown_field"] == "value"
     assert metadata["another_unknown"] == 123
 

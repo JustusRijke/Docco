@@ -29,6 +29,5 @@ def test_cyclomatic_complexity():
 
     assert not violations, (
         f"Found {len(violations)} function(s) exceeding "
-        f"complexity threshold of {MAX_COMPLEXITY}:\n" +
-        "\n".join(violations)
+        f"complexity threshold of {MAX_COMPLEXITY}:\n" + "\n".join(violations)
     )

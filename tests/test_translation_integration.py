@@ -232,7 +232,11 @@ Original content."""
         # Create a PO file by copying POT and adding translations
         po_path = os.path.join(translations_dir, "de.po")
         import subprocess
-        subprocess.run(["msginit", "--no-translator", "-i", pot_path, "-o", po_path, "-l", "de"], check=True)
+
+        subprocess.run(
+            ["msginit", "--no-translator", "-i", pot_path, "-o", po_path, "-l", "de"],
+            check=True,
+        )
 
         # Now manually translate some strings in the PO file
         with open(po_path, "r", encoding="utf-8") as f:

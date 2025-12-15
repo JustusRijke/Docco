@@ -179,8 +179,8 @@ def test_inline_html_empty_lines_preserved(fixture_dir):
 <!-- inline:"tests/fixtures/simple.html" -->"""
     result = process_inlines(content, ".")
     # Should contain trimmed content with preserved line structure
-    lines = result.split('\n')
-    assert any(line == '' for line in lines)  # Empty lines preserved
+    lines = result.split("\n")
+    assert any(line == "" for line in lines)  # Empty lines preserved
 
 
 def test_inline_html_with_placeholders(fixture_dir):

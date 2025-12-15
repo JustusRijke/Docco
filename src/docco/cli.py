@@ -77,9 +77,7 @@ def main():
                 parts.append(f"{counter.warning_count} warning(s)")
             logger.warning(f"Completed with {', '.join(parts)}")
         else:
-            logger.info(
-                f"Successfully generated {len(output_files)} output file(s)"
-            )
+            logger.info(f"Successfully generated {len(output_files)} output file(s)")
     except Exception as e:
         logger.error(f"Error: {e}", exc_info=True)
         sys.exit(1)

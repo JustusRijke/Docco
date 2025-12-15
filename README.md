@@ -1,6 +1,10 @@
 # Docco
 
-![Tests](https://github.com/justusrijke/docco/actions/workflows/test.yml/badge.svg)
+[![Build](https://github.com/JustusRijke/docco/actions/workflows/build.yml/badge.svg)](https://github.com/JustusRijke/docco/actions/workflows/build.yml)
+[![codecov](https://codecov.io/gh/JustusRijke/Docco/graph/badge.svg?token=26BSQ0KYAS)](https://codecov.io/gh/JustusRijke/Docco)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 
 **A CLI tool for generating professional PDFs from Markdown with CSS styling.**
 
@@ -139,7 +143,3 @@ docco Multilingual_Document_Example.md -o ../tests/baselines/ --allow-python
 
 - **CLAUDE.md** - Complete technical documentation for developers
 - **examples/** - Working examples with inline documentation
-
-## License
-
-MIT
