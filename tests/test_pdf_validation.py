@@ -198,8 +198,9 @@ img {{ width: 0.52in; height: 0.52in; }}
         assert result is not None
         assert result["total_images"] >= 1
         # Image at exactly threshold should NOT be flagged
-        assert len(result["low_dpi_images"]) == 0, \
+        assert len(result["low_dpi_images"]) == 0, (
             f"Image at exactly {75} DPI should not be flagged. Got: {result['low_dpi_images']}"
+        )
 
 
 def test_validate_and_warn_pdf_images_no_warnings(caplog):

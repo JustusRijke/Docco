@@ -72,8 +72,8 @@ def test_hierarchical_toc_structure():
     ]
     toc_html = _build_toc_html(headings)
     assert '<nav class="toc">' in toc_html
-    assert 'toc-level-1' in toc_html
-    assert 'toc-level-2' in toc_html
+    assert "toc-level-1" in toc_html
+    assert "toc-level-2" in toc_html
     assert '<a href="#h1"><span class="toc-number">1 </span>Chapter 1</a>' in toc_html
 
 
@@ -82,7 +82,7 @@ def test_toc_with_no_headings():
     html = "<!-- TOC -->\n<p>No headings here</p>"
     result = process_toc(html)
     assert '<nav class="toc">' in result
-    assert 'No headings found' in result
+    assert "No headings found" in result
 
 
 def test_multiple_heading_levels():
@@ -106,8 +106,14 @@ def test_toc_links_to_headings():
     """Test that TOC contains links to heading IDs."""
     html = "<!-- TOC -->\n<h1>Introduction</h1>\n<h2>Background</h2>"
     result = process_toc(html)
-    assert '<a href="#introduction"><span class="toc-number">1 </span>Introduction</a>' in result
-    assert '<a href="#background"><span class="toc-number">1.1 </span>Background</a>' in result
+    assert (
+        '<a href="#introduction"><span class="toc-number">1 </span>Introduction</a>'
+        in result
+    )
+    assert (
+        '<a href="#background"><span class="toc-number">1.1 </span>Background</a>'
+        in result
+    )
     assert 'id="introduction"' in result
     assert 'id="background"' in result
 
@@ -124,7 +130,10 @@ def test_toc_strips_html_from_display():
     """Test that TOC display text has HTML tags stripped."""
     html = "<!-- TOC -->\n<h1><strong>Bold</strong> Heading</h1>"
     result = process_toc(html)
-    assert '<a href="#bold-heading"><span class="toc-number">1 </span>Bold Heading</a>' in result
+    assert (
+        '<a href="#bold-heading"><span class="toc-number">1 </span>Bold Heading</a>'
+        in result
+    )
 
 
 def test_empty_heading_id():
@@ -151,8 +160,8 @@ def test_skipped_heading_levels():
     toc_html = _build_toc_html(headings)
     assert '<nav class="toc">' in toc_html
     # Should handle gracefully by opening intermediate lists
-    assert 'toc-level-1' in toc_html
-    assert 'toc-level-3' in toc_html
+    assert "toc-level-1" in toc_html
+    assert "toc-level-3" in toc_html
 
 
 def test_toc_exclude_directive():
@@ -165,18 +174,18 @@ def test_toc_exclude_directive():
     result = process_toc(html)
 
     # TOC should not contain excluded heading
-    assert 'Excluded Section' not in result.split('<h2')[0]  # Not in TOC
+    assert "Excluded Section" not in result.split("<h2")[0]  # Not in TOC
     # But heading still exists in document
-    assert '<h2' in result and 'Excluded Section' in result
+    assert "<h2" in result and "Excluded Section" in result
     # Included section should be in TOC
-    assert 'Included Section' in result.split('</nav>')[0]
+    assert "Included Section" in result.split("</nav>")[0]
 
 
 def test_toc_exclude_removes_directive():
     """Test that toc:exclude directive is removed from output."""
     html = "<!-- toc:exclude -->\n<h1>Heading</h1>"
     modified_html, headings = _extract_headings(html)
-    assert '<!-- toc:exclude -->' not in modified_html
+    assert "<!-- toc:exclude -->" not in modified_html
     assert len(headings) == 0  # Excluded heading not in list
 
 
@@ -190,8 +199,12 @@ def test_toc_numbering_in_html():
     ]
     toc_html = _build_toc_html(headings)
     assert '<a href="#h1"><span class="toc-number">1 </span>Chapter 1</a>' in toc_html
-    assert '<a href="#h2"><span class="toc-number">1.1 </span>Section 1.1</a>' in toc_html
-    assert '<a href="#h3"><span class="toc-number">1.2 </span>Section 1.2</a>' in toc_html
+    assert (
+        '<a href="#h2"><span class="toc-number">1.1 </span>Section 1.1</a>' in toc_html
+    )
+    assert (
+        '<a href="#h3"><span class="toc-number">1.2 </span>Section 1.2</a>' in toc_html
+    )
     assert '<a href="#h4"><span class="toc-number">2 </span>Chapter 2</a>' in toc_html
 
 
@@ -213,7 +226,7 @@ def test_multiple_toc_excludes():
 
 def test_excluded_heading_not_numbered():
     """Test that excluded headings don't get numbers."""
-    html = '<!-- TOC -->\n<!-- toc:exclude -->\n<h1>Excluded</h1><h2>First</h2>'
+    html = "<!-- TOC -->\n<!-- toc:exclude -->\n<h1>Excluded</h1><h2>First</h2>"
     result = process_toc(html)
     # Excluded heading should not have a number
     assert '<h1 id="excluded">Excluded</h1>' in result
@@ -232,13 +245,23 @@ def test_excluded_first_heading_numbering_sync():
     result = process_toc(html)
 
     # TOC should have "1 Section 1" and "2 Section 2"
-    assert '<a href="#section-1"><span class="toc-number">1 </span>Section 1</a>' in result
-    assert '<a href="#section-2"><span class="toc-number">2 </span>Section 2</a>' in result
+    assert (
+        '<a href="#section-1"><span class="toc-number">1 </span>Section 1</a>' in result
+    )
+    assert (
+        '<a href="#section-2"><span class="toc-number">2 </span>Section 2</a>' in result
+    )
 
     # Document headings should match TOC numbering
     assert '<h1 id="title">Title</h1>' in result  # No number
-    assert '<h2 id="section-1"><span class="heading-number">1 </span>Section 1</h2>' in result
-    assert '<h2 id="section-2"><span class="heading-number">2 </span>Section 2</h2>' in result
+    assert (
+        '<h2 id="section-1"><span class="heading-number">1 </span>Section 1</h2>'
+        in result
+    )
+    assert (
+        '<h2 id="section-2"><span class="heading-number">2 </span>Section 2</h2>'
+        in result
+    )
 
 
 def test_multilevel_toc_balanced_html_tags():
@@ -262,14 +285,18 @@ def test_multilevel_toc_balanced_html_tags():
     toc_html = _build_toc_html(headings)
 
     # Count opening and closing tags
-    li_open = len(re.findall(r'<li>', toc_html))
-    li_close = len(re.findall(r'</li>', toc_html))
-    ul_open = len(re.findall(r'<ul', toc_html))
-    ul_close = len(re.findall(r'</ul>', toc_html))
+    li_open = len(re.findall(r"<li>", toc_html))
+    li_close = len(re.findall(r"</li>", toc_html))
+    ul_open = len(re.findall(r"<ul", toc_html))
+    ul_close = len(re.findall(r"</ul>", toc_html))
 
     # Verify all tags are balanced
-    assert li_open == li_close, f"<li> tags not balanced: {li_open} open, {li_close} close"
-    assert ul_open == ul_close, f"<ul> tags not balanced: {ul_open} open, {ul_close} close"
+    assert li_open == li_close, (
+        f"<li> tags not balanced: {li_open} open, {li_close} close"
+    )
+    assert ul_open == ul_close, (
+        f"<ul> tags not balanced: {ul_open} open, {ul_close} close"
+    )
 
     # Verify expected tag counts (10 headings = 10 list items)
     assert li_open == 10
@@ -277,13 +304,16 @@ def test_multilevel_toc_balanced_html_tags():
 
     # Verify structure contains expected nesting
     assert '<nav class="toc">' in toc_html
-    assert 'toc-level-1' in toc_html
-    assert 'toc-level-2' in toc_html
-    assert 'toc-level-3' in toc_html
+    assert "toc-level-1" in toc_html
+    assert "toc-level-2" in toc_html
+    assert "toc-level-3" in toc_html
 
     # Test specific case: parent with children should have </li> after nested </ul>
     # Example: Chapter 1 has children, so structure should be:
     # <li><a>Chapter 1</a>
     #   <ul>...children...</ul>
     # </li>
-    assert '<a href="#chapter-1"><span class="toc-number">1 </span>Chapter 1</a>' in toc_html
+    assert (
+        '<a href="#chapter-1"><span class="toc-number">1 </span>Chapter 1</a>'
+        in toc_html
+    )
