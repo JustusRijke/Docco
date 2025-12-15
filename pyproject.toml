@@ -31,7 +31,7 @@ dev = [
     "pytest==9.0.1",
     "pytest-cov==7.0.0",
     "radon==6.0.1",
-    "diffpdf==0.1.2",
+    "diffpdf==0.2.0",
 ]
 
 [project.scripts]
