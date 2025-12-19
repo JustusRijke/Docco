@@ -206,10 +206,10 @@ msgstr "Prüfung"
 """)
 
         stats = get_po_stats(po_path)
-        assert stats['total'] == 3
-        assert stats['translated'] == 3
-        assert stats['fuzzy'] == 0
-        assert stats['untranslated'] == 0
+        assert stats["total"] == 3
+        assert stats["translated"] == 3
+        assert stats["fuzzy"] == 0
+        assert stats["untranslated"] == 0
 
 
 def test_get_po_stats_with_untranslated():
@@ -229,10 +229,10 @@ msgstr ""
 """)
 
         stats = get_po_stats(po_path)
-        assert stats['total'] == 3
-        assert stats['translated'] == 1
-        assert stats['fuzzy'] == 0
-        assert stats['untranslated'] == 2
+        assert stats["total"] == 3
+        assert stats["translated"] == 1
+        assert stats["fuzzy"] == 0
+        assert stats["untranslated"] == 2
 
 
 def test_get_po_stats_with_fuzzy():
@@ -253,10 +253,10 @@ msgstr ""
 """)
 
         stats = get_po_stats(po_path)
-        assert stats['total'] == 3
-        assert stats['translated'] == 1
-        assert stats['fuzzy'] == 1
-        assert stats['untranslated'] == 1
+        assert stats["total"] == 3
+        assert stats["translated"] == 1
+        assert stats["fuzzy"] == 1
+        assert stats["untranslated"] == 1
 
 
 def test_get_po_stats_empty_po():
@@ -271,10 +271,10 @@ msgstr ""
 """)
 
         stats = get_po_stats(po_path)
-        assert stats['total'] == 0
-        assert stats['translated'] == 0
-        assert stats['fuzzy'] == 0
-        assert stats['untranslated'] == 0
+        assert stats["total"] == 0
+        assert stats["translated"] == 0
+        assert stats["fuzzy"] == 0
+        assert stats["untranslated"] == 0
 
 
 def test_update_po_files_no_existing_po():
@@ -320,15 +320,15 @@ msgstr "Welt"
 
         # Get original stats
         orig_stats = get_po_stats(po_path)
-        assert orig_stats['translated'] == 2
+        assert orig_stats["translated"] == 2
 
         # Update with same POT (should preserve translations)
         update_po_files(pot_path, tmpdir)
 
         # Stats should be unchanged
         updated_stats = get_po_stats(po_path)
-        assert updated_stats['translated'] == 2
-        assert updated_stats['untranslated'] == 0
+        assert updated_stats["translated"] == 2
+        assert updated_stats["untranslated"] == 0
 
 
 def test_update_po_files_adds_new_strings():
@@ -361,17 +361,17 @@ msgstr "Welt"
 
         # Get original stats (2 translated)
         orig_stats = get_po_stats(po_path)
-        assert orig_stats['translated'] == 2
-        assert orig_stats['untranslated'] == 0
+        assert orig_stats["translated"] == 2
+        assert orig_stats["untranslated"] == 0
 
         # Update with new POT containing extra string
         update_po_files(pot_path, tmpdir)
 
         # Stats should reflect new untranslated string
         updated_stats = get_po_stats(po_path)
-        assert updated_stats['total'] == 3
-        assert updated_stats['translated'] == 2  # Preserved
-        assert updated_stats['untranslated'] == 1  # New string
+        assert updated_stats["total"] == 3
+        assert updated_stats["translated"] == 2  # Preserved
+        assert updated_stats["untranslated"] == 1  # New string
 
 
 def test_check_po_sync_in_sync():

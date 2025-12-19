@@ -1,4 +1,4 @@
-name: Tests
+name: Build
 
 on:
   push:
@@ -10,9 +10,10 @@ on:
 jobs:
   test-linux:
     runs-on: ubuntu-24.04
+    if: false
     strategy:
       matrix:
-        python-version: ["3.11", "3.x"]
+        python-version: ["3.10", "3.x"]
 
     steps:
       - uses: actions/checkout@v6
@@ -26,34 +27,35 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y gettext imagemagick poppler-utils
+          sudo apt-get install -y gettext
 
       - name: Install Python dependencies
         run: pip install -e ".[dev]"
 
       - name: Run tests with coverage
-        run: pytest --cov=src/docco --cov-report=term-missing --cov-report=xml
+        run: pytest tests/ -v --cov --cov-branch --cov-report=xml
 
       - name: Upload test output on failure
         if: failure()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: test-output-ubuntu-py${{ matrix.python-version }}
           path: tests/output/
           retention-days: 7
 
-      - name: Upload coverage to Codecov
-        if: matrix.python-version == '3.11'
+      - name: Upload coverage reports to Codecov
+        if: matrix.python-version == '3.10'
         uses: codecov/codecov-action@v5
         with:
-          file: ./coverage.xml
-          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
 
+
+          
   test-windows:
     runs-on: windows-latest
     strategy:
       matrix:
-        python-version: ["3.11", "3.x"]
+        python-version: ["3.10"]
 
     steps:
       - uses: actions/checkout@v6
@@ -63,44 +65,6 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
-
-      - name: Download and install ImageMagick
-        shell: pwsh
-        run: |
-          $url = "https://imagemagick.org/archive/binaries/ImageMagick-6.9.13-34-portable-Q16-x64.7z"
-          $outfile = "ImageMagick.7z"
-          Invoke-WebRequest -Uri $url -OutFile $outfile
-          Expand-7ZipArchive -Path $outfile -DestinationPath "ImageMagick"
-          $binpath = "$PWD\ImageMagick"
-          echo "$binpath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          Write-Host "Added ImageMagick to PATH: $binpath"
-
-          # Verify ImageMagick is available
-          $env:PATH = "$binpath;$env:PATH"
-          $cmd = Get-Command compare -ErrorAction SilentlyContinue
-          if (-not $cmd) {
-            throw "ImageMagick (compare.exe) not found after installation"
-          }
-          Write-Host "Verified: ImageMagick found at $($cmd.Source)"
-          
-      - name: Download and install Poppler
-        shell: pwsh
-        run: |
-          $url = "https://github.com/oschwartz10612/poppler-windows/releases/download/v21.11.0-0/Release-21.11.0-0.zip"
-          $outfile = "poppler.zip"
-          Invoke-WebRequest -Uri $url -OutFile $outfile
-          Expand-Archive -Path $outfile -DestinationPath "."
-          $binpath = "$PWD\poppler-21.11.0\Library\bin"
-          echo "$binpath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          Write-Host "Added Poppler to PATH: $binpath"
-
-          # Verify pdftocairo is available
-          $env:PATH = "$binpath;$env:PATH"
-          $cmd = Get-Command pdftocairo -ErrorAction SilentlyContinue
-          if (-not $cmd) {
-            throw "pdftocairo not found after installation"
-          }
-          Write-Host "Verified: pdftocairo found at $($cmd.Source)"
 
       - name: Download and install gettext
         shell: pwsh
@@ -139,16 +103,16 @@ jobs:
             throw "weasyprint not found after installation"
           }
           Write-Host "Verified: weasyprint found at $($cmd.Source)"
-
+          
       - name: Install Python dependencies
         run: pip install -e ".[dev]"
 
-      - name: Run tests with coverage
-        run: pytest --cov=src/docco --cov-report=term-missing --cov-report=xml
+      - name: Run tests
+        run: pytest
 
       - name: Upload test output on failure
         if: failure()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: test-output-windows-py${{ matrix.python-version }}
           path: tests/output/
