@@ -52,7 +52,6 @@ jobs:
           
   test-windows:
     runs-on: windows-latest
-    if: false
     strategy:
       matrix:
         python-version: ["3.10", "3.x"]
@@ -66,21 +65,44 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
 
-      - name: Install system dependencies
+      - name: Download and install gettext
+        shell: pwsh
         run: |
-          choco install gettext -y
+          $url = "https://github.com/mlocati/gettext-iconv-windows/releases/download/v0.21-v1.16/gettext0.21-iconv1.16-static-64.zip"
+          $outfile = "gettext.zip"
+          Invoke-WebRequest -Uri $url -OutFile $outfile
+          Expand-Archive -Path $outfile -DestinationPath "gettext"
+          $binpath = "$PWD\gettext\bin"
+          echo "$binpath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          Write-Host "Added gettext to PATH: $binpath"
+
+          # Verify msginit is available
+          $env:PATH = "$binpath;$env:PATH"
+          $cmd = Get-Command msginit -ErrorAction SilentlyContinue
+          if (-not $cmd) {
+            throw "msginit not found after installation"
+          }
+          Write-Host "Verified: msginit found at $($cmd.Source)"
 
       - name: Download and extract WeasyPrint executable
         shell: pwsh
         run: |
-          $version = "67.0"
-          $url = "https://github.com/Kozea/WeasyPrint/releases/download/v${version}/weasyprint-windows.zip"
+          $url = "https://github.com/Kozea/WeasyPrint/releases/download/v67.0/weasyprint-windows.zip"
           $outfile = "weasyprint.zip"
           Invoke-WebRequest -Uri $url -OutFile $outfile
-          Expand-Archive -Path $outfile -DestinationPath "weasyprint-extract"
-          $exePath = (Get-ChildItem -Path "weasyprint-extract" -Filter "weasyprint.exe" -Recurse).DirectoryName
-          echo "$exePath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          Expand-Archive -Path $outfile -DestinationPath "weasyprint"
+          $binpath = "$PWD\weasyprint\dist"
+          echo "$binpath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          Write-Host "Added WeasyPrint to PATH: $binpath"
 
+          # Verify weasyprint is available
+          $env:PATH = "$binpath;$env:PATH"
+          $cmd = Get-Command weasyprint -ErrorAction SilentlyContinue
+          if (-not $cmd) {
+            throw "weasyprint not found after installation"
+          }
+          Write-Host "Verified: weasyprint found at $($cmd.Source)"
+          
       - name: Install Python dependencies
         run: pip install -e ".[dev]"
 

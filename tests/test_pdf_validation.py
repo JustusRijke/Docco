@@ -3,11 +3,17 @@
 import os
 import tempfile
 import pytest
+from pathlib import Path
 from PIL import Image
 
 # Import the modules to test
 from docco.pdf import html_to_pdf
 from docco.pdf_validation import check_pdf_image_dpi, validate_and_warn_pdf_images
+
+
+def path_to_file_url(file_path):
+    """Convert file path to proper file:// URL (cross-platform)."""
+    return Path(file_path).as_uri()
 
 
 def test_check_pdf_image_dpi_with_low_dpi_images():
@@ -25,7 +31,7 @@ def test_check_pdf_image_dpi_with_low_dpi_images():
 <html>
 <head><meta charset="UTF-8"></head>
 <body>
-<img src="file://{img_path}" alt="test">
+<img src="{path_to_file_url(img_path)}" alt="test">
 </body>
 </html>""")
 
@@ -70,7 +76,7 @@ img {{ max-width: 100%; height: auto; }}
 </style>
 </head>
 <body>
-<img src="file://{img_path}" alt="test">
+<img src="{path_to_file_url(img_path)}" alt="test">
 </body>
 </html>""")
 
@@ -146,7 +152,7 @@ def test_validate_and_warn_pdf_images_with_warnings(caplog):
 <html>
 <head><meta charset="UTF-8"></head>
 <body>
-<img src="file://{img_path}" alt="test">
+<img src="{path_to_file_url(img_path)}" alt="test">
 </body>
 </html>""")
 
@@ -184,7 +190,7 @@ img {{ width: 0.52in; height: 0.52in; }}
 </style>
 </head>
 <body>
-<img src="file://{img_path}" alt="test">
+<img src="{path_to_file_url(img_path)}" alt="test">
 </body>
 </html>""")
 
@@ -223,7 +229,7 @@ img {{ max-width: 100%; height: auto; }}
 </style>
 </head>
 <body>
-<img src="file://{img_path}" alt="test">
+<img src="{path_to_file_url(img_path)}" alt="test">
 </body>
 </html>""")
 
