@@ -10,7 +10,6 @@ on:
 jobs:
   test-linux:
     runs-on: ubuntu-24.04
-    if: false
     strategy:
       matrix:
         python-version: ["3.10", "3.x"]
@@ -55,7 +54,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python-version: ["3.10"]
+        python-version: ["3.10", "3.x"]
 
     steps:
       - uses: actions/checkout@v6
