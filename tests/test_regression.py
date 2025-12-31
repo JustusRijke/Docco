@@ -4,9 +4,9 @@ import logging
 import os
 import glob
 import tempfile
+import shutil
 from docco.parser import parse_markdown
-from diffpdf import cli as diffpdf_cli
-from click.testing import CliRunner
+from diffpdf import diffpdf
 
 logger = logging.getLogger(__name__)
 
@@ -46,25 +46,22 @@ def test_regression_example_pdfs():
 
             # Compare PDFs using diffpdf
             with tempfile.TemporaryDirectory() as diff_dir:
-                runner = CliRunner()
-                result = runner.invoke(
-                    diffpdf_cli,
-                    [
-                        baseline_pdf,
-                        pdf_file,
-                        "--output-dir",
-                        diff_dir,
-                        "--threshold",
-                        "0.1",
-                    ],
-                )
-
-                if result.exit_code == 0:
+                if diffpdf(baseline_pdf, pdf_file, threshold=0.1, output_dir=diff_dir):
                     logger.info(f"✓ Pass: {filename}")
                     continue
 
-                # PDF comparison failed
+                # PDF comparison failed - copy diff files for debugging
+                diff_output_dir = os.path.join(output_dir, f"{filename}_diff")
+                os.makedirs(diff_output_dir, exist_ok=True)
+                for item in os.listdir(diff_dir):
+                    src = os.path.join(diff_dir, item)
+                    dst = os.path.join(diff_output_dir, item)
+                    if os.path.isfile(src):
+                        shutil.copy2(src, dst)
+                    elif os.path.isdir(src):
+                        shutil.copytree(src, dst, dirs_exist_ok=True)
+
                 assert False, (
-                    f"PDF mismatch for {filename} (from {os.path.basename(md_file)})\n"
-                    f"  diffpdf output: {result.output}"
+                    f"PDF mismatch for {filename} (from {os.path.basename(md_file)}). "
+                    f"Diff files saved to {diff_output_dir}"
                 )
