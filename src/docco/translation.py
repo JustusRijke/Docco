@@ -54,7 +54,7 @@ def extract_html_to_pot(html_path: str | Path, output_path: str | Path) -> str:
         open(html_path, "rb") as html_file,
         open(output_path, "wb") as pot_file,
     ):
-        html2po.converthtml(html_file, pot_file, None, pot=True, duplicatestyle="merge")  # type: ignore[no-untyped-call]
+        html2po.converthtml(html_file, pot_file, None, pot=True, duplicatestyle="merge")
 
     # Clean bloat from POT file for VCS
     clean_po_file(output_path)
@@ -91,7 +91,7 @@ def apply_po_to_html(
         open(html_input_path, "rb") as html_file,
         open(html_output_path, "wb") as out_file,
     ):
-        po2html.converthtml(po_file, out_file, html_file)  # type: ignore[no-untyped-call]
+        po2html.converthtml(po_file, out_file, html_file)
 
     logger.debug(f"Applied translations from {po_path}")
     return str(html_output_path)
@@ -112,7 +112,7 @@ def get_po_stats(po_path: str | Path) -> dict[str, int]:
             'untranslated': untranslated units
         }
     """
-    store = po.pofile.parsefile(po_path)  # type: ignore[no-untyped-call]
+    store = po.pofile.parsefile(po_path)
     units = [u for u in store.units if u.istranslatable()]
 
     translated = sum(1 for u in units if u.istranslated() and not u.isfuzzy())
@@ -138,8 +138,8 @@ def check_po_sync(pot_path: str | Path, po_path: str | Path) -> bool:
     Returns:
         bool: True if in sync, False if out of sync
     """
-    pot_store = po.pofile.parsefile(pot_path)  # type: ignore[no-untyped-call]
-    po_store = po.pofile.parsefile(po_path)  # type: ignore[no-untyped-call]
+    pot_store = po.pofile.parsefile(pot_path)
+    po_store = po.pofile.parsefile(po_path)
 
     pot_msgids = {u.source for u in pot_store.units if u.istranslatable()}
     po_msgids = {u.source for u in po_store.units if u.istranslatable()}
