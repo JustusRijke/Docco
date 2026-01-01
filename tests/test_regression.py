@@ -1,12 +1,15 @@
+# type: ignore
 """Regression tests comparing generated PDFs against baseline PDFs."""
 
+import glob
 import logging
 import os
-import glob
-import tempfile
 import shutil
-from docco.parser import parse_markdown
+import tempfile
+
 from diffpdf import diffpdf
+
+from docco.parser import parse_markdown
 
 logger = logging.getLogger(__name__)
 

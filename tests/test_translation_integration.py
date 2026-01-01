@@ -1,12 +1,15 @@
+# type: ignore
 """Integration tests for POT/PO translation workflow (HTML-based)."""
 
 import hashlib
 import os
 import tempfile
+
 import pytest
+
+from docco.core import markdown_to_html, parse_frontmatter
 from docco.parser import parse_markdown
 from docco.translation import extract_html_to_pot, get_po_stats
-from docco.core import parse_frontmatter, markdown_to_html
 
 
 def get_file_checksum(filepath):

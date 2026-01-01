@@ -1,16 +1,19 @@
+# type: ignore
 """Tests for POT/PO translation functionality (HTML-based)."""
 
 import os
 import tempfile
+
 import pytest
+
+from docco.core import markdown_to_html
 from docco.translation import (
-    extract_html_to_pot,
     apply_po_to_html,
+    check_po_sync,
+    extract_html_to_pot,
     get_po_stats,
     update_po_files,
-    check_po_sync,
 )
-from docco.core import markdown_to_html
 
 
 def test_extract_html_to_pot_creates_file():

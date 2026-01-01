@@ -7,10 +7,17 @@ name = "docco"
 version = "0.1.0"
 description = "Convert Markdown files with YAML frontmatter and CSS stylesheets to professional A4 PDFs"
 readme = "README.md"
-requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
     {name = "Justus Rijke", email = "justusrijke@gmail.com"}
+]
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Development Status :: 4 - Beta",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Typing :: Typed",
 ]
 dependencies = [
     "markdown-it-py==4.0.0",
@@ -27,11 +34,12 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "ruff==0.14.9",
-    "pytest==9.0.2",
-    "pytest-cov==7.0.0",
-    "radon==6.0.1",
-    "diffpdf==0.3.1",
+    "ruff",
+    "pytest",
+    "pytest-cov",
+    "radon",
+    "diffpdf",
+    "mypy"
 ]
 
 [project.scripts]
@@ -45,5 +53,7 @@ addopts = "--cov=src/docco --cov-report=term-missing --cov-report=html --cov-rep
 omit = ["src/docco/cli.py", "src/docco/logging_config.py"]
 
 [tool.ruff]
-fix = true
 target-version = "py310"
+
+[tool.ruff.lint]
+extend-select = ["I"] # Sort imports

@@ -1,4 +1,6 @@
+# type: ignore
 import subprocess
+
 import pytest
 
 

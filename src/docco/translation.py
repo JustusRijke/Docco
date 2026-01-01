@@ -1,9 +1,11 @@
 """POT/PO translation support for Docco using translate-toolkit."""
 
-import os
 import glob
-import subprocess
 import logging
+import os
+import subprocess
+from pathlib import Path
+
 import polib
 from translate.convert import html2po, po2html
 from translate.storage import po
@@ -11,7 +13,7 @@ from translate.storage import po
 logger = logging.getLogger(__name__)
 
 
-def clean_po_file(po_path):
+def clean_po_file(po_path: str | Path) -> None:
     """
     Remove bloat from PO/POT file for VCS-friendly format.
 
@@ -34,7 +36,7 @@ def clean_po_file(po_path):
     po_file.save(po_path)
 
 
-def extract_html_to_pot(html_path, output_path):
+def extract_html_to_pot(html_path: str | Path, output_path: str | Path) -> str:
     """
     Extract translatable strings from HTML file to POT file.
 
@@ -52,16 +54,18 @@ def extract_html_to_pot(html_path, output_path):
         open(html_path, "rb") as html_file,
         open(output_path, "wb") as pot_file,
     ):
-        html2po.converthtml(html_file, pot_file, None, pot=True, duplicatestyle="merge")
+        html2po.converthtml(html_file, pot_file, None, pot=True, duplicatestyle="merge")  # type: ignore[no-untyped-call]
 
     # Clean bloat from POT file for VCS
     clean_po_file(output_path)
 
     logger.debug(f"Extracted to POT: {output_path}")
-    return output_path
+    return str(output_path)
 
 
-def apply_po_to_html(html_input_path, po_path, html_output_path):
+def apply_po_to_html(
+    html_input_path: str | Path, po_path: str | Path, html_output_path: str | Path
+) -> str:
     """
     Apply PO file translations to HTML file.
 
@@ -87,13 +91,13 @@ def apply_po_to_html(html_input_path, po_path, html_output_path):
         open(html_input_path, "rb") as html_file,
         open(html_output_path, "wb") as out_file,
     ):
-        po2html.converthtml(po_file, out_file, html_file)
+        po2html.converthtml(po_file, out_file, html_file)  # type: ignore[no-untyped-call]
 
     logger.debug(f"Applied translations from {po_path}")
-    return html_output_path
+    return str(html_output_path)
 
 
-def get_po_stats(po_path):
+def get_po_stats(po_path: str | Path) -> dict[str, int]:
     """
     Get translation statistics for a PO file.
 
@@ -108,7 +112,7 @@ def get_po_stats(po_path):
             'untranslated': untranslated units
         }
     """
-    store = po.pofile.parsefile(po_path)
+    store = po.pofile.parsefile(po_path)  # type: ignore[no-untyped-call]
     units = [u for u in store.units if u.istranslatable()]
 
     translated = sum(1 for u in units if u.istranslated() and not u.isfuzzy())
@@ -123,7 +127,7 @@ def get_po_stats(po_path):
     }
 
 
-def check_po_sync(pot_path, po_path):
+def check_po_sync(pot_path: str | Path, po_path: str | Path) -> bool:
     """
     Check if PO file msgids match current POT.
 
@@ -134,8 +138,8 @@ def check_po_sync(pot_path, po_path):
     Returns:
         bool: True if in sync, False if out of sync
     """
-    pot_store = po.pofile.parsefile(pot_path)
-    po_store = po.pofile.parsefile(po_path)
+    pot_store = po.pofile.parsefile(pot_path)  # type: ignore[no-untyped-call]
+    po_store = po.pofile.parsefile(po_path)  # type: ignore[no-untyped-call]
 
     pot_msgids = {u.source for u in pot_store.units if u.istranslatable()}
     po_msgids = {u.source for u in po_store.units if u.istranslatable()}
@@ -143,7 +147,7 @@ def check_po_sync(pot_path, po_path):
     return pot_msgids == po_msgids
 
 
-def update_po_files(pot_path, translations_dir):
+def update_po_files(pot_path: str | Path, translations_dir: str | Path) -> None:
     """
     Update existing PO files with new/changed strings from POT file.
 

@@ -1,3 +1,4 @@
+# type: ignore
 """Tests for page layout directive processing."""
 
 from docco.page_layout import process_page_layout

@@ -1,15 +1,15 @@
 """Process inline markdown file directives."""
 
+import io
+import logging
 import os
 import re
-import io
 import sys
-import logging
 
 logger = logging.getLogger(__name__)
 
 
-def extract_code_blocks(content):
+def extract_code_blocks(content: str) -> tuple[str, dict[str, str]]:
     """
     Extract code blocks from content to prevent directive processing inside them.
 
@@ -24,7 +24,7 @@ def extract_code_blocks(content):
     code_blocks = {}
     counter = [0]
 
-    def replace_fenced(match):
+    def replace_fenced(match: re.Match[str]) -> str:
         original = match.group(0)
         # Store the code block content (strip the captured newlines from match)
         # We'll preserve them in the replacement
@@ -45,7 +45,7 @@ def extract_code_blocks(content):
             result = result + "\n"
         return result
 
-    def replace_inline(match):
+    def replace_inline(match: re.Match[str]) -> str:
         placeholder = f"___INLINE_CODE_{counter[0]}___"
         code_blocks[placeholder] = match.group(0)
         counter[0] += 1
@@ -78,7 +78,7 @@ def extract_code_blocks(content):
     return temp_content, code_blocks
 
 
-def restore_code_blocks(content, code_blocks):
+def restore_code_blocks(content: str, code_blocks: dict[str, str]) -> str:
     """
     Restore code blocks that were extracted.
 
@@ -95,7 +95,9 @@ def restore_code_blocks(content, code_blocks):
     return result
 
 
-def process_inlines(content, base_dir=".", allow_python=False):
+def process_inlines(
+    content: str, base_dir: str = ".", allow_python: bool = False
+) -> str:
     """
     Process inline directives with file-type aware post-processing.
 
@@ -125,7 +127,7 @@ def process_inlines(content, base_dir=".", allow_python=False):
     # Pattern to match inline directives
     pattern = r'<!--\s*inline\s*:\s*"([^"]+)"(.*?)-->'
 
-    def replace_inline(match):
+    def replace_inline(match: re.Match[str]) -> str:
         filepath = match.group(1)
         args_str = match.group(2).strip()
 
@@ -191,7 +193,7 @@ def process_inlines(content, base_dir=".", allow_python=False):
     return result
 
 
-def find_placeholders(content):
+def find_placeholders(content: str) -> set[str]:
     """
     Find all placeholder patterns in content.
 
@@ -206,7 +208,7 @@ def find_placeholders(content):
     return set(matches)
 
 
-def parse_inline_args(args_str):
+def parse_inline_args(args_str: str) -> dict[str, str]:
     """
     Parse arguments from inline directive.
 
@@ -227,19 +229,21 @@ def parse_inline_args(args_str):
     return args
 
 
-def get_file_type(filepath):
+def get_file_type(filepath: str) -> str:
     """Extract file extension from filepath."""
     return os.path.splitext(filepath)[1].lower()
 
 
-def trim_html_lines(content):
+def trim_html_lines(content: str) -> str:
     """Trim leading/trailing whitespace from all lines, preserve empty lines."""
     lines = content.split("\n")
     trimmed = [line.strip() for line in lines]
     return "\n".join(trimmed)
 
 
-def execute_python_file(filepath, base_dir, allow_python, args_dict):
+def execute_python_file(
+    filepath: str, base_dir: str, allow_python: bool, args_dict: dict[str, str]
+) -> str:
     """Execute Python file and return stdout."""
     if not allow_python:
         raise ValueError(
@@ -279,7 +283,13 @@ def execute_python_file(filepath, base_dir, allow_python, args_dict):
     return output.strip()
 
 
-def post_process_content(content, file_path, base_dir, allow_python, args_dict):
+def post_process_content(
+    content: str,
+    file_path: str,
+    base_dir: str,
+    allow_python: bool,
+    args_dict: dict[str, str],
+) -> str:
     """Apply file-type specific post-processing for non-Python files."""
     file_type = get_file_type(file_path)
 

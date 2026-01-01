@@ -1,16 +1,17 @@
 """CLI interface for Docco."""
 
 import argparse
+import logging
 import os
 import sys
-import logging
-from docco.parser import parse_markdown
+
 from docco.logging_config import setup_logging
+from docco.parser import parse_markdown
 
 logger = logging.getLogger(__name__)
 
 
-def main():
+def main() -> None:
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
         description="Convert Markdown to PDF with POT/PO translation support"

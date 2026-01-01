@@ -1,11 +1,34 @@
 """PDF validation utilities for checking image quality."""
 
 import logging
+from pathlib import Path
+from typing import TypedDict, cast
 
 logger = logging.getLogger(__name__)
 
 
-def check_pdf_image_dpi(pdf_path, threshold=300):
+class ImageInfo(TypedDict):
+    """Information about an image in the PDF."""
+
+    page: int
+    index: int
+    width_px: int
+    height_px: int
+    width_inches: float
+    height_inches: float
+    dpi_x: float
+    dpi_y: float
+    min_dpi: float
+
+
+class DPICheckResult(TypedDict):
+    """Result of PDF image DPI check."""
+
+    total_images: int
+    low_dpi_images: list[ImageInfo]
+
+
+def check_pdf_image_dpi(pdf_path: str | Path, threshold: int = 300) -> DPICheckResult:
     """
     Check all images in a PDF for DPI below threshold.
 
@@ -55,17 +78,20 @@ def check_pdf_image_dpi(pdf_path, threshold=300):
                     threshold * 0.95
                 ):  # 5% tolerance to compensate for rounding errors
                     low_dpi_images.append(
-                        {
-                            "page": page_num + 1,
-                            "index": img_idx + 1,
-                            "width_px": width_px,
-                            "height_px": height_px,
-                            "width_inches": width_inches,
-                            "height_inches": height_inches,
-                            "dpi_x": effective_dpi_x,
-                            "dpi_y": effective_dpi_y,
-                            "min_dpi": min_dpi,
-                        }
+                        cast(
+                            ImageInfo,
+                            {
+                                "page": page_num + 1,
+                                "index": img_idx + 1,
+                                "width_px": width_px,
+                                "height_px": height_px,
+                                "width_inches": width_inches,
+                                "height_inches": height_inches,
+                                "dpi_x": effective_dpi_x,
+                                "dpi_y": effective_dpi_y,
+                                "min_dpi": min_dpi,
+                            },
+                        )
                     )
     finally:
         doc.close()
@@ -75,7 +101,7 @@ def check_pdf_image_dpi(pdf_path, threshold=300):
         }
 
 
-def validate_and_warn_pdf_images(pdf_path, threshold=300):
+def validate_and_warn_pdf_images(pdf_path: str | Path, threshold: int = 300) -> None:
     """
     Validate PDF images and log warnings for low DPI images.
 
