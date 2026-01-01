@@ -1,4 +1,3 @@
-# type: ignore
 """Tests for HTML conversion."""
 
 from docco.core import markdown_to_html, wrap_html

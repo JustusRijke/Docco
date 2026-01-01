@@ -1,4 +1,3 @@
-# type: ignore
 """Integration tests for POT/PO translation workflow (HTML-based)."""
 
 import hashlib
