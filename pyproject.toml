@@ -27,11 +27,11 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "ruff==0.14.9",
-    "pytest==9.0.2",
-    "pytest-cov==7.0.0",
-    "radon==6.0.1",
-    "diffpdf==0.3.1",
+    "ruff",
+    "pytest",
+    "pytest",
+    "radon",
+    "diffpdf",
 ]
 
 [project.scripts]
