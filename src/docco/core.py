@@ -1,6 +1,7 @@
 """Core utilities: logging, frontmatter parsing, HTML wrapping."""
 
 import logging
+from typing import cast
 
 import frontmatter
 from markdown_it import MarkdownIt
@@ -17,7 +18,7 @@ KNOWN_FRONTMATTER_KEYS = {
 }
 
 
-def _validate_frontmatter(metadata):
+def _validate_frontmatter(metadata: dict[str, object]) -> None:
     """
     Warn about unknown frontmatter keys.
 
@@ -31,7 +32,7 @@ def _validate_frontmatter(metadata):
         )
 
 
-def parse_frontmatter(content):
+def parse_frontmatter(content: str) -> tuple[dict[str, object], str]:
     """
     Parse YAML frontmatter from markdown content.
 
@@ -52,7 +53,7 @@ def parse_frontmatter(content):
         raise ValueError(f"Invalid YAML in frontmatter: {e}")
 
 
-def markdown_to_html(markdown_content):
+def markdown_to_html(markdown_content: str) -> str:
     """
     Convert markdown content to HTML.
 
@@ -64,13 +65,15 @@ def markdown_to_html(markdown_content):
     """
     md = MarkdownIt().use(attrs_plugin).use(attrs_block_plugin).enable("table")
 
-    html = md.render(markdown_content)
+    html = cast(str, md.render(markdown_content))
     logger = logging.getLogger(__name__)
     logger.debug("Converted markdown to HTML")
     return html
 
 
-def wrap_html(html_content, css_content="", external_css=None):
+def wrap_html(
+    html_content: str, css_content: str = "", external_css: list[str] | None = None
+) -> str:
     """
     Wrap HTML content in a complete HTML document.
 

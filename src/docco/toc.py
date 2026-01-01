@@ -6,12 +6,12 @@ import re
 logger = logging.getLogger(__name__)
 
 
-def _strip_html_tags(text):
+def _strip_html_tags(text: str) -> str:
     """Remove HTML tags from text."""
     return re.sub(r"<[^>]+>", "", text)
 
 
-def _generate_id(text):
+def _generate_id(text: str) -> str:
     """Generate URL-safe ID from heading text."""
     # Remove HTML tags
     text = _strip_html_tags(text)
@@ -21,7 +21,7 @@ def _generate_id(text):
     return slug or "heading"
 
 
-def _extract_headings(html_content):
+def _extract_headings(html_content: str) -> tuple[str, list[tuple[int, str, str]]]:
     """
     Extract headings from HTML and ensure they have IDs.
 
@@ -43,7 +43,7 @@ def _extract_headings(html_content):
     # Pattern to match h1-h6 tags
     heading_pattern = r"<(h[1-6])(\s+[^>]*)?>(.*?)</\1>"
 
-    def process_heading(match):
+    def process_heading(match: re.Match[str]) -> str:
         tag = match.group(1)  # h1, h2, etc.
         attrs = match.group(2) or ""  # existing attributes
         text = match.group(3)  # heading content
@@ -91,7 +91,7 @@ def _extract_headings(html_content):
     return modified_html, headings
 
 
-def _update_counters(counters, level):
+def _update_counters(counters: list[int], level: int) -> str:
     """Update counters for heading numbering and return formatted number."""
     counters[level - 1] += 1
     for i in range(level, 6):
@@ -102,7 +102,9 @@ def _update_counters(counters, level):
     return number + " " if number else ""
 
 
-def _close_lists_up_to(toc_lines, current_level, target_level, li_open):
+def _close_lists_up_to(
+    toc_lines: list[str], current_level: int, target_level: int, li_open: bool
+) -> tuple[int, bool]:
     """Close lists and list items when moving up levels."""
     while current_level > target_level:
         if li_open:
@@ -114,7 +116,9 @@ def _close_lists_up_to(toc_lines, current_level, target_level, li_open):
     return current_level, li_open
 
 
-def _open_lists_down_to(toc_lines, current_level, target_level):
+def _open_lists_down_to(
+    toc_lines: list[str], current_level: int, target_level: int
+) -> int:
     """Open nested lists when moving down levels."""
     while current_level < target_level:
         current_level += 1
@@ -122,7 +126,7 @@ def _open_lists_down_to(toc_lines, current_level, target_level):
     return current_level
 
 
-def _build_toc_html(headings):
+def _build_toc_html(headings: list[tuple[int, str, str]]) -> str:
     """Build hierarchical TOC HTML with numbering."""
     if not headings:
         return '<nav class="toc"><p>No headings found</p></nav>'
@@ -177,7 +181,7 @@ def _build_toc_html(headings):
     return "\n".join(toc_lines)
 
 
-def _number_headings(html_content, headings):
+def _number_headings(html_content: str, headings: list[tuple[int, str, str]]) -> str:
     """
     Add numbers to heading text in HTML based on heading list.
 
@@ -197,7 +201,7 @@ def _number_headings(html_content, headings):
         heading_numbers[heading_id] = number
 
     # Replace heading text with numbered text
-    def add_number(match):
+    def add_number(match: re.Match[str]) -> str:
         tag = match.group(1)
         attrs = match.group(2) or ""
         text = match.group(3)
@@ -218,7 +222,7 @@ def _number_headings(html_content, headings):
     return re.sub(pattern, add_number, html_content)
 
 
-def process_toc(html_content):
+def process_toc(html_content: str) -> str:
     """
     Process TOC directive by generating table of contents.
 

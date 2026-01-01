@@ -1,3 +1,4 @@
+# type: ignore
 """Tests for inline file processing."""
 
 import os

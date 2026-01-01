@@ -1,3 +1,4 @@
+# type: ignore
 """Integration tests for the parser module."""
 
 import os

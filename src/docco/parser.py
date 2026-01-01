@@ -4,6 +4,7 @@ import glob
 import logging
 import os
 import re
+from pathlib import Path
 
 from docco.core import markdown_to_html, parse_frontmatter, wrap_html
 from docco.inline import extract_code_blocks, process_inlines
@@ -23,7 +24,9 @@ logger = logging.getLogger(__name__)
 MAX_ITERATIONS = 10
 
 
-def preprocess_document(content, input_file, allow_python=False):
+def preprocess_document(
+    content: str, input_file: str | Path, allow_python: bool = False
+) -> tuple[dict[str, object], str, str]:
     """
     Parse frontmatter and process directives.
 
@@ -41,14 +44,16 @@ def preprocess_document(content, input_file, allow_python=False):
     return metadata, body, base_dir
 
 
-def has_directives(content):
+def has_directives(content: str) -> bool:
     """Check if content contains inline directives (excluding code blocks)."""
     # Protect code blocks before checking for directives
     protected_content, _ = extract_code_blocks(content)
     return bool(re.search(r"<!--\s*inline\s*:", protected_content))
 
 
-def process_directives_iteratively(content, base_dir, allow_python):
+def process_directives_iteratively(
+    content: str, base_dir: str, allow_python: bool
+) -> str:
     """
     Iteratively process inline directives until none remain.
 
@@ -84,18 +89,18 @@ def process_directives_iteratively(content, base_dir, allow_python):
 
 
 def _generate_single_pdf(
-    body,
-    metadata,
-    input_file,
-    input_basename,
-    output_dir,
-    base_dir,
-    keep_intermediate,
-    allow_python,
-    lang_suffix=None,
-    po_file=None,
-    validate_images=True,
-):
+    body: str,
+    metadata: dict[str, object],
+    input_file: str | Path,
+    input_basename: str,
+    output_dir: str | Path,
+    base_dir: str,
+    keep_intermediate: bool,
+    allow_python: bool,
+    lang_suffix: str | None = None,
+    po_file: str | Path | None = None,
+    validate_images: bool = True,
+) -> str:
     """
     Generate a single PDF from processed markdown body.
 
@@ -181,11 +186,12 @@ def _generate_single_pdf(
 
     # Convert to PDF
     pdf_path = os.path.join(output_dir, pdf_filename)
-    dpi = metadata.get("dpi")
+    dpi_raw = metadata.get("dpi")
+    dpi = int(dpi_raw) if isinstance(dpi_raw, int) else None
     html_to_pdf(html_path, pdf_path, base_url=base_dir, dpi=dpi)
 
     # Validate PDF image quality if DPI was specified and validation enabled
-    if validate_images and dpi:
+    if validate_images and dpi is not None:
         validate_and_warn_pdf_images(pdf_path, threshold=dpi)
 
     # Clean up intermediate files if not keeping them
@@ -199,14 +205,14 @@ def _generate_single_pdf(
 
 
 def _generate_multilingual_pdfs(
-    body,
-    metadata,
-    input_file,
-    output_dir,
-    base_dir,
-    keep_intermediate,
-    allow_python,
-):
+    body: str,
+    metadata: dict[str, object],
+    input_file: str | Path,
+    output_dir: str | Path,
+    base_dir: str,
+    keep_intermediate: bool,
+    allow_python: bool,
+) -> list[str]:
     """
     Generate PDFs for all languages in multilingual mode.
 
@@ -226,9 +232,11 @@ def _generate_multilingual_pdfs(
         ValueError: If base_language not specified in frontmatter
     """
     # Check for required base_language in multilingual mode
-    base_language = metadata.get("base_language")
-    if not base_language:
+    base_language_raw = metadata.get("base_language")
+    if not base_language_raw or not isinstance(base_language_raw, str):
         raise ValueError("Multilingual mode requires 'base_language' in frontmatter")
+
+    base_language: str = base_language_raw
 
     input_basename = os.path.splitext(os.path.basename(input_file))[0]
     translations_dir = os.path.join(base_dir, input_basename)
@@ -317,12 +325,12 @@ def _generate_multilingual_pdfs(
 
 
 def parse_markdown(
-    input_file,
-    output_dir,
-    keep_intermediate=False,
-    allow_python=False,
-    po_file=None,
-):
+    input_file: str | Path,
+    output_dir: str | Path,
+    keep_intermediate: bool = False,
+    allow_python: bool = False,
+    po_file: str | Path | None = None,
+) -> list[str]:
     """
     Convert markdown file to PDF through full pipeline.
 

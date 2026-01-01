@@ -1,3 +1,4 @@
+# type: ignore
 """Tests for PDF validation module."""
 
 import os

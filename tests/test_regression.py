@@ -1,3 +1,4 @@
+# type: ignore
 """Regression tests comparing generated PDFs against baseline PDFs."""
 
 import glob

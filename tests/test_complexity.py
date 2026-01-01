@@ -1,3 +1,4 @@
+# type: ignore
 """Tests for code complexity using Radon."""
 
 from pathlib import Path

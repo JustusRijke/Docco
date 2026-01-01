@@ -1,3 +1,4 @@
+# type: ignore
 """Tests for TOC (Table of Contents) processing."""
 
 from docco.toc import _build_toc_html, _extract_headings, _generate_id, process_toc

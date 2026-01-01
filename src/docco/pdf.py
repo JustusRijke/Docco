@@ -4,11 +4,20 @@ import logging
 import os
 import shutil
 import subprocess
+from pathlib import Path
+from typing import TypedDict
 
 logger = logging.getLogger(__name__)
 
 
-def _check_file_writable(file_path):  # pragma: no cover
+class CSSContent(TypedDict):
+    """CSS content from frontmatter."""
+
+    inline: str
+    external: list[str]
+
+
+def _check_file_writable(file_path: str | Path) -> None:  # pragma: no cover
     """
     Check if output file can be written (not open in another process).
     Works on Windows and Linux.
@@ -38,7 +47,9 @@ except ImportError:  # pragma: no cover
     USE_EXECUTABLE = True
 
 
-def collect_css_content(markdown_file, metadata):
+def collect_css_content(
+    markdown_file: str | Path, metadata: dict[str, object]
+) -> CSSContent:
     """
     Collect CSS content from frontmatter.
 
@@ -61,11 +72,15 @@ def collect_css_content(markdown_file, metadata):
     md_dir = os.path.dirname(os.path.abspath(markdown_file))
 
     # Extract CSS from frontmatter
-    frontmatter_css = metadata.get("css", [])
+    frontmatter_css_raw = metadata.get("css", [])
 
     # Handle both string and list format
-    if isinstance(frontmatter_css, str):
-        frontmatter_css = [frontmatter_css]
+    if isinstance(frontmatter_css_raw, str):
+        frontmatter_css: list[str] = [frontmatter_css_raw]
+    elif isinstance(frontmatter_css_raw, list):
+        frontmatter_css = [str(item) for item in frontmatter_css_raw]
+    else:
+        frontmatter_css = []
 
     # Separate URLs from file paths
     for css_path in frontmatter_css:
@@ -86,7 +101,12 @@ def collect_css_content(markdown_file, metadata):
     return {"inline": "\n".join(css_content), "external": external_urls}
 
 
-def html_to_pdf(html_path, output_path, base_url=None, dpi=None):
+def html_to_pdf(
+    html_path: str | Path,
+    output_path: str | Path,
+    base_url: str | None = None,
+    dpi: int | None = None,
+) -> str:
     """
     Convert HTML file to PDF.
 
@@ -116,12 +136,15 @@ def html_to_pdf(html_path, output_path, base_url=None, dpi=None):
             html_obj.write_pdf(output_path)
 
     logger.info(f"Generated PDF: {output_path}")
-    return output_path
+    return str(output_path)
 
 
 def _html_to_pdf_with_executable(
-    html_path, output_path, base_url=None, dpi=None
-):  # pragma: no cover
+    html_path: str | Path,
+    output_path: str | Path,
+    base_url: str | None = None,
+    dpi: int | None = None,
+) -> None:  # pragma: no cover
     """
     Convert HTML to PDF using weasyprint executable (fallback for Windows).
 
@@ -155,7 +178,7 @@ def _html_to_pdf_with_executable(
         cmd.extend(["--dpi", str(dpi)])
         logger.debug(f"Setting maximum image DPI to {dpi} (executable mode)")
 
-    cmd.extend([html_path, str(output_path)])
+    cmd.extend([str(html_path), str(output_path)])
 
     # Call weasyprint executable
     result = subprocess.run(cmd, check=True, capture_output=True, text=True)

@@ -1,3 +1,4 @@
+# type: ignore
 """Tests for POT/PO translation functionality (HTML-based)."""
 
 import os

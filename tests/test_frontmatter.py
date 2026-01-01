@@ -1,3 +1,4 @@
+# type: ignore
 """Tests for frontmatter parsing."""
 
 import logging

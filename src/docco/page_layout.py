@@ -6,7 +6,7 @@ import re
 logger = logging.getLogger(__name__)
 
 
-def process_page_layout(html_content):
+def process_page_layout(html_content: str) -> str:
     """
     Process page layout directives.
 

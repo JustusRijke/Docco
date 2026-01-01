@@ -7,10 +7,17 @@ name = "docco"
 version = "0.1.0"
 description = "Convert Markdown files with YAML frontmatter and CSS stylesheets to professional A4 PDFs"
 readme = "README.md"
-requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
     {name = "Justus Rijke", email = "justusrijke@gmail.com"}
+]
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Development Status :: 4 - Beta",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Typing :: Typed",
 ]
 dependencies = [
     "markdown-it-py==4.0.0",
