@@ -2,9 +2,11 @@
 
 import os
 import tempfile
-import pytest
-from docco.parser import parse_markdown, process_directives_iteratively, MAX_ITERATIONS
+
 import fitz  # PyMuPDF
+import pytest
+
+from docco.parser import MAX_ITERATIONS, parse_markdown, process_directives_iteratively
 
 
 @pytest.fixture
@@ -157,8 +159,8 @@ msgstr "<h1>Hallo</h1>"
 
 def test_multilingual_po_sync_warning(caplog):
     """Test that out-of-sync PO files trigger sync warnings in multilingual mode."""
-    from unittest.mock import patch
     import subprocess
+    from unittest.mock import patch
 
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create markdown file

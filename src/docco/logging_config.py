@@ -1,6 +1,7 @@
 """Logging configuration for Docco."""
 
 import logging
+
 import colorlog
 
 

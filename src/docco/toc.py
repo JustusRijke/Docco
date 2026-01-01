@@ -1,7 +1,7 @@
 """Process TOC (Table of Contents) directive."""
 
-import re
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 

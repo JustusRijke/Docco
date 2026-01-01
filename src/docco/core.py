@@ -1,6 +1,7 @@
 """Core utilities: logging, frontmatter parsing, HTML wrapping."""
 
 import logging
+
 import frontmatter
 from markdown_it import MarkdownIt
 from mdit_py_plugins.attrs import attrs_block_plugin, attrs_plugin

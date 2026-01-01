@@ -1,10 +1,10 @@
 """Process inline markdown file directives."""
 
+import io
+import logging
 import os
 import re
-import io
 import sys
-import logging
 
 logger = logging.getLogger(__name__)
 

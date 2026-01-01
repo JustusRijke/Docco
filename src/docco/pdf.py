@@ -1,9 +1,9 @@
 """Convert HTML to PDF using WeasyPrint with CSS styling."""
 
+import logging
 import os
 import shutil
 import subprocess
-import logging
 
 logger = logging.getLogger(__name__)
 

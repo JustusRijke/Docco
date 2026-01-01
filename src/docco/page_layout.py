@@ -1,7 +1,7 @@
 """Process page layout directives (page breaks and orientation)."""
 
-import re
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 

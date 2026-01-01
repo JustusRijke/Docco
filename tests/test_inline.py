@@ -1,7 +1,9 @@
 """Tests for inline file processing."""
 
 import os
+
 import pytest
+
 from docco.inline import process_inlines
 
 

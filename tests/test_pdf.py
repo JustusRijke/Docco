@@ -1,8 +1,10 @@
 """Tests for PDF conversion."""
 
 import os
-import pytest
 from pathlib import Path
+
+import pytest
+
 from docco.pdf import collect_css_content, html_to_pdf
 
 

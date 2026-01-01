@@ -1,9 +1,10 @@
 """POT/PO translation support for Docco using translate-toolkit."""
 
-import os
 import glob
-import subprocess
 import logging
+import os
+import subprocess
+
 import polib
 from translate.convert import html2po, po2html
 from translate.storage import po

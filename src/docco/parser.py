@@ -1,22 +1,23 @@
 """Main parser orchestrator for markdown to PDF conversion."""
 
-import os
-import re
 import glob
 import logging
-from docco.core import parse_frontmatter, markdown_to_html, wrap_html
-from docco.inline import process_inlines, extract_code_blocks
-from docco.translation import (
-    apply_po_to_html,
-    extract_html_to_pot,
-    get_po_stats,
-    check_po_sync,
-    update_po_files,
-)
-from docco.toc import process_toc
+import os
+import re
+
+from docco.core import markdown_to_html, parse_frontmatter, wrap_html
+from docco.inline import extract_code_blocks, process_inlines
 from docco.page_layout import process_page_layout
 from docco.pdf import collect_css_content, html_to_pdf
 from docco.pdf_validation import validate_and_warn_pdf_images
+from docco.toc import process_toc
+from docco.translation import (
+    apply_po_to_html,
+    check_po_sync,
+    extract_html_to_pot,
+    get_po_stats,
+    update_po_files,
+)
 
 logger = logging.getLogger(__name__)
 MAX_ITERATIONS = 10

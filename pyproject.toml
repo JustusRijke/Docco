@@ -29,9 +29,10 @@ dependencies = [
 dev = [
     "ruff",
     "pytest",
-    "pytest",
+    "pytest-cov",
     "radon",
     "diffpdf",
+    "mypy"
 ]
 
 [project.scripts]
@@ -45,5 +46,7 @@ addopts = "--cov=src/docco --cov-report=term-missing --cov-report=html --cov-rep
 omit = ["src/docco/cli.py", "src/docco/logging_config.py"]
 
 [tool.ruff]
-fix = true
 target-version = "py310"
+
+[tool.ruff.lint]
+extend-select = ["I"] # Sort imports

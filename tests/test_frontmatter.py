@@ -1,7 +1,9 @@
 """Tests for frontmatter parsing."""
 
-import pytest
 import logging
+
+import pytest
+
 from docco.core import parse_frontmatter
 
 

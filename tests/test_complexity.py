@@ -1,8 +1,8 @@
 """Tests for code complexity using Radon."""
 
 from pathlib import Path
-from radon.complexity import cc_visit
 
+from radon.complexity import cc_visit
 
 MAX_COMPLEXITY = 15  # Maximum allowed cyclomatic complexity
 
