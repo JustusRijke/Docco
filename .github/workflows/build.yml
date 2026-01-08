@@ -2,80 +2,114 @@ name: Build
 
 on:
   push:
-    branches: [main]
   pull_request:
-    branches: [main]
   workflow_dispatch:
 
 jobs:
   test-linux:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.x"]
+        dependencies: [locked, oldest]
 
     steps:
       - uses: actions/checkout@v6
 
-      - name: Set up Python ${{ matrix.python-version }}
+      # When searching for a system Python version, uv will use the first compatible version - not the newest version.
+      # Therefore, make sure the newest version is available on the runner.
+      - name: Install Python
         uses: actions/setup-python@v6
         with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'pip'
-
-      - name: Install system dependencies
+          python-version: 3.x
+          
+      # At the time of writing there is no way to force uv select the lowest version of Python.
+      # Therefore, extract this from pyproject.toml
+      # More info: https://github.com/astral-sh/uv/issues/16333
+      - name: Extract minimum Python version from pyproject.toml
+        if: matrix.dependencies == 'oldest'
+        id: python-version
+        shell: bash
         run: |
-          sudo apt-get update
-          sudo apt-get install -y gettext
+          MIN_PY=$(grep 'requires-python' pyproject.toml | sed -E 's/[^0-9.]//g')
+          echo "min=$MIN_PY" >> $GITHUB_OUTPUT
+          
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "latest"
 
-      - name: Install package with dev dependencies
-        run: pip install -e .[dev]
+      - name: Install gettext
+        run: sudo apt-get install -y gettext
+
+      - name: Install locked dependencies
+        if: matrix.dependencies == 'locked'
+        run: uv sync --locked
+
+      - name: Install oldest dependencies
+        if: matrix.dependencies == 'oldest'
+        run: uv sync --resolution lowest --python ${{ steps.python-version.outputs.min }}
 
       - name: Run ruff (check)
-        if: matrix.python-version == '3.10'
-        run: ruff check
+        if: matrix.dependencies == 'locked'
+        run: uv run ruff check
 
       - name: Run ruff (format)
-        if: matrix.python-version == '3.10'
-        run: ruff format --check
+        if: matrix.dependencies == 'locked'
+        run: uv run ruff format --check
 
-      - name: Run mypy
-        if: matrix.python-version == '3.10'
-        run: mypy .
+      - name: Run ty
+        if: matrix.dependencies == 'locked'
+        run: uv run ty check --output-format github
 
       - name: Run pytest
-        run: pytest .
-
+        run: uv run pytest
+        
       - name: Upload test output on failure
         if: failure()
         uses: actions/upload-artifact@v6
         with:
-          name: test-output-ubuntu-py${{ matrix.python-version }}
+          name: test-output-ubuntu-${{ matrix.dependencies }}
           path: tests/output/
           retention-days: 7
 
       - name: Upload coverage reports to Codecov
-        if: matrix.python-version == '3.10'
+        if: matrix.dependencies == 'locked'
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-
 
           
   test-windows:
     runs-on: windows-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.x"]
+        dependencies: [locked, oldest]
 
     steps:
       - uses: actions/checkout@v6
 
-      - name: Set up Python ${{ matrix.python-version }}
+      # At the time of writing there is no way to force uv select the lowest version of Python.
+      # Therefore, extract this from pyproject.toml
+      # More info: https://github.com/astral-sh/uv/issues/16333
+      - name: Extract minimum Python version from pyproject.toml
+        if: matrix.dependencies == 'oldest'
+        id: python-version
+        shell: bash
+        run: |
+          MIN_PY=$(grep 'requires-python' pyproject.toml | sed -E 's/[^0-9.]//g')
+          echo "min=$MIN_PY" >> $GITHUB_OUTPUT
+
+      # When searching for a system Python version, uv will use the first compatible version - not the newest version.
+      # Therefore, make sure the newest version is available on the runner.
+      - name: Install the newest version of Python
         uses: actions/setup-python@v6
         with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'pip'
+          python-version: 3.x
+          
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "latest"
 
       - name: Download and install gettext
         shell: pwsh
@@ -114,17 +148,34 @@ jobs:
             throw "weasyprint not found after installation"
           }
           Write-Host "Verified: weasyprint found at $($cmd.Source)"
-          
-      - name: Install package with dev dependencies
-        run: pip install -e .[dev]
 
-      - name: Run tests
-        run: pytest .
+      - name: Install locked dependencies
+        if: matrix.dependencies == 'locked'
+        run: uv sync --locked
 
+      - name: Install oldest dependencies
+        if: matrix.dependencies == 'oldest'
+        run: uv sync --resolution lowest --python ${{ steps.python-version.outputs.min }}
+
+      - name: Run ruff (check)
+        if: matrix.dependencies == 'locked'
+        run: uv run ruff check
+
+      - name: Run ruff (format)
+        if: matrix.dependencies == 'locked'
+        run: uv run ruff format --check
+
+      - name: Run ty
+        if: matrix.dependencies == 'locked'
+        run: uv run ty check --output-format github
+
+      - name: Run pytest
+        run: uv run pytest
+        
       - name: Upload test output on failure
         if: failure()
         uses: actions/upload-artifact@v6
         with:
-          name: test-output-windows-py${{ matrix.python-version }}
+          name: test-output-windows-${{ matrix.dependencies }}
           path: tests/output/
           retention-days: 7
