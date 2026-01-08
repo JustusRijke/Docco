@@ -40,7 +40,7 @@ def _check_file_writable(file_path: str | Path) -> None:  # pragma: no cover
 
 # Check if WeasyPrint Python library is available
 try:
-    from weasyprint import HTML
+    from weasyprint import HTML  # ty: ignore
 
     USE_EXECUTABLE = False
 except ImportError:  # pragma: no cover
