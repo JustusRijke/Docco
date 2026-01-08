@@ -134,7 +134,7 @@ def test_check_pdf_image_dpi_invalid_pdf():
 def test_check_pdf_image_dpi_nonexistent_file():
     """Test behavior with nonexistent file."""
     # Should raise an exception when file doesn't exist
-    with pytest.raises(FileNotFoundError):
+    with pytest.raises(RuntimeError):
         check_pdf_image_dpi("/nonexistent/file.pdf")
 
 
