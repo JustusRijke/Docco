@@ -46,7 +46,7 @@ title: My Document
   invalid: [unclosed
 ---
 # Content"""
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Invalid YAML"):
         parse_frontmatter(content)
 
 

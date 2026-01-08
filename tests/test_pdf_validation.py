@@ -127,14 +127,14 @@ def test_check_pdf_image_dpi_invalid_pdf():
             f.write("This is not a PDF")
 
         # Should raise an exception when PDF cannot be opened
-        with pytest.raises(Exception):
+        with pytest.raises(RuntimeError):
             check_pdf_image_dpi(invalid_pdf)
 
 
 def test_check_pdf_image_dpi_nonexistent_file():
     """Test behavior with nonexistent file."""
     # Should raise an exception when file doesn't exist
-    with pytest.raises(Exception):
+    with pytest.raises(FileNotFoundError):
         check_pdf_image_dpi("/nonexistent/file.pdf")
 
 

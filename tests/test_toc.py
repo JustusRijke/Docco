@@ -176,7 +176,8 @@ def test_toc_exclude_directive():
     # TOC should not contain excluded heading
     assert "Excluded Section" not in result.split("<h2")[0]  # Not in TOC
     # But heading still exists in document
-    assert "<h2" in result and "Excluded Section" in result
+    assert "<h2" in result
+    assert "Excluded Section" in result
     # Included section should be in TOC
     assert "Included Section" in result.split("</nav>")[0]
 

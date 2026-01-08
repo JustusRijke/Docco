@@ -169,7 +169,7 @@ Hello world"""
         os.makedirs(output_dir)
 
         # Should raise ValueError because base_language is missing
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ValueError, match="base_language") as exc_info:
             parse_markdown(md_path, output_dir, allow_python=False)
 
         assert "base_language" in str(exc_info.value)

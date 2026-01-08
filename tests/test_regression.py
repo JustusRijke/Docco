@@ -6,6 +6,7 @@ import os
 import shutil
 import tempfile
 
+import pytest
 from diffpdf import diffpdf
 
 from docco.parser import parse_markdown
@@ -63,7 +64,7 @@ def test_regression_example_pdfs():
                     elif os.path.isdir(src):
                         shutil.copytree(src, dst, dirs_exist_ok=True)
 
-                assert False, (
+                pytest.fail(
                     f"PDF mismatch for {filename} (from {os.path.basename(md_file)}). "
                     f"Diff files saved to {diff_output_dir}"
                 )
