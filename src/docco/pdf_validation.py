@@ -95,10 +95,11 @@ def check_pdf_image_dpi(pdf_path: str | Path, threshold: int = 300) -> DPICheckR
                     )
     finally:
         doc.close()
-        return {
-            "total_images": total_images,
-            "low_dpi_images": low_dpi_images,
-        }
+
+    return {
+        "total_images": total_images,
+        "low_dpi_images": low_dpi_images,
+    }
 
 
 def validate_and_warn_pdf_images(pdf_path: str | Path, threshold: int = 300) -> None:
