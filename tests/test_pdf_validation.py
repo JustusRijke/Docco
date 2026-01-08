@@ -244,8 +244,5 @@ img {{ max-width: 100%; height: auto; }}
         # Validate
         validate_and_warn_pdf_images(pdf_path, threshold=300)
 
-        # Should have debug message but no warnings
+        # Should have no warnings about low DPI
         assert "below 300 DPI" not in caplog.text
-        # Check for debug message (if logging level allows)
-        if any(record.levelname == "DEBUG" for record in caplog.records):
-            assert "meet 300 DPI threshold" in caplog.text

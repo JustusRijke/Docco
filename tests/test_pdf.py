@@ -3,7 +3,9 @@
 import os
 from pathlib import Path
 
+import fitz  # PyMuPDF
 import pytest
+from PIL import Image
 
 from docco.pdf import collect_css_content, html_to_pdf
 
@@ -18,46 +20,29 @@ def get_pdf_image_info(pdf_path):
     Extract image info from PDF using PyMuPDF.
 
     Returns list of dicts with keys: width, height, xres, yres
-    Returns None if PyMuPDF is not available.
     """
-    try:
-        import fitz  # PyMuPDF
-    except ImportError:
-        return None
+    doc = fitz.open(str(pdf_path))
+    images_info = []
 
-    try:
-        doc = fitz.open(str(pdf_path))
-        images_info = []
+    for page_num in range(len(doc)):
+        page = doc[page_num]
+        image_list = page.get_images()
 
-        for page_num in range(len(doc)):
-            page = doc[page_num]
-            image_list = page.get_images()
+        for img_index, img in enumerate(image_list):
+            xref = img[0]  # xref is the first element
+            img_dict = doc.extract_image(xref)
 
-            for img_index, img in enumerate(image_list):
-                xref = img[0]  # xref is the first element
-                img_dict = doc.extract_image(xref)
+            images_info.append(
+                {
+                    "width": img_dict["width"],
+                    "height": img_dict["height"],
+                    "xres": img_dict["xres"],  # DPI in X direction
+                    "yres": img_dict["yres"],  # DPI in Y direction
+                }
+            )
 
-                images_info.append(
-                    {
-                        "width": img_dict["width"],
-                        "height": img_dict["height"],
-                        "xres": img_dict["xres"],  # DPI in X direction
-                        "yres": img_dict["yres"],  # DPI in Y direction
-                    }
-                )
-
-        doc.close()
-        return images_info
-    except Exception:
-        return None
-
-
-@pytest.fixture
-def tmp_css(tmp_path):
-    """Create a temporary CSS file."""
-    css_file = tmp_path / "test.css"
-    css_file.write_text("@page { size: A4; }")
-    return str(css_file)
+    doc.close()
+    return images_info
 
 
 @pytest.fixture
@@ -71,11 +56,6 @@ def tmp_md(tmp_path):
 @pytest.fixture
 def highres_image(tmp_path):
     """Create a high-resolution test image (600 DPI, 3000x2000px)."""
-    try:
-        from PIL import Image
-    except ImportError:
-        pytest.skip("PIL/Pillow not available")
-
     # Create a 3000x2000 pixel image at 600 DPI
     # This simulates a high-res photo that should be downsampled
     img = Image.new("RGB", (3000, 2000), color="blue")
@@ -193,16 +173,10 @@ def test_html_to_pdf_without_css(tmp_path):
 
 def test_html_to_pdf_with_base_url(tmp_path):
     """Test PDF generation with base_url for relative image paths."""
-    try:
-        from PIL import Image
-
-        # Create a valid image file
-        img = Image.new("RGB", (10, 10), color="red")
-        img_file = tmp_path / "test.png"
-        img.save(str(img_file))
-    except ImportError:
-        # Skip test if PIL not available
-        pytest.skip("PIL/Pillow not available")
+    # Create a valid image file
+    img = Image.new("RGB", (10, 10), color="red")
+    img_file = tmp_path / "test.png"
+    img.save(str(img_file))
 
     # HTML with relative image path
     html_content = "<!DOCTYPE html><html><body><img src='test.png'/></body></html>"
@@ -268,9 +242,6 @@ img {{
     # Extract image info
     images_300dpi = get_pdf_image_info(output_300dpi)
     images_no_dpi = get_pdf_image_info(output_no_dpi)
-
-    if images_300dpi is None or images_no_dpi is None:
-        pytest.skip("PyMuPDF not available for image verification")
 
     # Verify DPI=300 downsampled the image
     assert len(images_300dpi) == 1
@@ -395,10 +366,9 @@ img {{
 
     # Verify all images were embedded
     images = get_pdf_image_info(output_path)
-    if images is not None:
-        # Should have 3 images (or 1 if WeasyPrint deduplicates)
-        assert len(images) >= 1
-        assert len(images) <= 3
+    # Should have 3 images (or 1 if WeasyPrint deduplicates)
+    assert len(images) >= 1
+    assert len(images) <= 3
 
 
 def test_html_to_pdf_without_dpi_parameter(tmp_path):
