@@ -6,7 +6,7 @@ import tempfile
 
 import pytest
 
-from docco.core import markdown_to_html, parse_frontmatter
+from docco.core import markdown_to_html
 from docco.parser import parse_markdown
 from docco.translation import extract_html_to_pot, get_po_stats
 
