@@ -3,9 +3,12 @@
 import logging
 import re
 
-from docco.core import strip_html_tags
-
 logger = logging.getLogger(__name__)
+
+
+def _strip_html_tags(text: str) -> str:
+    """Remove HTML tags from text."""
+    return re.sub(r"<[^>]+>", "", text)
 
 
 def _extract_headings(html_content: str) -> tuple[str, list[tuple[int, str, str]]]:
@@ -102,7 +105,7 @@ def _build_toc_html(headings: list[tuple[int, str, str]]) -> str:
     counters = [0, 0, 0, 0, 0, 0]  # h1-h6
 
     for level, heading_id, text in headings:
-        display_text = strip_html_tags(text)
+        display_text = _strip_html_tags(text)
         number = _update_counters(counters, level)
 
         # Handle level changes

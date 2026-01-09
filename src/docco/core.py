@@ -1,7 +1,6 @@
 """Core utilities: logging, frontmatter parsing, HTML wrapping."""
 
 import logging
-import re
 from typing import cast
 
 import yaml
@@ -11,30 +10,6 @@ from mdit_py_plugins.attrs import attrs_block_plugin, attrs_plugin
 from mdit_py_plugins.front_matter import front_matter_plugin
 
 logger = logging.getLogger(__name__)
-
-
-def strip_html_tags(text: str) -> str:
-    """Remove HTML tags from text."""
-    return re.sub(r"<[^>]+>", "", text)
-
-
-def generate_heading_id(text: str) -> str:
-    """
-    Generate URL-safe ID from heading text.
-
-    Args:
-        text: Heading text (may contain HTML)
-
-    Returns:
-        str: URL-safe slug
-    """
-    # Remove HTML tags
-    text = strip_html_tags(text)
-    # Convert to lowercase and replace spaces/special chars with hyphens
-    slug = re.sub(r"[^\w\s-]", "", text.lower())
-    slug = re.sub(r"[-\s]+", "-", slug).strip("-")
-    return slug or "heading"
-
 
 # Known frontmatter keys that docco understands
 KNOWN_FRONTMATTER_KEYS = {
@@ -96,7 +71,6 @@ def markdown_to_html(markdown_content: str) -> str:
             anchors_plugin,
             min_level=1,
             max_level=6,
-            slug_func=generate_heading_id,
             permalink=False,
         )
         .use(attrs_plugin)
