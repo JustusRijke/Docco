@@ -3,9 +3,10 @@
 import logging
 from typing import cast
 
-import frontmatter
+import yaml
 from markdown_it import MarkdownIt
 from mdit_py_plugins.attrs import attrs_block_plugin, attrs_plugin
+from mdit_py_plugins.front_matter import front_matter_plugin
 
 logger = logging.getLogger(__name__)
 
@@ -18,21 +19,7 @@ KNOWN_FRONTMATTER_KEYS = {
 }
 
 
-def _validate_frontmatter(metadata: dict[str, object]) -> None:
-    """
-    Warn about unknown frontmatter keys.
-
-    Args:
-        metadata: Parsed frontmatter metadata dict
-    """
-    unknown_keys = set(metadata.keys()) - KNOWN_FRONTMATTER_KEYS
-    if unknown_keys:
-        logger.warning(
-            f"Unknown frontmatter declaration(s): {', '.join(sorted(unknown_keys))}"
-        )
-
-
-def parse_frontmatter(content: str) -> tuple[dict[str, object], str]:
+def parse_frontmatter(content: str) -> dict[str, object]:
     """
     Parse YAML frontmatter from markdown content.
 
@@ -40,17 +27,30 @@ def parse_frontmatter(content: str) -> tuple[dict[str, object], str]:
         content: Markdown content with optional frontmatter
 
     Returns:
-        tuple: (metadata dict, body string)
+        dict: Parsed frontmatter metadata
 
     Raises:
         ValueError: If frontmatter YAML is invalid
     """
+    md = MarkdownIt().use(front_matter_plugin)
+    tokens = md.parse(content)
+    frontmatter = next((t for t in tokens if t.type == "front_matter"), None)
+
+    if not frontmatter:
+        return {}
+
     try:
-        post = frontmatter.loads(content)
-        _validate_frontmatter(post.metadata)
-        return post.metadata, post.content
-    except Exception as e:
+        metadata = yaml.safe_load(frontmatter.content) or {}
+    except yaml.YAMLError as e:
         raise ValueError(f"Invalid YAML in frontmatter: {e}")
+
+    unknown_keys = set(metadata.keys()) - KNOWN_FRONTMATTER_KEYS
+    if unknown_keys:
+        logger.warning(
+            f"Unknown frontmatter declaration(s): {', '.join(sorted(unknown_keys))}"
+        )
+
+    return metadata
 
 
 def markdown_to_html(markdown_content: str) -> str:
@@ -63,7 +63,13 @@ def markdown_to_html(markdown_content: str) -> str:
     Returns:
         str: HTML content
     """
-    md = MarkdownIt().use(attrs_plugin).use(attrs_block_plugin).enable("table")
+    md = (
+        MarkdownIt()
+        .use(front_matter_plugin)
+        .use(attrs_plugin)
+        .use(attrs_block_plugin)
+        .enable("table")
+    )
 
     html = cast(str, md.render(markdown_content))
     logger = logging.getLogger(__name__)

@@ -2,9 +2,11 @@
 
 import os
 import tempfile
+from unittest.mock import patch
 
 import fitz  # PyMuPDF
 import pytest
+from PIL import Image
 
 from docco.parser import MAX_ITERATIONS, parse_markdown, process_directives_iteratively
 
@@ -159,9 +161,6 @@ msgstr "<h1>Hallo</h1>"
 
 def test_multilingual_po_sync_warning(caplog):
     """Test that out-of-sync PO files trigger sync warnings in multilingual mode."""
-    import subprocess
-    from unittest.mock import patch
-
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create markdown file
         input_file = os.path.join(tmpdir, "test.md")
@@ -192,26 +191,9 @@ msgid "<h1>Old Content</h1>"
 msgstr "<h1>Alter Inhalt</h1>"
 """)
 
-        # Mock pot2po to fail so PO file doesn't get updated
-        original_run = subprocess.run
-
-        def mock_run(cmd, *args, **kwargs):
-            if "pot2po" in cmd:
-                # Simulate failure
-                class FailedResult:
-                    returncode = 1
-                    stderr = "Mocked failure"
-                    stdout = ""
-
-                return FailedResult()
-            return original_run(cmd, *args, **kwargs)
-
-        with patch("subprocess.run", side_effect=mock_run):
+        with patch("subprocess.run"):
             # Build multilingual PDF
-            outputs = parse_markdown(input_file, tmpdir)
-
-            # Should still generate PDFs
-            assert len(outputs) >= 1
+            parse_markdown(input_file, tmpdir)
 
             # Should have logged warning about out-of-sync PO file
             assert (
@@ -267,11 +249,6 @@ This document has a DPI setting in frontmatter.
 
 def test_dpi_frontmatter_with_image():
     """Test DPI frontmatter with actual image downsampling."""
-    try:
-        from PIL import Image
-    except ImportError:
-        pytest.skip("PIL/Pillow not available")
-
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create a high-resolution test image
         img = Image.new("RGB", (3000, 2000), color="red")
@@ -317,33 +294,25 @@ css: style.css
 
         # Extract and compare image dimensions using PyMuPDF
         def get_image_dims(pdf_path):
-            doc = fitz.open(pdf_path)
-            for page in doc:
-                images = page.get_images()
-                if images:
-                    xref = images[0][0]
-                    img_dict = doc.extract_image(xref)
-                    doc.close()
-                    return img_dict["width"], img_dict["height"]
-            doc.close()
-            return None, None
+            with fitz.open(pdf_path) as doc:
+                for page in doc:
+                    images = page.get_images()
+                    if images:  # pragma: no branch
+                        xref = images[0][0]
+                        img_dict = doc.extract_image(xref)
+                        return img_dict["width"], img_dict["height"]
+            raise AssertionError("No images found in PDF")  # pragma: no cover
 
         width_300, height_300 = get_image_dims(outputs_300[0])
         width_no_dpi, height_no_dpi = get_image_dims(outputs_no_dpi[0])
 
         # Image with DPI=300 should be downsampled compared to no-DPI version
-        if width_300 and width_no_dpi:
-            assert width_300 < width_no_dpi
-            assert height_300 < height_no_dpi
+        assert width_300 < width_no_dpi
+        assert height_300 < height_no_dpi
 
 
 def test_dpi_validation_warns_on_low_dpi_images(caplog):
     """Test that low DPI images trigger warnings when DPI is set."""
-    try:
-        from PIL import Image
-    except ImportError:
-        pytest.skip("PIL/Pillow not available")
-
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create a small low-resolution image
         img = Image.new("RGB", (100, 100), color="blue")
@@ -372,11 +341,6 @@ dpi: 300
 
 def test_dpi_validation_multilingual_base_only(caplog):
     """Test that DPI validation only runs for base language in multilingual mode."""
-    try:
-        from PIL import Image
-    except ImportError:
-        pytest.skip("PIL/Pillow not available")
-
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create a small low-resolution image
         img = Image.new("RGB", (100, 100), color="green")

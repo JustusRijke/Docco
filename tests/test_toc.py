@@ -1,5 +1,7 @@
 """Tests for TOC (Table of Contents) processing."""
 
+import re
+
 from docco.toc import _build_toc_html, _extract_headings, _generate_id, process_toc
 
 
@@ -267,8 +269,6 @@ def test_excluded_first_heading_numbering_sync():
 
 def test_multilevel_toc_balanced_html_tags():
     """Test that multi-level TOC has properly balanced <li> and <ul> tags."""
-    import re
-
     # Complex multi-level structure with various nesting patterns
     headings = [
         (1, "chapter-1", "Chapter 1"),

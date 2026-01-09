@@ -1,23 +1,14 @@
 """Integration tests for POT/PO translation workflow (HTML-based)."""
 
-import hashlib
 import os
+import subprocess
 import tempfile
 
 import pytest
 
-from docco.core import markdown_to_html, parse_frontmatter
+from docco.core import markdown_to_html
 from docco.parser import parse_markdown
 from docco.translation import extract_html_to_pot, get_po_stats
-
-
-def get_file_checksum(filepath):
-    """Calculate MD5 checksum of a file."""
-    md5 = hashlib.md5()
-    with open(filepath, "rb") as f:
-        for chunk in iter(lambda: f.read(4096), b""):
-            md5.update(chunk)
-    return md5.hexdigest()
 
 
 @pytest.fixture
@@ -46,9 +37,8 @@ def test_extract_pot_file_from_html(translation_files):
     with open(translation_files["source"], "r") as f:
         content = f.read()
 
-    # Parse frontmatter and convert to HTML
-    _, body = parse_frontmatter(content)
-    html_content = markdown_to_html(body)
+    # Convert to HTML (frontmatter stripped automatically)
+    html_content = markdown_to_html(content)
 
     # Write HTML to file
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -233,27 +223,10 @@ Original content."""
 
         # Create a PO file by copying POT and adding translations
         po_path = os.path.join(translations_dir, "de.po")
-        import subprocess
-
         subprocess.run(
             ["msginit", "--no-translator", "-i", pot_path, "-o", po_path, "-l", "de"],
             check=True,
         )
-
-        # Now manually translate some strings in the PO file
-        with open(po_path, "r", encoding="utf-8") as f:
-            po_lines = f.readlines()
-
-        # Find and translate the "Hello" heading
-        with open(po_path, "w", encoding="utf-8") as f:
-            for i, line in enumerate(po_lines):
-                f.write(line)
-                if 'msgid "<h1>Hello</h1>"' in line:
-                    # Skip the msgstr line and replace it
-                    if i + 1 < len(po_lines):
-                        f.write('msgstr "<h1>Hallo</h1>"\n')
-                        # Skip the original msgstr
-                        po_lines[i + 1] = ""
 
         # Update markdown with new content
         updated_content = """---
