@@ -19,20 +19,6 @@ KNOWN_FRONTMATTER_KEYS = {
 }
 
 
-def _validate_frontmatter(metadata: dict[str, object]) -> None:
-    """
-    Warn about unknown frontmatter keys.
-
-    Args:
-        metadata: Parsed frontmatter metadata dict
-    """
-    unknown_keys = set(metadata.keys()) - KNOWN_FRONTMATTER_KEYS
-    if unknown_keys:
-        logger.warning(
-            f"Unknown frontmatter declaration(s): {', '.join(sorted(unknown_keys))}"
-        )
-
-
 def parse_frontmatter(content: str) -> dict[str, object]:
     """
     Parse YAML frontmatter from markdown content.
@@ -46,21 +32,25 @@ def parse_frontmatter(content: str) -> dict[str, object]:
     Raises:
         ValueError: If frontmatter YAML is invalid
     """
-    try:
-        md = MarkdownIt().use(front_matter_plugin)
-        tokens = md.parse(content)
-        frontmatter = next((t for t in tokens if t.type == "front_matter"), None)
+    md = MarkdownIt().use(front_matter_plugin)
+    tokens = md.parse(content)
+    frontmatter = next((t for t in tokens if t.type == "front_matter"), None)
 
-        if frontmatter:
-            metadata = yaml.safe_load(frontmatter.content) or {}
-            _validate_frontmatter(metadata)
-            return metadata
-
+    if not frontmatter:
         return {}
+
+    try:
+        metadata = yaml.safe_load(frontmatter.content) or {}
     except yaml.YAMLError as e:
         raise ValueError(f"Invalid YAML in frontmatter: {e}")
-    except Exception as e:
-        raise ValueError(f"Invalid YAML in frontmatter: {e}")
+
+    unknown_keys = set(metadata.keys()) - KNOWN_FRONTMATTER_KEYS
+    if unknown_keys:
+        logger.warning(
+            f"Unknown frontmatter declaration(s): {', '.join(sorted(unknown_keys))}"
+        )
+
+    return metadata
 
 
 def markdown_to_html(markdown_content: str) -> str:
