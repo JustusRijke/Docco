@@ -36,12 +36,12 @@ def preprocess_document(
         allow_python: Allow python directive execution
 
     Returns:
-        tuple: (metadata dict, processed body string, base directory path)
+        tuple: (metadata dict, processed content string, base directory path)
     """
-    metadata, body = parse_frontmatter(content)
+    metadata = parse_frontmatter(content)
     base_dir = os.path.dirname(os.path.abspath(input_file))
-    body = process_directives_iteratively(body, base_dir, allow_python)
-    return metadata, body, base_dir
+    processed_content = process_directives_iteratively(content, base_dir, allow_python)
+    return metadata, processed_content, base_dir
 
 
 def has_directives(content: str) -> bool:

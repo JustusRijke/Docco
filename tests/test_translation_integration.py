@@ -37,9 +37,8 @@ def test_extract_pot_file_from_html(translation_files):
     with open(translation_files["source"], "r") as f:
         content = f.read()
 
-    # Parse frontmatter and convert to HTML
-    _, body = parse_frontmatter(content)
-    html_content = markdown_to_html(body)
+    # Convert to HTML (frontmatter stripped automatically)
+    html_content = markdown_to_html(content)
 
     # Write HTML to file
     with tempfile.TemporaryDirectory() as tmpdir:

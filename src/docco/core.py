@@ -3,9 +3,10 @@
 import logging
 from typing import cast
 
-import frontmatter
+import yaml
 from markdown_it import MarkdownIt
 from mdit_py_plugins.attrs import attrs_block_plugin, attrs_plugin
+from mdit_py_plugins.front_matter import front_matter_plugin
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +33,7 @@ def _validate_frontmatter(metadata: dict[str, object]) -> None:
         )
 
 
-def parse_frontmatter(content: str) -> tuple[dict[str, object], str]:
+def parse_frontmatter(content: str) -> dict[str, object]:
     """
     Parse YAML frontmatter from markdown content.
 
@@ -40,15 +41,24 @@ def parse_frontmatter(content: str) -> tuple[dict[str, object], str]:
         content: Markdown content with optional frontmatter
 
     Returns:
-        tuple: (metadata dict, body string)
+        dict: Parsed frontmatter metadata
 
     Raises:
         ValueError: If frontmatter YAML is invalid
     """
     try:
-        post = frontmatter.loads(content)
-        _validate_frontmatter(post.metadata)
-        return post.metadata, post.content
+        md = MarkdownIt().use(front_matter_plugin)
+        tokens = md.parse(content)
+        frontmatter = next((t for t in tokens if t.type == "front_matter"), None)
+
+        if frontmatter:
+            metadata = yaml.safe_load(frontmatter.content) or {}
+            _validate_frontmatter(metadata)
+            return metadata
+
+        return {}
+    except yaml.YAMLError as e:
+        raise ValueError(f"Invalid YAML in frontmatter: {e}")
     except Exception as e:
         raise ValueError(f"Invalid YAML in frontmatter: {e}")
 
@@ -63,7 +73,13 @@ def markdown_to_html(markdown_content: str) -> str:
     Returns:
         str: HTML content
     """
-    md = MarkdownIt().use(attrs_plugin).use(attrs_block_plugin).enable("table")
+    md = (
+        MarkdownIt()
+        .use(front_matter_plugin)
+        .use(attrs_plugin)
+        .use(attrs_block_plugin)
+        .enable("table")
+    )
 
     html = cast(str, md.render(markdown_content))
     logger = logging.getLogger(__name__)
