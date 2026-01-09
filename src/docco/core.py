@@ -5,6 +5,7 @@ from typing import cast
 
 import yaml
 from markdown_it import MarkdownIt
+from mdit_py_plugins.anchors import anchors_plugin
 from mdit_py_plugins.attrs import attrs_block_plugin, attrs_plugin
 from mdit_py_plugins.front_matter import front_matter_plugin
 
@@ -66,13 +67,18 @@ def markdown_to_html(markdown_content: str) -> str:
     md = (
         MarkdownIt()
         .use(front_matter_plugin)
+        .use(
+            anchors_plugin,
+            min_level=1,
+            max_level=6,
+            permalink=False,
+        )
         .use(attrs_plugin)
         .use(attrs_block_plugin)
         .enable("table")
     )
 
     html = cast(str, md.render(markdown_content))
-    logger = logging.getLogger(__name__)
     logger.debug("Converted markdown to HTML")
     return html
 
