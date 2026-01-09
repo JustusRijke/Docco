@@ -3,37 +3,24 @@
 import logging
 import re
 
+from docco.core import strip_html_tags
+
 logger = logging.getLogger(__name__)
-
-
-def _strip_html_tags(text: str) -> str:
-    """Remove HTML tags from text."""
-    return re.sub(r"<[^>]+>", "", text)
-
-
-def _generate_id(text: str) -> str:
-    """Generate URL-safe ID from heading text."""
-    # Remove HTML tags
-    text = _strip_html_tags(text)
-    # Convert to lowercase and replace spaces/special chars with hyphens
-    slug = re.sub(r"[^\w\s-]", "", text.lower())
-    slug = re.sub(r"[-\s]+", "-", slug).strip("-")
-    return slug or "heading"
 
 
 def _extract_headings(html_content: str) -> tuple[str, list[tuple[int, str, str]]]:
     """
-    Extract headings from HTML and ensure they have IDs.
+    Extract headings from HTML.
 
     Headings preceded by <!-- toc:exclude --> are excluded from TOC and numbering.
+    Assumes all headings already have IDs (added by anchors_plugin).
 
     Returns:
         tuple: (modified_html, list of (level, id, text) tuples)
     """
     headings = []
-    used_ids = set()
 
-    # Find positions of toc:exclude directives and following headings (only at line start, allowing leading whitespace)
+    # Find positions of toc:exclude directives and following headings
     exclude_pattern = r"^\s*<!--\s*toc:exclude\s*-->\s*<(h[1-6])"
     excluded_positions = set()
     for match in re.finditer(exclude_pattern, html_content, flags=re.MULTILINE):
@@ -49,43 +36,21 @@ def _extract_headings(html_content: str) -> tuple[str, list[tuple[int, str, str]
         text = match.group(3)  # heading content
 
         level = int(tag[1])  # Extract number from h1-h6
-
-        # Check if this heading should be excluded from TOC
         is_excluded = match.start() in excluded_positions
 
-        # Check if heading already has an id
+        # Extract ID (added by anchors_plugin)
         id_match = re.search(r'id=["\']([^"\']+)["\']', attrs)
-        if id_match:
+        if id_match and not is_excluded:
             heading_id = id_match.group(1)
-        else:
-            # Generate unique ID
-            base_id = _generate_id(text)
-            heading_id = base_id
-            counter = 1
-            while heading_id in used_ids:
-                heading_id = f"{base_id}-{counter}"
-                counter += 1
-
-            # Add id to attributes
-            if attrs:
-                attrs = f'{attrs} id="{heading_id}"'
-            else:
-                attrs = f' id="{heading_id}"'
-
-        used_ids.add(heading_id)
-
-        if not is_excluded:
-            # Only add to TOC if not excluded
             headings.append((level, heading_id, text))
 
-        # Return modified heading with id (numbering added later)
-        return f"<{tag}{attrs}>{text}</{tag}>"
+        return match.group(0)  # Return unchanged
 
-    modified_html = re.sub(heading_pattern, process_heading, html_content)
+    re.sub(heading_pattern, process_heading, html_content)
 
     # Remove toc:exclude directives from HTML
     modified_html = re.sub(
-        r"^\s*<!--\s*toc:exclude\s*-->\s*", "", modified_html, flags=re.MULTILINE
+        r"^\s*<!--\s*toc:exclude\s*-->\s*", "", html_content, flags=re.MULTILINE
     )
 
     return modified_html, headings
@@ -137,7 +102,7 @@ def _build_toc_html(headings: list[tuple[int, str, str]]) -> str:
     counters = [0, 0, 0, 0, 0, 0]  # h1-h6
 
     for level, heading_id, text in headings:
-        display_text = _strip_html_tags(text)
+        display_text = strip_html_tags(text)
         number = _update_counters(counters, level)
 
         # Handle level changes

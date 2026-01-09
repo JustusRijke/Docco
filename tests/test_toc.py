@@ -2,25 +2,7 @@
 
 import re
 
-from docco.toc import _build_toc_html, _extract_headings, _generate_id, process_toc
-
-
-def test_generate_id_basic():
-    """Test ID generation from simple text."""
-    assert _generate_id("Hello World") == "hello-world"
-    assert _generate_id("Test Heading") == "test-heading"
-
-
-def test_generate_id_special_chars():
-    """Test ID generation removes special characters."""
-    assert _generate_id("Hello, World!") == "hello-world"
-    assert _generate_id("Test-Heading_123") == "test-heading_123"
-
-
-def test_generate_id_with_html():
-    """Test ID generation strips HTML tags."""
-    assert _generate_id("<strong>Bold</strong> Text") == "bold-text"
-    assert _generate_id("<em>Italic</em>") == "italic"
+from docco.toc import _build_toc_html, _extract_headings, process_toc
 
 
 def test_toc_directive_replacement():
@@ -38,30 +20,12 @@ def test_no_toc_directive():
     assert result == html
 
 
-def test_heading_id_generation():
-    """Test that headings without IDs get IDs added."""
-    html = "<h1>Test Heading</h1>"
-    modified_html, headings = _extract_headings(html)
-    assert 'id="test-heading"' in modified_html
-    assert len(headings) == 1
-    assert headings[0] == (1, "test-heading", "Test Heading")
-
-
 def test_heading_with_existing_id():
     """Test that headings with existing IDs are preserved."""
     html = '<h1 id="custom-id">Test Heading</h1>'
     modified_html, headings = _extract_headings(html)
     assert 'id="custom-id"' in modified_html
     assert headings[0] == (1, "custom-id", "Test Heading")
-
-
-def test_duplicate_heading_ids():
-    """Test that duplicate heading texts get unique IDs."""
-    html = "<h1>Heading</h1>\n<h2>Heading</h2>\n<h3>Heading</h3>"
-    modified_html, headings = _extract_headings(html)
-    assert 'id="heading"' in modified_html
-    assert 'id="heading-1"' in modified_html
-    assert 'id="heading-2"' in modified_html
 
 
 def test_hierarchical_toc_structure():
@@ -90,12 +54,12 @@ def test_toc_with_no_headings():
 def test_multiple_heading_levels():
     """Test extraction of all heading levels h1-h6."""
     html = """
-    <h1>H1</h1>
-    <h2>H2</h2>
-    <h3>H3</h3>
-    <h4>H4</h4>
-    <h5>H5</h5>
-    <h6>H6</h6>
+    <h1 id="h1">H1</h1>
+    <h2 id="h2">H2</h2>
+    <h3 id="h3">H3</h3>
+    <h4 id="h4">H4</h4>
+    <h5 id="h5">H5</h5>
+    <h6 id="h6">H6</h6>
     """
     modified_html, headings = _extract_headings(html)
     assert len(headings) == 6
@@ -106,7 +70,7 @@ def test_multiple_heading_levels():
 
 def test_toc_links_to_headings():
     """Test that TOC contains links to heading IDs."""
-    html = "<!-- TOC -->\n<h1>Introduction</h1>\n<h2>Background</h2>"
+    html = '<!-- TOC -->\n<h1 id="introduction">Introduction</h1>\n<h2 id="background">Background</h2>'
     result = process_toc(html)
     assert (
         '<a href="#introduction"><span class="toc-number">1 </span>Introduction</a>'
@@ -130,27 +94,12 @@ def test_whitespace_in_toc_directive():
 
 def test_toc_strips_html_from_display():
     """Test that TOC display text has HTML tags stripped."""
-    html = "<!-- TOC -->\n<h1><strong>Bold</strong> Heading</h1>"
+    html = '<!-- TOC -->\n<h1 id="bold-heading"><strong>Bold</strong> Heading</h1>'
     result = process_toc(html)
     assert (
         '<a href="#bold-heading"><span class="toc-number">1 </span>Bold Heading</a>'
         in result
     )
-
-
-def test_empty_heading_id():
-    """Test that empty headings get default ID."""
-    html = "<h1></h1>"
-    modified_html, headings = _extract_headings(html)
-    assert 'id="heading"' in modified_html
-
-
-def test_heading_with_attributes_no_id():
-    """Test heading with existing attributes gets ID added."""
-    html = '<h1 class="title">Heading</h1>'
-    modified_html, headings = _extract_headings(html)
-    assert 'id="heading"' in modified_html
-    assert 'class="title"' in modified_html
 
 
 def test_skipped_heading_levels():
@@ -169,10 +118,10 @@ def test_skipped_heading_levels():
 def test_toc_exclude_directive():
     """Test that headings with toc:exclude are not in TOC."""
     html = """<!-- TOC -->
-    <h1>Chapter 1</h1>
+    <h1 id="chapter-1">Chapter 1</h1>
     <!-- toc:exclude -->
-    <h2>Excluded Section</h2>
-    <h2>Included Section</h2>"""
+    <h2 id="excluded-section">Excluded Section</h2>
+    <h2 id="included-section">Included Section</h2>"""
     result = process_toc(html)
 
     # TOC should not contain excluded heading
@@ -214,12 +163,12 @@ def test_toc_numbering_in_html():
 def test_multiple_toc_excludes():
     """Test multiple excluded headings."""
     html = """
-    <h1>Chapter 1</h1>
+    <h1 id="chapter-1">Chapter 1</h1>
     <!-- toc:exclude -->
-    <h2>Excluded 1</h2>
-    <h2>Included</h2>
+    <h2 id="excluded-1">Excluded 1</h2>
+    <h2 id="included">Included</h2>
     <!-- toc:exclude -->
-    <h2>Excluded 2</h2>
+    <h2 id="excluded-2">Excluded 2</h2>
     """
     modified_html, headings = _extract_headings(html)
     assert len(headings) == 2  # Only Chapter 1 and Included
@@ -229,7 +178,7 @@ def test_multiple_toc_excludes():
 
 def test_excluded_heading_not_numbered():
     """Test that excluded headings don't get numbers."""
-    html = "<!-- TOC -->\n<!-- toc:exclude -->\n<h1>Excluded</h1><h2>First</h2>"
+    html = '<!-- TOC -->\n<!-- toc:exclude -->\n<h1 id="excluded">Excluded</h1><h2 id="first">First</h2>'
     result = process_toc(html)
     # Excluded heading should not have a number
     assert '<h1 id="excluded">Excluded</h1>' in result
@@ -242,9 +191,9 @@ def test_excluded_first_heading_numbering_sync():
     """Test that excluding first heading keeps TOC and document numbering in sync."""
     html = """<!-- TOC -->
     <!-- toc:exclude -->
-    <h1>Title</h1>
-    <h2>Section 1</h2>
-    <h2>Section 2</h2>"""
+    <h1 id="title">Title</h1>
+    <h2 id="section-1">Section 1</h2>
+    <h2 id="section-2">Section 2</h2>"""
     result = process_toc(html)
 
     # TOC should have "1 Section 1" and "2 Section 2"
