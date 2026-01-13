@@ -253,7 +253,7 @@ def execute_python_file(
     # Build sys.argv list
     argv_list = [filepath]
     for key, value in args_dict.items():
-        argv_list.append(f"{key}={value}")
+        argv_list.append(f"--{key}={value}")
 
     logger.debug(f"Executing Python file: {filepath} with args: {args_dict}")
 
