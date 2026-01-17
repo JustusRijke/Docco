@@ -1,6 +1,7 @@
 """Core utilities: logging, frontmatter parsing, HTML wrapping."""
 
 import logging
+from pathlib import Path
 from typing import cast
 
 import yaml
@@ -106,14 +107,13 @@ def wrap_html(
     )
     link_tags = f"{link_tags}\n" if link_tags else ""
 
-    wrapped = f"""<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-{link_tags}{style_tag}</head>
-<body>
-{html_content}
-</body>
-</html>"""
+    head_content = f"{link_tags}{style_tag}"
+
+    # Load template and replace placeholders
+    template_path = Path(__file__).parent / "templates" / "base.html"
+    template = template_path.read_text()
+    wrapped = template.replace("{HEAD_CONTENT}", head_content).replace(
+        "{BODY_CONTENT}", html_content
+    )
 
     return wrapped
