@@ -32,11 +32,11 @@ dependencies = [
     "polib>=1.2.0",
     "pymupdf>=1.26.7",
     "pillow>=12.0.0",
-
     # Add a lower bound for unpinned transitive dependencies
     "cffi>=2.0.0",
     "pycparser>=2.21",
-    "ply>=3.11"
+    "ply>=3.11",
+    "playwright>=1.57.0",
 ]
 
 [project.urls]
