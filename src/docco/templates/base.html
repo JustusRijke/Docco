@@ -3,7 +3,61 @@
 
 <head>
     <meta charset="UTF-8">
+
+    <script src="https://unpkg.com/pagedjs@0.4.3/dist/paged.polyfill.js"></script>
+
+    <style>
+        /* Define how the book looks on the screen
+         * Based on CSS for Paged.js interface – v0.4
+         * https://gitlab.coko.foundation/pagedjs/interface-polyfill
+        */
+
+        /* Show margin boxes. Set to transparent to hide. */
+        :root {
+            --color-marginBox: whitesmoke;
+        }
+
+        @media screen,
+        pagedjs-ignore {
+            body {
+                background-color: whitesmoke;
+            }
+
+            .pagedjs_page {
+                background-color: white;
+                box-shadow: 0 0 0 1px #cfcfcf;
+                flex-shrink: 0;
+                flex-grow: 0;
+                margin: 5mm;
+            }
+
+            .pagedjs_margin-top-left-corner-holder,
+            .pagedjs_margin-top,
+            .pagedjs_margin-top-left,
+            .pagedjs_margin-top-center,
+            .pagedjs_margin-top-right,
+            .pagedjs_margin-top-right-corner-holder,
+            .pagedjs_margin-bottom-left-corner-holder,
+            .pagedjs_margin-bottom,
+            .pagedjs_margin-bottom-left,
+            .pagedjs_margin-bottom-center,
+            .pagedjs_margin-bottom-right,
+            .pagedjs_margin-bottom-right-corner-holder,
+            .pagedjs_margin-right,
+            .pagedjs_margin-right-top,
+            .pagedjs_margin-right-middle,
+            .pagedjs_margin-right-bottom,
+            .pagedjs_margin-left,
+            .pagedjs_margin-left-top,
+            .pagedjs_margin-left-middle,
+            .pagedjs_margin-left-bottom {
+                box-shadow: 0 0 0 1px inset var(--color-marginBox);
+            }
+        }
+    </style>
+
     {HEAD_CONTENT}
+
 </head>
 
 <body>

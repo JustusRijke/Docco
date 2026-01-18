@@ -1,6 +1,8 @@
 /* Page setup */
 @page {
     size: A4 portrait;
+    margin-top: 2.5cm;
+    margin-bottom: 2.5cm;
 }
 
 @page landscape {
