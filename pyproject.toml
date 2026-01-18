@@ -48,7 +48,7 @@ dev = [
     "pytest>=9",
     "pytest-cov>=6",
     "ruff>=0.10",
-    "diffpdf>=1.0.0",
+    "diffpdf>=1.1.0",
     "ty>=0.0.8",
 ]
 
@@ -91,3 +91,6 @@ combine-as-imports = true # Combines "as" imports on the same line
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["ANN"] # Do not enforce type annotations for tests
+
+[tool.uv.sources]
+diffpdf = { path = "../DiffPDF", editable = true }
