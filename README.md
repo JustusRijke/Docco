@@ -5,10 +5,9 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-
 **A CLI tool for generating professional PDFs from Markdown with CSS styling.**
 
-Docco converts Markdown documents into styled PDFs using WeasyPrint. Specify your content in Markdown, configure styling with CSS, and generate beautiful PDFs with automatic table of contents, section numbering, headers, footers, and multilingual support.
+Docco converts Markdown documents into styled PDFs using WeasyPrint. Specify your content in Markdown, configure styling with CSS, and generate beautiful PDFs.
 
 ## Features
 
@@ -36,7 +35,8 @@ pip install -e .
 
 ### Note on WeasyPrint
 
-WeasyPrint installation varies by platform. See the [WeasyPrint installation guide](https://doc.courtbouillon.org/weasyprint/stable/first_steps.html) for platform-specific instructions.
+WeasyPrint installation varies by platform.
+See the [WeasyPrint installation guide](https://doc.courtbouillon.org/weasyprint/stable/first_steps.html) for platform-specific instructions.
 
 On Windows, WeasyPrint is not available via pip. Docco will automatically use the WeasyPrint executable if the Python library is unavailable.
 
@@ -62,6 +62,7 @@ docco input.md --allow-python -o output/
 ### Multilingual Mode
 
 Set `multilingual: true` in frontmatter to automatically:
+
 - Extract POT file from HTML content
 - Update all PO files with new/changed strings
 - Generate PDFs for base language + all translations
@@ -75,6 +76,7 @@ css: style.css
 ```
 
 Then simply run:
+
 ```bash
 docco input.md -o output/
 ```
@@ -103,6 +105,7 @@ See `examples/` for complete working examples:
 - **inline/** - Reusable content templates with placeholder substitution
 
 Build the examples:
+
 ```bash
 docco examples/Feature_Showcase.md -o output/ --allow-python
 docco examples/Multilingual_Document_Example.md -o output/ --allow-python
@@ -130,9 +133,10 @@ docco Feature_Showcase.md --allow-python
 
 ### Testing
 
-The test suite includes regression tests that verify generated PDFs match baseline versions stored in `tests/baselines/`. Regression tests use [DiffPDF](https://github.com/JustusRijke/DiffPDF) for comprehensive PDF comparison across hash, page count, text content, and visual layers.
+The test suite includes regression tests that verify generated PDFs match baseline versions stored in `tests/baselines/` using [DiffPDF](https://github.com/JustusRijke/DiffPDF).
 
 When adding features or fixing bugs, update baselines by running:
+
 ```bash
 cd examples
 docco Feature_Showcase.md -o ../tests/baselines/ --allow-python
