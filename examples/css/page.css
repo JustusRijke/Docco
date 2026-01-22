@@ -11,6 +11,16 @@
     size: A4 landscape;
 }
 
+/* 
+Rotate and shift content as paged.js ignores page orientation 
+More info: https://github.com/pagedjs/pagedjs/issues/281
+*/
+.pagedjs_landscape_page .pagedjs_sheet {
+    transform: translateX(-100%) translateY(0) rotate(-90deg);
+    transform-origin: right top;
+    width: 297mm;
+}
+
 /* Section orientation */
 .section-wrapper.landscape {
     page: landscape;
