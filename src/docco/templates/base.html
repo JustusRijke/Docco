@@ -6,6 +6,25 @@
 
     <script src="https://unpkg.com/pagedjs@0.4.3/dist/paged.polyfill.js"></script>
 
+    <script>
+        /* 
+        Rotate and shift content after rendering by applying CSS class `landscape_page`
+        More info: https://github.com/pagedjs/pagedjs/issues/281
+        */
+        class LandscapeHandler extends Paged.Handler {
+            constructor(chunker, polisher, caller) {
+                super(chunker, polisher, caller);
+            }
+            afterRendered(pages) {
+                for (const page of pages) {
+                    if (page.element.classList.contains('pagedjs_landscape_page'))
+                        page.element.classList.add("landscape_page");
+                }
+            }
+        }
+        Paged.registerHandlers(LandscapeHandler);
+    </script>
+
     <style>
         /* Define how the book looks on the screen
          * Based on CSS for Paged.js interface – v0.4
