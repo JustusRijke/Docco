@@ -26,7 +26,7 @@ def _check_file_writable(file_path: str | Path) -> None:  # pragma: no cover
         RuntimeError: If file is locked or inaccessible
     """
     try:
-        with open(file_path, "w"):
+        with open(file_path, "w", encoding="utf-8"):
             pass
     except (PermissionError, OSError):
         raise RuntimeError(

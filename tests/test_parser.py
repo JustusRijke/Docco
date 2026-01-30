@@ -44,10 +44,10 @@ def test_end_to_end_with_inline(fixture_dir):
         input_file = os.path.join(tmpdir, "with_inline.md")
         # Copy inline target to tmpdir so it's relative to the markdown file
         inline_target = os.path.join(tmpdir, "inline_target.md")
-        with open(inline_target, "w") as f:
+        with open(inline_target, "w", encoding="utf-8") as f:
             f.write("Inlined: {{name}}")
 
-        with open(input_file, "w") as f:
+        with open(input_file, "w", encoding="utf-8") as f:
             f.write("""# Document
 
 Before
@@ -100,7 +100,7 @@ def test_max_iterations_exceeded_self_referencing():
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create a markdown file that references itself
         self_ref_file = os.path.join(tmpdir, "self_ref.md")
-        with open(self_ref_file, "w") as f:
+        with open(self_ref_file, "w", encoding="utf-8") as f:
             f.write('# Self Reference\n<!-- inline:"self_ref.md" -->')
 
         # Create content that inlines the self-referencing file
@@ -117,7 +117,7 @@ def test_multilingual_build_logs_translation_warnings(caplog):
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create markdown file with multilingual frontmatter
         input_file = os.path.join(tmpdir, "test.md")
-        with open(input_file, "w") as f:
+        with open(input_file, "w", encoding="utf-8") as f:
             f.write("""---
 multilingual: true
 base_language: en
@@ -164,7 +164,7 @@ def test_multilingual_po_sync_warning(caplog):
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create markdown file
         input_file = os.path.join(tmpdir, "test.md")
-        with open(input_file, "w") as f:
+        with open(input_file, "w", encoding="utf-8") as f:
             f.write("""---
 multilingual: true
 base_language: en
@@ -206,7 +206,7 @@ def test_multilingual_missing_base_language():
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create markdown file without base_language
         input_file = os.path.join(tmpdir, "test.md")
-        with open(input_file, "w") as f:
+        with open(input_file, "w", encoding="utf-8") as f:
             f.write("""---
 multilingual: true
 ---
@@ -257,7 +257,7 @@ def test_dpi_frontmatter_with_image():
 
         # Create CSS file with image sizing
         css_path = os.path.join(tmpdir, "style.css")
-        with open(css_path, "w") as f:
+        with open(css_path, "w", encoding="utf-8") as f:
             f.write("img { max-width: 100%; height: auto; }")
 
         # Create markdown with DPI and image

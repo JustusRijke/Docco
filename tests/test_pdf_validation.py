@@ -27,7 +27,7 @@ def test_check_pdf_image_dpi_with_low_dpi_images():
 
         # Create HTML with image
         html_path = os.path.join(tmpdir, "test.html")
-        with open(html_path, "w") as f:
+        with open(html_path, "w", encoding="utf-8") as f:
             f.write(f"""<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"></head>
@@ -67,7 +67,7 @@ def test_check_pdf_image_dpi_with_high_dpi_images():
 
         # Create HTML with CSS constraints
         html_path = os.path.join(tmpdir, "test.html")
-        with open(html_path, "w") as f:
+        with open(html_path, "w", encoding="utf-8") as f:
             f.write(f"""<!DOCTYPE html>
 <html>
 <head>
@@ -99,7 +99,7 @@ def test_check_pdf_image_dpi_no_images():
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create HTML without images
         html_path = os.path.join(tmpdir, "test.html")
-        with open(html_path, "w") as f:
+        with open(html_path, "w", encoding="utf-8") as f:
             f.write("""<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"></head>
@@ -123,7 +123,7 @@ def test_check_pdf_image_dpi_invalid_pdf():
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create an invalid PDF (just text file)
         invalid_pdf = os.path.join(tmpdir, "invalid.pdf")
-        with open(invalid_pdf, "w") as f:
+        with open(invalid_pdf, "w", encoding="utf-8") as f:
             f.write("This is not a PDF")
 
         # Should raise an exception when PDF cannot be opened
@@ -148,7 +148,7 @@ def test_validate_and_warn_pdf_images_with_warnings(caplog):
 
         # Create HTML with image
         html_path = os.path.join(tmpdir, "test.html")
-        with open(html_path, "w") as f:
+        with open(html_path, "w", encoding="utf-8") as f:
             f.write(f"""<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"></head>
@@ -181,7 +181,7 @@ def test_check_pdf_image_dpi_at_threshold():
         # Create HTML with image sized to exactly 0.52 inches (39 pixels / 75 DPI)
         # This should result in exactly 75 DPI
         html_path = os.path.join(tmpdir, "test.html")
-        with open(html_path, "w") as f:
+        with open(html_path, "w", encoding="utf-8") as f:
             f.write(f"""<!DOCTYPE html>
 <html>
 <head>
@@ -220,7 +220,7 @@ def test_validate_and_warn_pdf_images_no_warnings(caplog):
 
         # Create HTML with CSS constraints
         html_path = os.path.join(tmpdir, "test.html")
-        with open(html_path, "w") as f:
+        with open(html_path, "w", encoding="utf-8") as f:
             f.write(f"""<!DOCTYPE html>
 <html>
 <head>

@@ -32,7 +32,7 @@ def test_extract_html_to_pot_creates_file():
         assert result == pot_path
 
         # Check file is not empty
-        with open(pot_path, "r") as f:
+        with open(pot_path, "r", encoding="utf-8") as f:
             pot_content = f.read()
         assert len(pot_content) > 0
 
@@ -50,7 +50,7 @@ def test_extract_html_to_pot_contains_strings():
         pot_path = os.path.join(tmpdir, "test.pot")
         extract_html_to_pot(html_path, pot_path)
 
-        with open(pot_path, "r") as f:
+        with open(pot_path, "r", encoding="utf-8") as f:
             pot_content = f.read()
 
         # Should contain the title and paragraph
@@ -71,7 +71,7 @@ def test_extract_html_to_pot_with_formatting():
         pot_path = os.path.join(tmpdir, "test.pot")
         extract_html_to_pot(html_path, pot_path)
 
-        with open(pot_path, "r") as f:
+        with open(pot_path, "r", encoding="utf-8") as f:
             pot_content = f.read()
 
         # Should contain HTML tags in msgids, not markdown syntax
@@ -94,7 +94,7 @@ def test_apply_po_to_html_with_translations():
         with open(html_input_path, "w", encoding="utf-8") as f:
             f.write(html_content)
 
-        with open(po_path, "w") as f:
+        with open(po_path, "w", encoding="utf-8") as f:
             f.write("""# German Translation
 msgid "Hello"
 msgstr "Hallo"
@@ -148,7 +148,7 @@ def test_extract_roundtrip():
         # Verify POT was created
         assert os.path.exists(pot_path)
 
-        with open(pot_path, "r") as f:
+        with open(pot_path, "r", encoding="utf-8") as f:
             pot_content = f.read()
 
         # POT should be valid
@@ -169,7 +169,7 @@ def test_apply_po_empty_translations():
         with open(html_input_path, "w", encoding="utf-8") as f:
             f.write(html_content)
 
-        with open(po_path, "w") as f:
+        with open(po_path, "w", encoding="utf-8") as f:
             # PO file with no translations (empty msgstr)
             f.write("""
 msgid "Hello"
@@ -218,7 +218,7 @@ def test_get_po_stats_with_untranslated():
     """Test get_po_stats with untranslated strings."""
     with tempfile.TemporaryDirectory() as tmpdir:
         po_path = os.path.join(tmpdir, "test.po")
-        with open(po_path, "w") as f:
+        with open(po_path, "w", encoding="utf-8") as f:
             f.write("""# German Translation
 msgid "Hello"
 msgstr "Hallo"
@@ -241,7 +241,7 @@ def test_get_po_stats_with_fuzzy():
     """Test get_po_stats with fuzzy translations."""
     with tempfile.TemporaryDirectory() as tmpdir:
         po_path = os.path.join(tmpdir, "test.po")
-        with open(po_path, "w") as f:
+        with open(po_path, "w", encoding="utf-8") as f:
             f.write("""# German Translation
 msgid "Hello"
 msgstr "Hallo"
@@ -265,7 +265,7 @@ def test_get_po_stats_empty_po():
     """Test get_po_stats with empty PO file (only header)."""
     with tempfile.TemporaryDirectory() as tmpdir:
         po_path = os.path.join(tmpdir, "test.po")
-        with open(po_path, "w") as f:
+        with open(po_path, "w", encoding="utf-8") as f:
             f.write("""# Translation file
 msgid ""
 msgstr ""
@@ -283,7 +283,7 @@ def test_update_po_files_no_existing_po():
     """Test update_po_files with no existing PO files (should not crash)."""
     with tempfile.TemporaryDirectory() as tmpdir:
         pot_path = os.path.join(tmpdir, "test.pot")
-        with open(pot_path, "w") as f:
+        with open(pot_path, "w", encoding="utf-8") as f:
             f.write(
                 """
 msgid "Hello"
@@ -300,7 +300,7 @@ def test_update_po_files_preserves_translations():
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create original POT with 2 strings
         pot_path = os.path.join(tmpdir, "test.pot")
-        with open(pot_path, "w") as f:
+        with open(pot_path, "w", encoding="utf-8") as f:
             f.write("""
 msgid "Hello"
 msgstr ""
@@ -311,7 +311,7 @@ msgstr ""
 
         # Create PO with translations
         po_path = os.path.join(tmpdir, "test.po")
-        with open(po_path, "w") as f:
+        with open(po_path, "w", encoding="utf-8") as f:
             f.write("""
 msgid "Hello"
 msgstr "Hallo"
@@ -338,7 +338,7 @@ def test_update_po_files_adds_new_strings():
     with tempfile.TemporaryDirectory() as tmpdir:
         # Original POT
         pot_path = os.path.join(tmpdir, "test.pot")
-        with open(pot_path, "w") as f:
+        with open(pot_path, "w", encoding="utf-8") as f:
             f.write("""
 msgid "Hello"
 msgstr ""
@@ -352,7 +352,7 @@ msgstr ""
 
         # PO with translations for original strings only
         po_path = os.path.join(tmpdir, "test.po")
-        with open(po_path, "w") as f:
+        with open(po_path, "w", encoding="utf-8") as f:
             f.write("""
 msgid "Hello"
 msgstr "Hallo"
@@ -383,7 +383,7 @@ def test_check_po_sync_in_sync():
         po_path = os.path.join(tmpdir, "test.po")
 
         # Create POT
-        with open(pot_path, "w") as f:
+        with open(pot_path, "w", encoding="utf-8") as f:
             f.write(
                 """
 msgid "Hello"
@@ -395,7 +395,7 @@ msgstr ""
             )
 
         # Create PO with same strings
-        with open(po_path, "w") as f:
+        with open(po_path, "w", encoding="utf-8") as f:
             f.write(
                 """
 msgid "Hello"
@@ -417,7 +417,7 @@ def test_check_po_sync_out_of_sync_new_string():
         po_path = os.path.join(tmpdir, "test.po")
 
         # Create POT with 3 strings
-        with open(pot_path, "w") as f:
+        with open(pot_path, "w", encoding="utf-8") as f:
             f.write(
                 """
 msgid "Hello"
@@ -432,7 +432,7 @@ msgstr ""
             )
 
         # Create PO with only 2 strings
-        with open(po_path, "w") as f:
+        with open(po_path, "w", encoding="utf-8") as f:
             f.write(
                 """
 msgid "Hello"
@@ -454,7 +454,7 @@ def test_check_po_sync_out_of_sync_removed_string():
         po_path = os.path.join(tmpdir, "test.po")
 
         # Create POT with 1 string
-        with open(pot_path, "w") as f:
+        with open(pot_path, "w", encoding="utf-8") as f:
             f.write(
                 """
 msgid "Hello"
@@ -463,7 +463,7 @@ msgstr ""
             )
 
         # Create PO with 2 strings
-        with open(po_path, "w") as f:
+        with open(po_path, "w", encoding="utf-8") as f:
             f.write(
                 """
 msgid "Hello"
@@ -485,7 +485,7 @@ def test_check_po_sync_out_of_sync_changed_string():
         po_path = os.path.join(tmpdir, "test.po")
 
         # Create POT with modified string
-        with open(pot_path, "w") as f:
+        with open(pot_path, "w", encoding="utf-8") as f:
             f.write(
                 """
 msgid "Hello World"

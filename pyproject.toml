@@ -78,11 +78,12 @@ addopts = [
 
 # Ruff configuration. More info: https://docs.astral.sh/ruff/configuration/
 [tool.ruff.lint]
+preview = true
 extend-select = [
     "I", # Sort imports
     "ANN", # Enforce type annotations
     "PT", # Common style issues or inconsistencies with pytest-based tests
-    # Available rulesets: https://docs.astral.sh/ruff/rules/
+    "PLW1514", # Must specify file encoding
 ]
 
 [tool.ruff.lint.isort]
