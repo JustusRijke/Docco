@@ -237,7 +237,7 @@ toml = [
 
 [[package]]
 name = "diffpdf"
-version = "1.1.0"
+version = "1.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
@@ -246,9 +246,9 @@ dependencies = [
     { name = "pre-commit" },
     { name = "pymupdf" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e0/5a/ff9a74cd89c6f526af1c81dcc18819e1d02398667de6b30a35815ef64cd6/diffpdf-1.1.0.tar.gz", hash = "sha256:3118e511dff1a116e957736d25e8a4edc6802dfeccaa56b8c200c4ac785ed722", size = 102198, upload-time = "2026-01-18T16:36:50.308Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a0/e3/b6ab44dbd8ae299914796b820c298c47e7bf2617405f4f17d2f8a7c46472/diffpdf-1.1.1.tar.gz", hash = "sha256:e507d09c76446d8af3d924a5e931e7e0acb08d2936e2e6fe17eb13a16af87b8b", size = 133287, upload-time = "2026-01-30T17:31:17.27Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a8/e5/06fa0ac9b8af56426c4e412b68dc6017755a3cb43626712f0321d98f44ee/diffpdf-1.1.0-py3-none-any.whl", hash = "sha256:9aebe53d3cdf1f8bf20ddbdfeb0a767bc40599827ca2384aeba3540a75d7cdc3", size = 8018, upload-time = "2026-01-18T16:36:48.503Z" },
+    { url = "https://files.pythonhosted.org/packages/f7/e3/6392de714c3aad38caba4f8478cc3771a776d36fdaa16feb0a3b8a252a62/diffpdf-1.1.1-py3-none-any.whl", hash = "sha256:0b2397c177cd5daa3c97883786c916c8ef6051a316be7fb99070fdab52dd3681", size = 8030, upload-time = "2026-01-30T17:31:16.301Z" },
 ]
 
 [[package]]
@@ -266,7 +266,6 @@ source = { editable = "." }
 dependencies = [
     { name = "cffi" },
     { name = "colorlog" },
-    { name = "diffpdf" },
     { name = "markdown-it-py" },
     { name = "mdit-py-plugins" },
     { name = "pillow" },
@@ -292,7 +291,6 @@ dev = [
 requires-dist = [
     { name = "cffi", specifier = ">=2.0.0" },
     { name = "colorlog", specifier = ">=6.10.1" },
-    { name = "diffpdf", specifier = ">=1.0.1" },
     { name = "markdown-it-py", specifier = ">=4.0.0" },
     { name = "mdit-py-plugins", specifier = ">=0.5.0" },
     { name = "pillow", specifier = ">=12.0.0" },
@@ -307,7 +305,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "diffpdf", specifier = ">=1.1.0" },
+    { name = "diffpdf", specifier = ">=1.1.1" },
     { name = "pytest", specifier = ">=9" },
     { name = "pytest-cov", specifier = ">=6" },
     { name = "ruff", specifier = ">=0.10" },

@@ -36,7 +36,6 @@ dependencies = [
     "cffi>=2.0.0",
     "pycparser>=2.21",
     "ply>=3.11",
-    "diffpdf>=1.0.1",
 ]
 
 [project.urls]
@@ -48,7 +47,7 @@ dev = [
     "pytest>=9",
     "pytest-cov>=6",
     "ruff>=0.10",
-    "diffpdf>=1.1.0",
+    "diffpdf>=1.1.1",
     "ty>=0.0.8",
 ]
 
