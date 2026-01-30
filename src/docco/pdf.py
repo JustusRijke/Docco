@@ -92,6 +92,68 @@ def collect_css_content(
     return {"inline": "\n".join(css_content), "external": external_urls}
 
 
+def _downscale_pdf_images(pdf_path: str | Path, target_dpi: int) -> None:
+    """
+    Downscale images in PDF to target DPI using Ghostscript.
+
+    Uses threshold=1.0 to downsample any image exceeding target DPI.
+    Bicubic downsampling provides highest quality results.
+
+    Args:
+        pdf_path: Path to PDF file to modify in-place
+        target_dpi: Target maximum DPI for images
+    """
+    import shutil
+    import subprocess
+    import tempfile
+
+    if not shutil.which("gs"):
+        logger.warning("Ghostscript (gs) not found, skipping image downscaling")
+        return
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+        tmp_path = tmp.name
+
+    try:
+        subprocess.run(
+            [
+                "gs",
+                "-sDEVICE=pdfwrite",
+                "-dCompatibilityLevel=1.4",
+                f"-dColorImageResolution={target_dpi}",
+                f"-dGrayImageResolution={target_dpi}",
+                f"-dMonoImageResolution={target_dpi}",
+                "-dColorImageDownsampleThreshold=1.0",
+                "-dGrayImageDownsampleThreshold=1.0",
+                "-dMonoImageDownsampleThreshold=1.0",
+                "-dColorImageDownsampleType=/Bicubic",
+                "-dGrayImageDownsampleType=/Bicubic",
+                "-dMonoImageDownsampleType=/Subsample",
+                "-dDownsampleColorImages=true",
+                "-dDownsampleGrayImages=true",
+                "-dDownsampleMonoImages=true",
+                "-dNOPAUSE",
+                "-dQUIET",
+                "-dBATCH",
+                f"-sOutputFile={tmp_path}",
+                str(pdf_path),
+            ],
+            check=True,
+            capture_output=True,
+        )
+        os.replace(tmp_path, str(pdf_path))
+        logger.info(f"Downscaled images in PDF to {target_dpi} DPI")
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Ghostscript failed: {e.stderr.decode()}")
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+        raise
+    except Exception:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+        raise
+
+
 def html_to_pdf(
     html_path: str | Path,
     output_path: str | Path,
@@ -106,7 +168,7 @@ def html_to_pdf(
     Args:
         html_path: Path to HTML file to convert
         output_path: Path for output PDF file
-        dpi: Maximum image resolution in DPI (ignored, Chromium uses 96 DPI)
+        dpi: Maximum image resolution in DPI
 
     Returns:
         str: Path to generated PDF file
@@ -115,25 +177,26 @@ def html_to_pdf(
 
     logger.info("Using Playwright/Chromium for PDF generation")
 
-    # Convert to absolute path for file:// URL
     abs_html_path = os.path.abspath(html_path)
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
 
-        # Load HTML file and wait for network idle (important for Paged.js)
         page.goto(f"file://{abs_html_path}", wait_until="networkidle")
 
-        # Generate PDF
         page.pdf(
             path=str(output_path),
-            print_background=True,  # Essential for CSS backgrounds/colors
-            prefer_css_page_size=True,  # Use @page size from CSS
-            display_header_footer=False,  # Headers/footers handled by HTML/CSS
+            print_background=True,
+            prefer_css_page_size=True,
+            display_header_footer=False,
         )
 
         browser.close()
 
     logger.info(f"Generated PDF: {output_path}")
+
+    if dpi:
+        _downscale_pdf_images(output_path, dpi)
+
     return str(output_path)
