@@ -1,6 +1,7 @@
 """Core utilities: logging, frontmatter parsing, HTML wrapping."""
 
 import logging
+import os
 from pathlib import Path
 from typing import cast
 
@@ -103,7 +104,9 @@ def _absolutize_html_urls(html_content: str, base_dir: str) -> str:
     import re
     from urllib.parse import urljoin
 
-    base_url = Path(base_dir).as_uri()
+    # Ensure absolute path for cross-platform compatibility
+    abs_base_dir = os.path.abspath(base_dir)
+    base_url = Path(abs_base_dir).as_uri()
 
     def replace_url(match: re.Match) -> str:
         attr = match.group(1)

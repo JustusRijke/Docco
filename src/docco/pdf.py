@@ -56,7 +56,9 @@ def _absolutize_css_urls(css_content: str, css_file_path: str) -> str:
     import re
     from urllib.parse import urljoin
 
-    css_dir = os.path.dirname(os.path.abspath(css_file_path))
+    # Ensure absolute path for cross-platform compatibility
+    abs_css_path = os.path.abspath(css_file_path)
+    css_dir = os.path.dirname(abs_css_path)
     base_url = Path(css_dir).as_uri()
 
     def replace_url(match: re.Match) -> str:
