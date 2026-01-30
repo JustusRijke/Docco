@@ -2,32 +2,32 @@
 
 @font-face {
   font-family: 'Open Sans';
-  src: url('./fonts/OpenSans-Regular.ttf') format('truetype');
+  src: url('../fonts/OpenSans-Regular.ttf') format('truetype');
 }
 
 @font-face {
   font-family: 'Open Sans';
-  src: url('./fonts/OpenSans-Bold.ttf') format('truetype');
+  src: url('../fonts/OpenSans-Bold.ttf') format('truetype');
   font-weight: bold;
 }
 
 @font-face {
   font-family: 'Montserrat';
-  src: url('./fonts/Montserrat-Bold.ttf') format('truetype');
+  src: url('../fonts/Montserrat-Bold.ttf') format('truetype');
   font-weight: bold;
 
 }
 
 @font-face {
   font-family: 'DejaVu Sans Mono';
-  src: url('./fonts/DejaVuSansMono.ttf') format('truetype');
+  src: url('../fonts/DejaVuSansMono.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
 }
 
 @font-face {
   font-family: 'DejaVu Sans Mono';
-  src: url('./fonts/DejaVuSansMono-Bold.ttf') format('truetype');
+  src: url('../fonts/DejaVuSansMono-Bold.ttf') format('truetype');
   font-weight: bold;
   font-style: normal;
 }

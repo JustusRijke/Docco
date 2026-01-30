@@ -38,6 +38,48 @@ def _check_file_writable(file_path: str | Path) -> None:  # pragma: no cover
         raise RuntimeError(f"Error accessing PDF file {file_path}: {e}")
 
 
+def _absolutize_css_urls(css_content: str, css_file_path: str) -> str:
+    """
+    Convert relative URLs in CSS to absolute file:// URLs.
+
+    Converts url() references while preserving:
+    - Absolute URLs (http://, https://, file://)
+    - Data URLs (data:)
+
+    Args:
+        css_content: CSS content string
+        css_file_path: Path to CSS file for resolving relative paths
+
+    Returns:
+        str: CSS with absolutized URLs
+    """
+    import re
+    from urllib.parse import urljoin
+
+    css_dir = os.path.dirname(os.path.abspath(css_file_path))
+    base_url = Path(css_dir).as_uri()
+
+    def replace_url(match: re.Match) -> str:
+        url = match.group(1).strip("'\" ")
+
+        # Preserve absolute URLs and data URLs
+        if (
+            url.startswith("http://")
+            or url.startswith("https://")
+            or url.startswith("file://")
+            or url.startswith("data:")
+        ):
+            return match.group(0)
+
+        # Convert relative URL to absolute file:// URL
+        abs_url = urljoin(base_url + "/", url)
+        return f'url("{abs_url}")'
+
+    # Match url(...) with various quote styles
+    pattern = r'url\(["\']?([^)]+?)["\']?\)'
+    return re.sub(pattern, replace_url, css_content)
+
+
 def collect_css_content(
     markdown_file: str | Path, metadata: dict[str, object]
 ) -> CSSContent:
@@ -84,7 +126,10 @@ def collect_css_content(
             abs_path = os.path.join(md_dir, css_path)
             if os.path.exists(abs_path):
                 with open(abs_path, "r", encoding="utf-8") as f:
-                    css_content.append(f.read())
+                    raw_css = f.read()
+                # Convert relative URLs in CSS to absolute paths
+                absolutized_css = _absolutize_css_urls(raw_css, abs_path)
+                css_content.append(absolutized_css)
                 logger.debug(f"Using CSS from frontmatter: {css_path}")
             else:
                 logger.warning(f"CSS file not found: {abs_path}")
@@ -163,8 +208,8 @@ def html_to_pdf(
     """
     Convert HTML file to PDF.
 
-    CSS should be embedded in the HTML via <style> tags. Use <base> tag in HTML
-    for resolving relative paths.
+    CSS should be embedded in the HTML via <style> tags. Relative URLs in HTML
+    and CSS are converted to absolute file:// paths during HTML generation.
 
     Args:
         html_path: Path to HTML file to convert
@@ -183,6 +228,19 @@ def html_to_pdf(
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
+
+        # Capture console messages for debugging
+        def handle_console(msg: object) -> None:
+            msg_type = msg.type  # type: ignore[attr-defined]
+            if msg_type in ("error", "warning"):
+                logger.warning(f"Chromium {msg_type}: {msg.text}")  # type: ignore[attr-defined]
+            elif msg_type == "log":
+                logger.debug(f"Chromium log: {msg.text}")  # type: ignore[attr-defined]
+
+        page.on("console", handle_console)
+
+        # Capture page errors
+        page.on("pageerror", lambda exc: logger.error(f"Chromium error: {exc}"))
 
         page.goto(f"file://{abs_html_path}", wait_until="networkidle")
 

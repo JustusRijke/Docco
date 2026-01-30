@@ -7,7 +7,7 @@ import fitz  # PyMuPDF
 import pytest
 from PIL import Image
 
-from docco.pdf import collect_css_content, html_to_pdf
+from docco.pdf import _absolutize_css_urls, collect_css_content, html_to_pdf
 
 
 def path_to_file_url(file_path):
@@ -117,6 +117,69 @@ def test_collect_css_empty_metadata(tmp_md):
     assert result["external"] == []
 
 
+def test_absolutize_css_urls_converts_relative_font():
+    """Test relative font URLs are converted to absolute file:// URLs."""
+    css = "@font-face { src: url('./fonts/font.ttf'); }"
+    css_path = "/path/to/css/style.css"
+    result = _absolutize_css_urls(css, css_path)
+    assert 'url("file:///path/to/css/fonts/font.ttf")' in result
+
+
+def test_absolutize_css_urls_handles_various_quote_styles():
+    """Test CSS url() with different quote styles."""
+    css = """
+        .a { background: url('./img1.png'); }
+        .b { background: url("./img2.png"); }
+        .c { background: url(./img3.png); }
+    """
+    css_path = "/path/to/css/style.css"
+    result = _absolutize_css_urls(css, css_path)
+    assert 'url("file:///path/to/css/img1.png")' in result
+    assert 'url("file:///path/to/css/img2.png")' in result
+    assert 'url("file:///path/to/css/img3.png")' in result
+
+
+def test_absolutize_css_urls_preserves_absolute_urls():
+    """Test absolute URLs (http, https, file) are preserved."""
+    css = """
+        @font-face { src: url("https://fonts.com/font.woff2"); }
+        .a { background: url("http://example.com/bg.png"); }
+        .b { background: url("file:///etc/image.png"); }
+    """
+    css_path = "/path/to/css/style.css"
+    result = _absolutize_css_urls(css, css_path)
+    assert 'url("https://fonts.com/font.woff2")' in result
+    assert 'url("http://example.com/bg.png")' in result
+    assert 'url("file:///etc/image.png")' in result
+
+
+def test_absolutize_css_urls_preserves_data_urls():
+    """Test data URLs are preserved."""
+    css = ".icon { background: url('data:image/svg+xml;base64,abc123'); }"
+    css_path = "/path/to/css/style.css"
+    result = _absolutize_css_urls(css, css_path)
+    assert "url('data:image/svg+xml;base64,abc123')" in result
+
+
+def test_collect_css_absolutizes_font_urls(tmp_path):
+    """Test CSS collection converts font URLs to absolute paths."""
+    md_file = tmp_path / "document.md"
+    md_file.write_text("# Test")
+
+    css_dir = tmp_path / "css"
+    css_dir.mkdir()
+    css_file = css_dir / "fonts.css"
+    css_file.write_text("@font-face { src: url('./fonts/test.ttf'); }")
+
+    metadata = {"css": "css/fonts.css"}
+    result = collect_css_content(str(md_file), metadata)
+
+    # URL should be converted to absolute path
+    assert "url(" in result["inline"]
+    assert "file://" in result["inline"]
+    assert "fonts/test.ttf" in result["inline"]
+
+
 def test_html_to_pdf_creates_file(tmp_path):
     """Test that PDF file is created."""
     html_content = "<!DOCTYPE html><html><body><p>Test</p></body></html>"
@@ -172,15 +235,15 @@ def test_html_to_pdf_without_css(tmp_path):
 
 
 def test_html_to_pdf_with_base_url(tmp_path):
-    """Test PDF generation with <base> tag (used for relative resource paths)."""
+    """Test PDF generation without base tag (URLs are absolutized during HTML generation)."""
     # Create test directory structure
     base_dir = tmp_path / "source"
     base_dir.mkdir()
 
-    # Create HTML with base tag
-    html_content = f"""<!DOCTYPE html>
+    # Create HTML without base tag (absolutization happens earlier in pipeline)
+    html_content = """<!DOCTYPE html>
 <html>
-<head><base href="file://{base_dir}/"></head>
+<head></head>
 <body><h1>Test</h1></body>
 </html>"""
 
@@ -190,7 +253,7 @@ def test_html_to_pdf_with_base_url(tmp_path):
     with open(html_path, "w", encoding="utf-8") as f:
         f.write(html_content)
 
-    # Generate PDF - should succeed with base tag present
+    # Generate PDF - should succeed
     result = html_to_pdf(str(html_path), str(output_path))
     assert os.path.exists(str(output_path))
     assert result == str(output_path)
