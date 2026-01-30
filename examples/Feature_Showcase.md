@@ -364,25 +364,20 @@ Explore additional markdown features: https://markdown-it.github.io/
 
 ### CSS for PDF Generation
 
-WeasyPrint (version 66.0 at time of writing) is used to convert HTML to PDF. It supports CSS up to v2.1, with partial support for modern CSS features:
+Docco uses Chromium (via Playwright) with the Paged.js polyfill to convert HTML to PDF. This provides full modern CSS support including:
 
-**Supported:**
-- Basic layout: block, inline, float, positioning
-- Some modern features: Flexbox, Grid (partially)
-- Media queries and custom selectors
-- CSS custom properties (`--variables`)
+**Fully Supported:**
+- All modern CSS features: Flexbox, Grid, Custom Properties, transforms, animations
+- CSS Paged Media rules for headers, footers, and page styling
+- Media queries and advanced selectors
+- Web fonts (Google Fonts, custom fonts via `@font-face`)
+- SVG rendering as vector graphics
 
-**Not fully supported:**
-- Some CSS 3+ features (check WeasyPrint documentation)
-
-For detailed CSS support information, see the [WeasyPrint API reference](https://doc.courtbouillon.org/weasyprint/stable/api_reference.html).
-
-### Best Practices
-
-- Keep CSS focused on print-friendly layouts
-- Test CSS features before heavy use
-- Reference the WeasyPrint documentation for edge cases
-- Use CSS Paged Media rules for headers, footers, and page styling
+**Best Practices:**
+- Use CSS Paged Media rules (`@page`) for professional print layouts
+- Leverage modern CSS features freely (Flexbox, Grid, custom properties)
+- External fonts load via standard `<link>` tags in frontmatter CSS
+- SVG images render as crisp vector graphics at any resolution
 
 ## Multilingual Documents
 
