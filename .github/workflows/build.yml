@@ -41,6 +41,9 @@ jobs:
       - name: Install gettext
         run: sudo apt-get install -y gettext
 
+      - name: Install Ghostscript
+        run: sudo apt-get install -y ghostscript
+
       - name: Install locked dependencies
         if: matrix.dependencies == 'locked'
         run: uv sync --locked
@@ -132,6 +135,40 @@ jobs:
             throw "msginit not found after installation"
           }
           Write-Host "Verified: msginit found at $($cmd.Source)"
+
+      - name: Setup Ghostscript (portable)
+        shell: pwsh
+        run: |
+          # Download installer (self-extracting archive)
+          $url = "https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10060/gs10060w64.exe"
+          $installer = "$env:TEMP\gs_installer.exe"
+          Write-Host "Downloading Ghostscript..."
+          Invoke-WebRequest -Uri $url -OutFile $installer
+
+          # Extract with 7-zip (pre-installed on GitHub Actions runners)
+          $extractDir = "$env:RUNNER_TEMP\ghostscript"
+          Write-Host "Extracting to $extractDir..."
+          & 7z x $installer -o"$extractDir" -y | Out-Null
+
+          # Find bin directory and add to PATH
+          $binPath = Get-ChildItem -Path $extractDir -Filter "bin" -Recurse -Directory | Select-Object -First 1
+          if ($binPath) {
+            $gsPath = $binPath.FullName
+            Write-Host "Adding to PATH: $gsPath"
+            echo "$gsPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+            # Verify
+            $env:PATH = "$gsPath;$env:PATH"
+            $gsExe = Get-Command gs -ErrorAction SilentlyContinue
+            if ($gsExe) {
+              Write-Host "Verified: gs found at $($gsExe.Source)"
+              & gs --version
+            } else {
+              throw "gs command not found after extraction"
+            }
+          } else {
+            throw "Could not find bin directory in $extractDir"
+          }
 
       - name: Install locked dependencies
         if: matrix.dependencies == 'locked'
