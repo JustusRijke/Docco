@@ -85,7 +85,10 @@ def markdown_to_html(markdown_content: str) -> str:
 
 
 def wrap_html(
-    html_content: str, css_content: str = "", external_css: list[str] | None = None
+    html_content: str,
+    css_content: str = "",
+    external_css: list[str] | None = None,
+    base_url: str | None = None,
 ) -> str:
     """
     Wrap HTML content in a complete HTML document.
@@ -94,6 +97,7 @@ def wrap_html(
         html_content: Raw HTML body content
         css_content: CSS content to embed in <style> tag (optional)
         external_css: List of external CSS URLs (optional)
+        base_url: Base directory URL for resolving relative paths (optional)
 
     Returns:
         str: Complete HTML document
@@ -107,7 +111,10 @@ def wrap_html(
     )
     link_tags = f"{link_tags}\n" if link_tags else ""
 
-    head_content = f"{link_tags}{style_tag}"
+    # Add base tag for relative URL resolution if base_url provided
+    base_tag = f'<base href="file://{base_url}/">\n' if base_url else ""
+
+    head_content = f"{base_tag}{link_tags}{style_tag}"
 
     # Load template and replace placeholders
     template_path = Path(__file__).parent / "templates" / "base.html"

@@ -95,18 +95,17 @@ def collect_css_content(
 def html_to_pdf(
     html_path: str | Path,
     output_path: str | Path,
-    base_url: str | None = None,
     dpi: int | None = None,
 ) -> str:
     """
     Convert HTML file to PDF.
 
-    CSS should be embedded in the HTML via <style> tags.
+    CSS should be embedded in the HTML via <style> tags. Use <base> tag in HTML
+    for resolving relative paths.
 
     Args:
         html_path: Path to HTML file to convert
         output_path: Path for output PDF file
-        base_url: Base URL for resolving relative paths (ignored with file:// protocol)
         dpi: Maximum image resolution in DPI (ignored, Chromium uses 96 DPI)
 
     Returns:

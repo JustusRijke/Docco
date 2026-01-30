@@ -146,7 +146,9 @@ def _generate_single_pdf(
         )
 
         # Wrap body HTML temporarily for translation
-        temp_wrapped = wrap_html(body_html, css_content="", external_css=[])
+        temp_wrapped = wrap_html(
+            body_html, css_content="", external_css=[], base_url=base_dir
+        )
         with open(temp_body_path, "w", encoding="utf-8") as f:
             f.write(temp_wrapped)
 
@@ -173,7 +175,10 @@ def _generate_single_pdf(
 
     # Wrap in complete HTML document with CSS
     html_wrapped = wrap_html(
-        body_html, css_content=css_result["inline"], external_css=css_result["external"]
+        body_html,
+        css_content=css_result["inline"],
+        external_css=css_result["external"],
+        base_url=base_dir,
     )
 
     # Write final HTML to file
@@ -186,7 +191,7 @@ def _generate_single_pdf(
     pdf_path = os.path.join(output_dir, pdf_filename)
     dpi_raw = metadata.get("dpi")
     dpi = int(dpi_raw) if isinstance(dpi_raw, int) else None
-    html_to_pdf(html_path, pdf_path, base_url=base_dir, dpi=dpi)
+    html_to_pdf(html_path, pdf_path, dpi=dpi)
 
     # Validate PDF image quality if DPI was specified and validation enabled
     if validate_images and dpi is not None:
@@ -248,7 +253,10 @@ def _generate_multilingual_pdfs(
     css_result = collect_css_content(input_file, metadata)
     body_html = markdown_to_html(body)
     html_for_pot = wrap_html(
-        body_html, css_content=css_result["inline"], external_css=css_result["external"]
+        body_html,
+        css_content=css_result["inline"],
+        external_css=css_result["external"],
+        base_url=base_dir,
     )
 
     # Write HTML for POT extraction (without layout)

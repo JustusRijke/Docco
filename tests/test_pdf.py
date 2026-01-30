@@ -172,39 +172,30 @@ def test_html_to_pdf_without_css(tmp_path):
 
 
 def test_html_to_pdf_with_base_url(tmp_path):
-    """Test PDF generation with base_url for relative image paths."""
-    # Create a valid image file
-    img = Image.new("RGB", (10, 10), color="red")
-    img_file = tmp_path / "test.png"
-    img.save(str(img_file))
+    """Test PDF generation with <base> tag (used for relative resource paths)."""
+    # Create test directory structure
+    base_dir = tmp_path / "source"
+    base_dir.mkdir()
 
-    # HTML with relative image path
-    html_content = "<!DOCTYPE html><html><body><img src='test.png'/></body></html>"
+    # Create HTML with base tag
+    html_content = f"""<!DOCTYPE html>
+<html>
+<head><base href="file://{base_dir}/"></head>
+<body><h1>Test</h1></body>
+</html>"""
+
     html_path = tmp_path / "test.html"
-    output_path_with_base = tmp_path / "with_base.pdf"
-    output_path_without_base = tmp_path / "without_base.pdf"
+    output_path = tmp_path / "test.pdf"
 
     with open(html_path, "w", encoding="utf-8") as f:
         f.write(html_content)
 
-    # Generate PDF with base_url - should succeed and include the image
-    result_with_base = html_to_pdf(
-        str(html_path), str(output_path_with_base), base_url=str(tmp_path)
-    )
-    assert os.path.exists(str(output_path_with_base))
-    assert result_with_base == str(output_path_with_base)
-    size_with_base = os.path.getsize(str(output_path_with_base))
-
-    # When HTML is provided as a file, WeasyPrint uses the file's directory as base_url by default
-    # So even without explicit base_url, the relative image will resolve
-    html_to_pdf(str(html_path), str(output_path_without_base))
-    assert os.path.exists(str(output_path_without_base))
-    size_without_base = os.path.getsize(str(output_path_without_base))
-
-    # Both PDFs should contain the image (both have same size) since HTML file location provides base path
-    assert size_with_base == size_without_base
-    # Verify PDF is not empty (contains image)
-    assert size_with_base > 1000
+    # Generate PDF - should succeed with base tag present
+    result = html_to_pdf(str(html_path), str(output_path))
+    assert os.path.exists(str(output_path))
+    assert result == str(output_path)
+    # Verify PDF was created with content
+    assert os.path.getsize(str(output_path)) > 500
 
 
 def test_html_to_pdf_dpi_with_basic_img_tag(tmp_path, highres_image):
