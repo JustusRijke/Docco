@@ -155,16 +155,22 @@ jobs:
           if ($binPath) {
             $gsPath = $binPath.FullName
             Write-Host "Adding to PATH: $gsPath"
-            echo "$gsPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-
-            # Verify
+            if ($env:GITHUB_PATH) {
+              try {
+                echo "$gsPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+              } catch {
+                Write-Host "Warning: Could not write to GITHUB_PATH"
+              }
+            }
             $env:PATH = "$gsPath;$env:PATH"
-            $gsExe = Get-Command gs -ErrorAction SilentlyContinue
+
+            # Verify gswin64c.exe is available
+            $gsExe = Get-Command gswin64c -ErrorAction SilentlyContinue
             if ($gsExe) {
-              Write-Host "Verified: gs found at $($gsExe.Source)"
-              & gs --version
+              Write-Host "Verified: gswin64c found at $($gsExe.Source)"
+              & gswin64c --version
             } else {
-              throw "gs command not found after extraction"
+              throw "gswin64c command not found after extraction"
             }
           } else {
             throw "Could not find bin directory in $extractDir"

@@ -107,8 +107,9 @@ def _downscale_pdf_images(pdf_path: str | Path, target_dpi: int) -> None:
     import subprocess
     import tempfile
 
-    if not shutil.which("gs"):
-        logger.warning("Ghostscript (gs) not found, skipping image downscaling")
+    gs_cmd = shutil.which("gswin64c") or shutil.which("gs")
+    if not gs_cmd:
+        logger.warning("Ghostscript not found, skipping image downscaling")
         return
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
@@ -117,7 +118,7 @@ def _downscale_pdf_images(pdf_path: str | Path, target_dpi: int) -> None:
     try:
         subprocess.run(
             [
-                "gs",
+                gs_cmd,
                 "-sDEVICE=pdfwrite",
                 "-dCompatibilityLevel=1.4",
                 f"-dColorImageResolution={target_dpi}",
