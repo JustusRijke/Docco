@@ -49,6 +49,9 @@ jobs:
         if: matrix.dependencies == 'oldest'
         run: uv sync --resolution lowest --python ${{ steps.python-version.outputs.min }}
 
+      - name: Install Playwright browsers
+        run: uv run playwright install chromium --with-deps
+
       - name: Run ruff (check)
         if: matrix.dependencies == 'locked'
         run: uv run ruff check
@@ -130,25 +133,6 @@ jobs:
           }
           Write-Host "Verified: msginit found at $($cmd.Source)"
 
-      - name: Download and extract WeasyPrint executable
-        shell: pwsh
-        run: |
-          $url = "https://github.com/Kozea/WeasyPrint/releases/download/v67.0/weasyprint-windows.zip"
-          $outfile = "weasyprint.zip"
-          Invoke-WebRequest -Uri $url -OutFile $outfile
-          Expand-Archive -Path $outfile -DestinationPath "weasyprint"
-          $binpath = "$PWD\weasyprint\dist"
-          echo "$binpath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          Write-Host "Added WeasyPrint to PATH: $binpath"
-
-          # Verify weasyprint is available
-          $env:PATH = "$binpath;$env:PATH"
-          $cmd = Get-Command weasyprint -ErrorAction SilentlyContinue
-          if (-not $cmd) {
-            throw "weasyprint not found after installation"
-          }
-          Write-Host "Verified: weasyprint found at $($cmd.Source)"
-
       - name: Install locked dependencies
         if: matrix.dependencies == 'locked'
         run: uv sync --locked
@@ -156,6 +140,9 @@ jobs:
       - name: Install oldest dependencies
         if: matrix.dependencies == 'oldest'
         run: uv sync --resolution lowest --python ${{ steps.python-version.outputs.min }}
+
+      - name: Install Playwright browsers
+        run: uv run playwright install chromium --with-deps
 
       - name: Run ruff (check)
         if: matrix.dependencies == 'locked'
@@ -171,7 +158,7 @@ jobs:
 
       - name: Run pytest
         run: uv run pytest
-        
+
       - name: Upload test output on failure
         if: failure()
         uses: actions/upload-artifact@v6
