@@ -36,3 +36,28 @@
 code, pre, kbd, samp, tt {
   font-family: 'DejaVu Sans Mono';
 }
+
+/* Cross-platform font rendering normalization
+ * Ensures identical character spacing across Windows/Linux/Mac
+ * Critical for regression testing with diffpdf
+ */
+* {
+  /* Disable platform-specific kerning (prevents spacing differences) */
+  font-feature-settings: "kern" 0;
+
+  /* Disable ligatures (can vary by platform) */
+  font-variant-ligatures: none;
+
+  /* Use geometric precision instead of platform-optimized rendering */
+  text-rendering: geometricPrecision;
+
+  /* Explicit letter spacing (overrides platform defaults) */
+  letter-spacing: 0;
+
+  /* Explicit word spacing (overrides platform defaults) */
+  word-spacing: 0;
+
+  /* Disable font smoothing variations */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
