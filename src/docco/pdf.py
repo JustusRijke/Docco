@@ -1,11 +1,11 @@
-"""Convert HTML to PDF using WeasyPrint with CSS styling."""
+"""Convert HTML to PDF using Playwright/Chromium with CSS styling."""
 
 import logging
 import os
-import shutil
-import subprocess
 from pathlib import Path
 from typing import TypedDict
+
+from playwright.sync_api import sync_playwright
 
 logger = logging.getLogger(__name__)
 
@@ -38,15 +38,6 @@ def _check_file_writable(file_path: str | Path) -> None:  # pragma: no cover
         raise RuntimeError(f"Error accessing PDF file {file_path}: {e}")
 
 
-# Check if WeasyPrint Python library is available
-try:
-    from weasyprint import HTML  # ty: ignore
-
-    USE_EXECUTABLE = False
-except ImportError:  # pragma: no cover
-    USE_EXECUTABLE = True
-
-
 def collect_css_content(
     markdown_file: str | Path, metadata: dict[str, object]
 ) -> CSSContent:
@@ -55,7 +46,7 @@ def collect_css_content(
 
     Separates file-based CSS from external CSS URLs. File paths are resolved
     relative to the markdown file directory. External URLs (http:// or https://)
-    are passed separately to WeasyPrint.
+    are kept separate for HTML link tags.
 
     Args:
         markdown_file: Path to markdown file
@@ -115,72 +106,35 @@ def html_to_pdf(
     Args:
         html_path: Path to HTML file to convert
         output_path: Path for output PDF file
-        base_url: Base URL for resolving relative paths in HTML (optional)
-        dpi: Maximum image resolution in DPI (optional, default: no limit)
+        base_url: Base URL for resolving relative paths (ignored with file:// protocol)
+        dpi: Maximum image resolution in DPI (ignored, Chromium uses 96 DPI)
 
     Returns:
         str: Path to generated PDF file
     """
     _check_file_writable(output_path)
 
-    if USE_EXECUTABLE:  # pragma: no cover
-        logger.info("Using weasyprint executable for PDF generation")
-        _html_to_pdf_with_executable(html_path, output_path, base_url, dpi)
-    else:
-        logger.info("Using WeasyPrint Python module for PDF generation")
-        html_obj = HTML(filename=html_path, base_url=base_url, encoding="utf-8")
-        if dpi:
-            logger.debug(f"Setting maximum image DPI to {dpi}")
-            html_obj.write_pdf(output_path, dpi=dpi)
-        else:
-            html_obj.write_pdf(output_path)
+    logger.info("Using Playwright/Chromium for PDF generation")
+
+    # Convert to absolute path for file:// URL
+    abs_html_path = os.path.abspath(html_path)
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+
+        # Load HTML file and wait for network idle (important for Paged.js)
+        page.goto(f"file://{abs_html_path}", wait_until="networkidle")
+
+        # Generate PDF
+        page.pdf(
+            path=str(output_path),
+            print_background=True,  # Essential for CSS backgrounds/colors
+            prefer_css_page_size=True,  # Use @page size from CSS
+            display_header_footer=False,  # Headers/footers handled by HTML/CSS
+        )
+
+        browser.close()
 
     logger.info(f"Generated PDF: {output_path}")
     return str(output_path)
-
-
-def _html_to_pdf_with_executable(
-    html_path: str | Path,
-    output_path: str | Path,
-    base_url: str | None = None,
-    dpi: int | None = None,
-) -> None:  # pragma: no cover
-    """
-    Convert HTML to PDF using weasyprint executable (fallback for Windows).
-
-    Args:
-        html_path: Path to HTML file to convert
-        output_path: Path for output PDF file
-        base_url: Base URL for resolving relative paths (optional)
-        dpi: Maximum image resolution in DPI (optional)
-
-    Raises:
-        RuntimeError: If weasyprint executable not found in PATH
-        subprocess.CalledProcessError: If rendering fails
-    """
-    # Check if weasyprint executable is available
-    weasyprint_cmd = shutil.which("weasyprint")
-    if not weasyprint_cmd:
-        raise RuntimeError(
-            "WeasyPrint Python library not available and 'weasyprint' executable not found in PATH. "
-            "Install WeasyPrint: https://doc.courtbouillon.org/weasyprint/stable/first_steps.html"
-        )
-
-    # Build command
-    cmd = [weasyprint_cmd]
-
-    # Add base URL if provided
-    if base_url:
-        cmd.extend(["-u", base_url])
-
-    # Add DPI if provided
-    if dpi:
-        cmd.extend(["--dpi", str(dpi)])
-        logger.debug(f"Setting maximum image DPI to {dpi} (executable mode)")
-
-    cmd.extend([str(html_path), str(output_path)])
-
-    # Call weasyprint executable
-    result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-    if result.stderr:
-        logger.error(result.stderr)
