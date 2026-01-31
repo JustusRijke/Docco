@@ -34,33 +34,41 @@ base_language: en
 #### Supported Fields
 
 **`css`** - CSS stylesheet(s) for PDF styling. Can be:
+
 - Single file (string): `css: "style.css"`
 - Multiple files (inline array): `css: ["page.css", "theme.css"]`
 - Multiple files (multiline list):
+
   ```yaml
   css:
     - "css/page.css"
     - "css/toc.css"
   ```
+
 - External CSS URLs (e.g., Google Fonts):
+
   ```yaml
   css:
     - "css/page.css"
     - "https://fonts.googleapis.com/css?family=Raleway:400,600&display=swap"
   ```
 
-File paths are relative to the markdown file and are embedded in the generated HTML document within `<style>` tags. External CSS URLs (starting with `http://` or `https://`) are included as `<link>` tags in the HTML, allowing WeasyPrint to fetch them during PDF generation. This enables use of web fonts like Google Fonts directly in your PDF documents.
+File paths are relative to the markdown file and are embedded in the generated HTML document within `<style>` tags.
+External CSS URLs (starting with `http://` or `https://`) are included as `<link>` tags in the HTML, allowing WeasyPrint to fetch them during PDF generation.
+This enables use of web fonts like Google Fonts directly in your PDF documents.
 
 **`multilingual`** - Enable multilingual mode (boolean, default: `false`). When set to `true`, Docco automatically extracts translatable strings to a POT file and generates PDFs for the base language plus all discovered translations.
 
 **`base_language`** - The language code of the source document (required when `multilingual: true`). Example: `base_language: en`. This will be used as the suffix for the base language PDF (e.g., `Document_EN.pdf`).
 
 **`dpi`** - Maximum image resolution in dots per inch (integer, optional). Controls image downsampling in the generated PDF:
+
 - Default (no `dpi` specified): Preserves original image resolution. High-quality images remain full resolution, which is excellent for print but may result in larger file sizes.
 - `dpi: 300`: Recommended for professional printing. Images are downsampled to a maximum of 300 DPI, which is the industry standard for high-quality print output while keeping file sizes reasonable.
 - `dpi: 150`: Suitable for screen viewing and digital distribution. Produces smaller files with adequate quality for on-screen reading.
 
 Example:
+
 ```yaml
 ---
 css: "style.css"
@@ -69,6 +77,7 @@ dpi: 300
 ```
 
 **Note:** The DPI setting works most effectively when images have CSS constraints. For optimal file size reduction, include CSS rules like:
+
 ```css
 img {
     max-width: 100%;
@@ -76,7 +85,8 @@ img {
 }
 ```
 
-**Automatic Validation:** When you specify a `dpi` value, Docco automatically validates the generated PDF and warns if any images fall below the specified DPI threshold. This helps ensure your PDFs meet quality requirements before printing. For multilingual documents, only the base language PDF is validated.
+**Automatic Validation:** When you specify a `dpi` value, Docco automatically validates the generated PDF and warns if any images fall below the specified DPI threshold.
+This helps ensure your PDFs meet quality requirements before printing. For multilingual documents, only the base language PDF is validated.
 
 This setting applies to all raster images (PNG, JPEG, etc.) embedded in the document. It does not affect vector graphics (SVG). If images are already at or below the specified DPI, they remain unchanged.
 
@@ -85,6 +95,7 @@ This setting applies to all raster images (PNG, JPEG, etc.) embedded in the docu
 ### Understanding Directives
 
 Docco extends markdown with powerful **directives** - special HTML comments that trigger processing. Directives enable:
+
 - File inclusion and composition with file-type awareness (.md, .html, .py)
 - Dynamic content generation (via Python files)
 - Page layout control
@@ -92,10 +103,12 @@ Docco extends markdown with powerful **directives** - special HTML comments that
 
 #### General Directive Rule
 
-**Directives can appear anywhere in the document**, including in the middle of lines. However, directives inside code blocks (both inline `` `code` `` and fenced ``` ``` blocks) are **protected** and will not be processed. This allows you to show directive syntax as examples in documentation without triggering them.
+**Directives can appear anywhere in the document**, including in the middle of lines. However, directives inside code blocks (both inline `` `code` `` and fenced ``` ``` blocks) are **protected** and will not be processed.
+This allows you to show directive syntax as examples in documentation without triggering them.
 
 Example (this won't execute):
-```
+
+```markdown
 <!-- inline:"file.md" -->
 <!-- inline:"script.py" -->
 ```
@@ -128,11 +141,13 @@ When inlining HTML files, be aware that **all content is parsed as markdown**:
 - **Solution**: HTML files must start at column 0 (no leading indentation). Inline directives themselves should also not be indented.
 
 Correct:
+
 ```markdown
 <!-- inline:"header.html" -->
 ```
 
 Incorrect:
+
 ```markdown
     <!-- inline:"header.html" -->
 ```
@@ -197,7 +212,7 @@ This section uses **landscape orientation** with the `<!-- landscape -->` direct
 
 {.table-borders}
 | Q1 Revenue | Q1 Expenses | Q1 Profit | Q2 Revenue | Q2 Expenses | Q2 Profit | Q3 Revenue | Q3 Expenses | Q3 Profit | Q4 Revenue | Q4 Expenses |
-|-----------|------------|----------|-----------|------------|----------|-----------|------------|----------|-----------|------------|
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | $50,000 | $35,000 | $15,000 | $55,000 | $37,000 | $18,000 | $62,000 | $40,000 | $22,000 | $71,000 | $45,000 |
 | $50,000 | $35,000 | $15,000 | $55,000 | $37,000 | $18,000 | $62,000 | $40,000 | $22,000 | $71,000 | $45,000 |
 | $50,000 | $35,000 | $15,000 | $55,000 | $37,000 | $18,000 | $62,000 | $40,000 | $22,000 | $71,000 | $45,000 |
@@ -226,6 +241,7 @@ This section returns to **portrait orientation** using the `<!-- portrait -->` d
 ### Headers & Footers
 
 Docco supports page headers and footers added via **inline directives**. Headers and footers are processed through the same pipeline as the main document, supporting:
+
 - Placeholder substitution
 - Dynamic content via Python files (`.py`)
 - File inclusion with `<!-- inline -->` directives
@@ -263,6 +279,7 @@ See `examples/css/header_footer.css` for a complete example.
 #### Example Files
 
 Docco provides example header and footer HTML files in the `examples/` folder:
+
 - `examples/header.html` - Example page header with placeholder support
 - `examples/footer.html` - Example page footer with directive support
 
@@ -283,6 +300,7 @@ docco input.md -o output/ --allow-python
 #### Example
 
 File `examples/counter.py`:
+
 ```python
 print("_", end='')
 for i in range(10):
@@ -304,6 +322,7 @@ You can pass arguments to Python scripts via the inline directive. Arguments are
 ```
 
 In your Python script:
+
 ```python
 import sys
 ## sys.argv = ['script.py', 'count=10', 'name=test']
@@ -314,7 +333,8 @@ for arg in sys.argv[1:]:
 
 ## Document Formatting
 
-Docco relies on [MarkdownIt](https://markdown-it-py.readthedocs.io/en/latest/) for rendering markdown to HTML. It fully supports [CommonMark specs](https://spec.commonmark.org) with table support. The [(block) attributes](https://mdit-py-plugins.readthedocs.io/en/latest/#attributes) plugin is also installed.
+Docco relies on [MarkdownIt](https://markdown-it-py.readthedocs.io/en/latest/) for rendering markdown to HTML. It fully supports [CommonMark specs](https://spec.commonmark.org) with table support.
+The [(block) attributes](https://mdit-py-plugins.readthedocs.io/en/latest/#attributes) plugin is also installed.
 
 ### Images with Styling
 
@@ -358,7 +378,7 @@ Markdown tables organize tabular data with optional styling:
 
 ### More Markdown Features
 
-Explore additional markdown features: https://markdown-it.github.io/
+Explore additional markdown features: [https://markdown-it.github.io/](https://markdown-it.github.io/)
 
 ## Styling & Layout
 
@@ -367,6 +387,7 @@ Explore additional markdown features: https://markdown-it.github.io/
 Docco uses Chromium (via Playwright) with the Paged.js polyfill to convert HTML to PDF. This provides full modern CSS support including:
 
 **Fully Supported:**
+
 - All modern CSS features: Flexbox, Grid, Custom Properties, transforms, animations
 - CSS Paged Media rules for headers, footers, and page styling
 - Media queries and advanced selectors
@@ -374,6 +395,7 @@ Docco uses Chromium (via Playwright) with the Paged.js polyfill to convert HTML 
 - SVG rendering as vector graphics
 
 **Best Practices:**
+
 - Use CSS Paged Media rules (`@page`) for professional print layouts
 - Leverage modern CSS features freely (Flexbox, Grid, custom properties)
 - External fonts load via standard `<link>` tags in frontmatter CSS
@@ -397,12 +419,14 @@ base_language: en
 #### How It Works
 
 When enabled, Docco will:
+
 1. Extract a POT file to a `{document_name}/` subfolder
 2. Discover all `.po` translation files in that subfolder
 3. Generate a PDF for the base language (e.g., `Document_EN.pdf`)
 4. Generate translated PDFs for each `.po` file (e.g., `Document_DE.pdf`, `Document_FR.pdf`)
 
 **Example:** See `Multilingual_Document_Example.md` which generates:
+
 - `Multilingual_Document_Example_EN.pdf`
 - `Multilingual_Document_Example_DE.pdf`
 - `Multilingual_Document_Example_NL.pdf`
@@ -424,6 +448,7 @@ Docco integrates with professional translation tools and services for enterprise
 #### Step 1: Enable Multilingual Mode
 
 Add to your frontmatter:
+
 ```yaml
 ---
 multilingual: true
@@ -438,11 +463,13 @@ docco myfile.md -o output/
 ```
 
 This automatically:
+
 - Generates `myfile_EN.pdf` (base language)
 - Creates `myfile/myfile.pot` (translation template)
 
 File structure:
-```
+
+```text
 myfile.md
 myfile/
   └── myfile.pot        (template)
@@ -453,13 +480,15 @@ output/
 #### Step 3: Create Language-Specific Translations
 
 Translators create `.po` files for each language using professional tools:
+
 - **poedit** (desktop application)
 - **Weblate** (web-based, collaborative)
 - **Crowdin, Lokalise, POEditor** (professional translation platforms)
 - Any gettext-compatible tool
 
 Place them in the `myfile/` directory:
-```
+
+```text
 myfile.md
 myfile/
   ├── myfile.pot        (template)
@@ -475,11 +504,12 @@ docco myfile.md -o output/
 ```
 
 This automatically:
+
 - Updates POT file
 - Updates all existing PO files with new/changed strings
 - Generates PDFs for all languages
 
-```
+```text
 Extracted POT: myfile/myfile.pot
 Updated de.po: 40 translated, 2 fuzzy, 5 untranslated
 Updated fr.po: 38 translated, 1 fuzzy, 6 untranslated
@@ -502,6 +532,7 @@ docco myfile.md -o output/
 ```
 
 Docco automatically:
+
 - Updates POT file with new content
 - Merges changes into all existing PO files
 - Preserves existing translations

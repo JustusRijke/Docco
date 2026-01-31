@@ -2,3 +2,6 @@ no-inline-html: false
 first-line-heading: false
 line-length:
   line_length: 255
+no-alt-text: false
+blanks-around-tables: false
+no-duplicate-heading: false
