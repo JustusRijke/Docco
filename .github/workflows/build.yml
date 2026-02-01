@@ -90,8 +90,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        # dependencies: [locked, oldest]
-        dependencies: [oldest]
+        dependencies: [locked, oldest]
 
     env:
       GETTEXT_VERSION: v0.21-v1.16
@@ -252,13 +251,13 @@ jobs:
         if: matrix.dependencies == 'locked'
         run: uv run ty check --output-format github
 
-      # - name: Run pytest
-      #   run: uv run pytest
+      - name: Run pytest
+        run: uv run pytest
 
-      # - name: Upload test output on failure
-      #   if: failure()
-      #   uses: actions/upload-artifact@v6
-      #   with:
-      #     name: test-output-windows-${{ matrix.dependencies }}
-      #     path: tests/output/
-      #     retention-days: 7
+      - name: Upload test output on failure
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: test-output-windows-${{ matrix.dependencies }}
+          path: tests/output/
+          retention-days: 7
