@@ -88,6 +88,7 @@ jobs:
           
   test-windows:
     runs-on: windows-latest
+    needs: test-linux
     strategy:
       matrix:
         dependencies: [locked, oldest]
@@ -238,18 +239,6 @@ jobs:
       # - name: Show Playwright cache contents
       #   if: steps.playwright-cache.outputs.cache-hit == 'true'
       #   run: Get-ChildItem -Path "${{ env.PLAYWRIGHT_BROWSERS_PATH }}" -Recurse | Select-Object FullName
-  
-      - name: Run ruff (check)
-        if: matrix.dependencies == 'locked'
-        run: uv run ruff check
-
-      - name: Run ruff (format)
-        if: matrix.dependencies == 'locked'
-        run: uv run ruff format --check
-
-      - name: Run ty
-        if: matrix.dependencies == 'locked'
-        run: uv run ty check --output-format github
 
       - name: Run pytest
         run: uv run pytest
