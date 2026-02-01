@@ -229,7 +229,7 @@ jobs:
           key: playwright-${{ runner.os }}-${{ matrix.dependencies }}-${{ hashFiles('uv.lock') }}
 
       - name: Install Playwright browsers
-        run: uv run playwright install chromium --with-deps
+        run: uv run playwright install chromium --only-shell --with-deps
 
       - name: Run ruff (check)
         if: matrix.dependencies == 'locked'
