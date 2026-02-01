@@ -4,6 +4,12 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    # Ignore all version bumps in pyproject.toml to maintain wide 
+    # downward compatibility and prevent shifting minimum versions.
+    # This keeps the ecosystem active for the Dependency Graph and 
+    # automated Security Vulnerability alerts
+    ignore:
+      - dependency-name: "*"
 
   - package-ecosystem: "github-actions"
     directory: "/"
