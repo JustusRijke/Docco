@@ -102,6 +102,8 @@ jobs:
       GETTEXT_VERSION: v0.21-v1.16
       GHOSTSCRIPT_VERSION: 10.06.0
       GHOSTSCRIPT_TAG: gs10060
+      GETTEXT_DIR: ${{ runner.temp }}\gettext
+      GHOSTSCRIPT_DIR: ${{ runner.temp }}\ghostscript
 
     steps:
       - uses: actions/checkout@v6
@@ -134,7 +136,7 @@ jobs:
         id: cache-gettext
         uses: actions/cache@v4
         with:
-          path: gettext
+          path: ${{ env.GETTEXT_DIR }}
           key: gettext-windows-${{ env.GETTEXT_VERSION }}
 
       - name: Download and install gettext
@@ -142,15 +144,17 @@ jobs:
         shell: pwsh
         run: |
           $version = "${{ env.GETTEXT_VERSION }}"
+          $gettextDir = "${{ env.GETTEXT_DIR }}"
           $url = "https://github.com/mlocati/gettext-iconv-windows/releases/download/$version/gettext0.21-iconv1.16-static-64.zip"
-          $outfile = "gettext.zip"
+          $outfile = "$env:TEMP\gettext.zip"
           Invoke-WebRequest -Uri $url -OutFile $outfile
-          Expand-Archive -Path $outfile -DestinationPath "gettext"
+          Expand-Archive -Path $outfile -DestinationPath $gettextDir
 
       - name: Add gettext to PATH
         shell: pwsh
         run: |
-          $binpath = "$PWD\gettext\bin"
+          $gettextDir = "${{ env.GETTEXT_DIR }}"
+          $binpath = "$gettextDir\bin"
           echo "$binpath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           Write-Host "Added gettext to PATH: $binpath"
 
@@ -166,7 +170,7 @@ jobs:
         id: cache-ghostscript
         uses: actions/cache@v4
         with:
-          path: ghostscript
+          path: ${{ env.GHOSTSCRIPT_DIR }}
           key: ghostscript-windows-${{ env.GHOSTSCRIPT_VERSION }}
 
       - name: Download and extract Ghostscript
@@ -174,18 +178,20 @@ jobs:
         shell: pwsh
         run: |
           $tag = "${{ env.GHOSTSCRIPT_TAG }}"
+          $ghostscriptDir = "${{ env.GHOSTSCRIPT_DIR }}"
           $url = "https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/$tag/${tag}w64.exe"
           $installer = "$env:TEMP\gs_installer.exe"
           Write-Host "Downloading Ghostscript..."
           Invoke-WebRequest -Uri $url -OutFile $installer
 
           Write-Host "Extracting Ghostscript..."
-          & 7z x $installer -o"ghostscript" -y | Out-Null
+          & 7z x $installer -o"$ghostscriptDir" -y | Out-Null
 
       - name: Add Ghostscript to PATH
         shell: pwsh
         run: |
-          $binPath = Get-ChildItem -Path "ghostscript" -Filter "bin" -Recurse -Directory | Select-Object -First 1
+          $ghostscriptDir = "${{ env.GHOSTSCRIPT_DIR }}"
+          $binPath = Get-ChildItem -Path $ghostscriptDir -Filter "bin" -Recurse -Directory | Select-Object -First 1
           if ($binPath) {
             $gsPath = $binPath.FullName
             Write-Host "Adding to PATH: $gsPath"
@@ -207,7 +213,7 @@ jobs:
               throw "gswin64c command not found"
             }
           } else {
-            throw "Could not find bin directory in ghostscript"
+            throw "Could not find bin directory in $ghostscriptDir"
           }
 
       - name: Install locked dependencies
