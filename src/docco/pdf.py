@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 from typing import TypedDict
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import ConsoleMessage, sync_playwright
 
 logger = logging.getLogger(__name__)
 
@@ -158,7 +158,7 @@ def _downscale_pdf_images(pdf_path: str | Path, target_dpi: int) -> None:
     import tempfile
 
     gs_cmd = shutil.which("gswin64c") or shutil.which("gs")
-    if not gs_cmd:
+    if not gs_cmd:  # pragma: no cover
         logger.warning("Ghostscript not found, skipping image downscaling")
         return
 
@@ -194,12 +194,12 @@ def _downscale_pdf_images(pdf_path: str | Path, target_dpi: int) -> None:
         )
         os.replace(tmp_path, str(pdf_path))
         logger.info(f"Downscaled images in PDF to {target_dpi} DPI")
-    except subprocess.CalledProcessError as e:
+    except subprocess.CalledProcessError as e:  # pragma: no cover
         logger.error(f"Ghostscript failed: {e.stderr.decode()}")
         if os.path.exists(tmp_path):
             os.unlink(tmp_path)
         raise
-    except Exception:
+    except Exception:  # pragma: no cover
         if os.path.exists(tmp_path):
             os.unlink(tmp_path)
         raise
@@ -235,12 +235,17 @@ def html_to_pdf(
         page = browser.new_page()
 
         # Capture console messages for debugging
-        def handle_console(msg: object) -> None:
-            msg_type = msg.type  # type: ignore[attr-defined]
-            if msg_type in ("error", "warning"):
-                logger.warning(f"Chromium {msg_type}: {msg.text}")  # type: ignore[attr-defined]
-            elif msg_type == "log":
-                logger.debug(f"Chromium log: {msg.text}")  # type: ignore[attr-defined]
+        def handle_console(msg: ConsoleMessage) -> None:  # pragma: no cover
+            msg_type = msg.type
+            msg_text = f"Chromium: {msg.text}"
+            if msg_type == "info":
+                logger.info(msg_text)
+            elif msg_type == "warning":
+                logger.warning(msg_text)
+            elif msg_type == "error":
+                logger.error(msg_text)
+            else:
+                logger.debug(f"Chromium {msg_type}: {msg_text}")
 
         page.on("console", handle_console)
 
