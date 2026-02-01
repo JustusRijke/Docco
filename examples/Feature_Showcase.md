@@ -5,7 +5,9 @@ css:
   - "css/header_footer.css"
   - "css/fonts.css"
   - "css/fancy.css"
+  - "css/multiplatform.css"
 ---
+
 <!-- inline:"header.html" title="Docco Feature Showcase" author="Docco Team" -->
 <!-- inline:"footer.html" -->
 
