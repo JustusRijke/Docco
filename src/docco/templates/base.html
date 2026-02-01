@@ -112,7 +112,7 @@
     </script>
 
     <script>
-        /* 
+        /*
         Rotate and shift content after rendering by applying CSS class `landscape_page`
         More info: https://github.com/pagedjs/pagedjs/issues/281
         */
@@ -125,6 +125,8 @@
                     if (page.element.classList.contains('pagedjs_landscape_page'))
                         page.element.classList.add("landscape_page");
                 }
+                // Signal that paged.js rendering is complete
+                window.pagedJsRenderingComplete = true;
             }
         }
         Paged.registerHandlers(LandscapeHandler);

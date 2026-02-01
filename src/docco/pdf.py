@@ -246,6 +246,9 @@ def html_to_pdf(
 
         page.goto(f"file://{abs_html_path}", wait_until="networkidle")
 
+        # Wait for paged.js rendering to complete
+        page.wait_for_function("window.pagedJsRenderingComplete === true")
+
         page.pdf(
             path=str(output_path),
             print_background=True,
