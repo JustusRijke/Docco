@@ -223,9 +223,6 @@ jobs:
           $PW_VERSION = uv pip show playwright | Select-String -Pattern "^Version:" | ForEach-Object { $_.Line -replace "Version:\s*", "" }
           echo "version=$PW_VERSION" >> $env:GITHUB_OUTPUT
           
-      - name: Install Playwright browsers
-        run: uv run playwright install chromium --only-shell
-
       - name: Cache Playwright browsers
         id: playwright-cache
         uses: actions/cache@v5
@@ -235,8 +232,8 @@ jobs:
 
       - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: uv run playwright install chromium --with-deps
-        
+        run: uv run playwright install chromium --only-shell
+                
       - name: Run ruff (check)
         if: matrix.dependencies == 'locked'
         run: uv run ruff check
