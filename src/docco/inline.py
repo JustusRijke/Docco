@@ -2,7 +2,7 @@
 
 import io
 import logging
-import os
+import pathlib
 import re
 import sys
 
@@ -96,7 +96,7 @@ def restore_code_blocks(content: str, code_blocks: dict[str, str]) -> str:
 
 
 def process_inlines(
-    content: str, base_dir: str = ".", allow_python: bool = False
+    content: str, base_dir: pathlib.Path, allow_python: bool = False
 ) -> str:
     """
     Process inline directives with file-type aware post-processing.
@@ -132,10 +132,10 @@ def process_inlines(
         args_str = match.group(2).strip()
 
         # Resolve file path relative to base_dir
-        full_path = os.path.join(base_dir, filepath)
+        full_path = base_dir / filepath
 
         # Check if file exists
-        if not os.path.exists(full_path):
+        if not full_path.exists():
             raise FileNotFoundError(f"Inline file not found: {filepath}")
 
         # Parse arguments from the directive
@@ -151,7 +151,7 @@ def process_inlines(
             return execute_python_file(full_path, base_dir, allow_python, args)
         else:
             # For other files: read content
-            with open(full_path, "r", encoding="utf-8") as f:
+            with full_path.open("r", encoding="utf-8") as f:
                 file_content = f.read()
 
             # Find all placeholders in the file
@@ -229,9 +229,9 @@ def parse_inline_args(args_str: str) -> dict[str, str]:
     return args
 
 
-def get_file_type(filepath: str) -> str:
+def get_file_type(filepath: pathlib.Path) -> str:
     """Extract file extension from filepath."""
-    return os.path.splitext(filepath)[1].lower()
+    return filepath.suffix.lower()
 
 
 def trim_html_lines(content: str) -> str:
@@ -242,7 +242,10 @@ def trim_html_lines(content: str) -> str:
 
 
 def execute_python_file(
-    filepath: str, base_dir: str, allow_python: bool, args_dict: dict[str, str]
+    filepath: pathlib.Path,
+    base_dir: pathlib.Path,
+    allow_python: bool,
+    args_dict: dict[str, str],
 ) -> str:
     """Execute Python file and return stdout."""
     if not allow_python:
@@ -251,7 +254,7 @@ def execute_python_file(
         )
 
     # Build sys.argv list
-    argv_list = [filepath]
+    argv_list = [str(filepath)]
     for key, value in args_dict.items():
         argv_list.append(f"--{key}={value}")
 
@@ -268,10 +271,10 @@ def execute_python_file(
         sys.argv = argv_list
 
         # Read and execute the file
-        with open(filepath, "r", encoding="utf-8") as f:
+        with filepath.open("r", encoding="utf-8") as f:
             code = f.read()
 
-        exec(code, {"__file__": filepath})
+        exec(code, {"__file__": str(filepath)})
         output = sys.stdout.getvalue()
     except Exception as e:
         raise ValueError(f"Python execution error in {filepath}: {e}")
@@ -285,8 +288,8 @@ def execute_python_file(
 
 def post_process_content(
     content: str,
-    file_path: str,
-    base_dir: str,
+    file_path: pathlib.Path,
+    base_dir: pathlib.Path,
     allow_python: bool,
     args_dict: dict[str, str],
 ) -> str:

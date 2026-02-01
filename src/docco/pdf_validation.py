@@ -28,7 +28,7 @@ class DPICheckResult(TypedDict):
     low_dpi_images: list[ImageInfo]
 
 
-def check_pdf_image_dpi(pdf_path: str | Path, threshold: int = 300) -> DPICheckResult:
+def check_pdf_image_dpi(pdf_path: Path, threshold: int = 300) -> DPICheckResult:
     """
     Check all images in a PDF for DPI below threshold.
 
@@ -102,7 +102,7 @@ def check_pdf_image_dpi(pdf_path: str | Path, threshold: int = 300) -> DPICheckR
     }
 
 
-def validate_and_warn_pdf_images(pdf_path: str | Path, threshold: int = 300) -> None:
+def validate_and_warn_pdf_images(pdf_path: Path, threshold: int = 300) -> None:
     """
     Validate PDF images and log warnings for low DPI images.
 

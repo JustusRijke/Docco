@@ -84,6 +84,7 @@ extend-select = [
     "ANN", # Enforce type annotations
     "PT", # Common style issues or inconsistencies with pytest-based tests
     "PLW1514", # Must specify file encoding
+    "PTH", # Use PathLib
 ]
 
 [tool.ruff.lint.isort]

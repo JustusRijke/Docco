@@ -1,6 +1,5 @@
 """Tests for PDF conversion."""
 
-import os
 from pathlib import Path
 
 import fitz  # PyMuPDF
@@ -74,7 +73,7 @@ def test_collect_css_single_frontmatter(tmp_path):
     css_file.write_text(css_content)
 
     metadata = {"css": "style.css"}
-    result = collect_css_content(str(md_file), metadata)
+    result = collect_css_content(md_file, metadata)
     assert result["inline"] == css_content
     assert result["external"] == []
 
@@ -93,7 +92,7 @@ def test_collect_css_multiple_frontmatter(tmp_path):
     css2.write_text(css2_content)
 
     metadata = {"css": ["page.css", "style.css"]}
-    result = collect_css_content(str(md_file), metadata)
+    result = collect_css_content(md_file, metadata)
     assert css1_content in result["inline"]
     assert css2_content in result["inline"]
     # Content should be joined with newlines
@@ -176,7 +175,7 @@ def test_collect_css_absolutizes_font_urls(tmp_path):
     css_file.write_text("@font-face { src: url('./fonts/test.ttf'); }")
 
     metadata = {"css": "css/fonts.css"}
-    result = collect_css_content(str(md_file), metadata)
+    result = collect_css_content(md_file, metadata)
 
     # URL should be converted to absolute path
     assert "url(" in result["inline"]
@@ -190,13 +189,13 @@ def test_html_to_pdf_creates_file(tmp_path):
     html_path = tmp_path / "test.html"
     output_path = tmp_path / "test.pdf"
 
-    with open(html_path, "w", encoding="utf-8") as f:
+    with Path(html_path).open("w", encoding="utf-8") as f:
         f.write(html_content)
 
-    result = html_to_pdf(str(html_path), str(output_path))
+    result = html_to_pdf(html_path, output_path)
 
-    assert os.path.exists(str(output_path))
-    assert result == str(output_path)
+    assert Path(str(output_path)).exists()
+    assert result == output_path
 
 
 def test_html_to_pdf_with_embedded_css(tmp_path):
@@ -214,13 +213,13 @@ p { font-size: 14px; }
     html_path = tmp_path / "test.html"
     output_path = tmp_path / "test.pdf"
 
-    with open(html_path, "w", encoding="utf-8") as f:
+    with Path(html_path).open("w", encoding="utf-8") as f:
         f.write(html_content)
 
-    result = html_to_pdf(str(html_path), str(output_path))
+    result = html_to_pdf(html_path, output_path)
 
-    assert os.path.exists(str(output_path))
-    assert result == str(output_path)
+    assert Path(str(output_path)).exists()
+    assert result == output_path
 
 
 def test_html_to_pdf_without_css(tmp_path):
@@ -229,13 +228,13 @@ def test_html_to_pdf_without_css(tmp_path):
     html_path = tmp_path / "test.html"
     output_path = tmp_path / "test.pdf"
 
-    with open(html_path, "w", encoding="utf-8") as f:
+    with Path(html_path).open("w", encoding="utf-8") as f:
         f.write(html_content)
 
-    result = html_to_pdf(str(html_path), str(output_path))
+    result = html_to_pdf(html_path, output_path)
 
-    assert os.path.exists(str(output_path))
-    assert result == str(output_path)
+    assert Path(str(output_path)).exists()
+    assert result == output_path
 
 
 def test_html_to_pdf_with_base_url(tmp_path):
@@ -254,15 +253,15 @@ def test_html_to_pdf_with_base_url(tmp_path):
     html_path = tmp_path / "test.html"
     output_path = tmp_path / "test.pdf"
 
-    with open(html_path, "w", encoding="utf-8") as f:
+    with Path(html_path).open("w", encoding="utf-8") as f:
         f.write(html_content)
 
     # Generate PDF - should succeed
-    result = html_to_pdf(str(html_path), str(output_path))
-    assert os.path.exists(str(output_path))
-    assert result == str(output_path)
+    result = html_to_pdf(html_path, output_path)
+    assert Path(str(output_path)).exists()
+    assert result == output_path
     # Verify PDF was created with content
-    assert os.path.getsize(str(output_path)) > 500
+    assert Path(str(output_path)).stat().st_size > 500
 
 
 def test_html_to_pdf_dpi_with_basic_img_tag(tmp_path, highres_image):
@@ -288,14 +287,14 @@ img {{
     output_300dpi = tmp_path / "test_300dpi.pdf"
     output_no_dpi = tmp_path / "test_no_dpi.pdf"
 
-    with open(html_path, "w", encoding="utf-8") as f:
+    with Path(html_path).open("w", encoding="utf-8") as f:
         f.write(html_content)
 
     # Generate with DPI limit
-    html_to_pdf(str(html_path), str(output_300dpi), dpi=300)
+    html_to_pdf(html_path, output_300dpi, dpi=300)
 
     # Generate without DPI limit
-    html_to_pdf(str(html_path), str(output_no_dpi))
+    html_to_pdf(html_path, output_no_dpi)
 
     # Extract image info
     images_300dpi = get_pdf_image_info(output_300dpi)
@@ -332,12 +331,12 @@ def test_html_to_pdf_dpi_with_css_styled_images(tmp_path, highres_image):
         html_path = tmp_path / f"test_{test_name}.html"
         output_path = tmp_path / f"test_{test_name}.pdf"
 
-        with open(html_path, "w", encoding="utf-8") as f:
+        with Path(html_path).open("w", encoding="utf-8") as f:
             f.write(html_content)
 
-        html_to_pdf(str(html_path), str(output_path), dpi=300)
+        html_to_pdf(html_path, output_path, dpi=300)
 
-        assert os.path.exists(str(output_path))
+        assert Path(str(output_path)).exists()
 
         # Verify image was embedded
         images = get_pdf_image_info(output_path)
@@ -371,12 +370,12 @@ figure img {{
     html_path = tmp_path / "test_figure.html"
     output_path = tmp_path / "test_figure.pdf"
 
-    with open(html_path, "w", encoding="utf-8") as f:
+    with Path(html_path).open("w", encoding="utf-8") as f:
         f.write(html_content)
 
-    html_to_pdf(str(html_path), str(output_path), dpi=300)
+    html_to_pdf(html_path, output_path, dpi=300)
 
-    assert os.path.exists(str(output_path))
+    assert Path(str(output_path)).exists()
 
     # Verify image was embedded and potentially downsampled
     images = get_pdf_image_info(output_path)
@@ -415,12 +414,12 @@ img {{
     html_path = tmp_path / "test_multiple.html"
     output_path = tmp_path / "test_multiple.pdf"
 
-    with open(html_path, "w", encoding="utf-8") as f:
+    with Path(html_path).open("w", encoding="utf-8") as f:
         f.write(html_content)
 
-    html_to_pdf(str(html_path), str(output_path), dpi=300)
+    html_to_pdf(html_path, output_path, dpi=300)
 
-    assert os.path.exists(str(output_path))
+    assert Path(str(output_path)).exists()
 
     # Verify all images were embedded
     images = get_pdf_image_info(output_path)
@@ -435,11 +434,11 @@ def test_html_to_pdf_without_dpi_parameter(tmp_path):
     html_path = tmp_path / "test_no_dpi.html"
     output_path = tmp_path / "test_no_dpi.pdf"
 
-    with open(html_path, "w", encoding="utf-8") as f:
+    with Path(html_path).open("w", encoding="utf-8") as f:
         f.write(html_content)
 
     # Test without DPI parameter (default behavior)
-    result = html_to_pdf(str(html_path), str(output_path))
+    result = html_to_pdf(html_path, output_path)
 
-    assert os.path.exists(str(output_path))
-    assert result == str(output_path)
+    assert Path(str(output_path)).exists()
+    assert result == output_path

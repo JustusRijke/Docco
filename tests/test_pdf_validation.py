@@ -1,6 +1,6 @@
 """Tests for PDF validation module."""
 
-import os
+import pathlib
 import tempfile
 from pathlib import Path
 
@@ -22,12 +22,12 @@ def test_check_pdf_image_dpi_with_low_dpi_images():
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create a small low-res image
         img = Image.new("RGB", (100, 100), color="red")
-        img_path = os.path.join(tmpdir, "lowres.png")
+        img_path = pathlib.Path(tmpdir) / "lowres.png"
         img.save(img_path)
 
         # Create HTML with image
-        html_path = os.path.join(tmpdir, "test.html")
-        with open(html_path, "w", encoding="utf-8") as f:
+        html_path = pathlib.Path(tmpdir) / "test.html"
+        with Path(html_path).open("w", encoding="utf-8") as f:
             f.write(f"""<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"></head>
@@ -37,7 +37,7 @@ def test_check_pdf_image_dpi_with_low_dpi_images():
 </html>""")
 
         # Generate PDF
-        pdf_path = os.path.join(tmpdir, "test.pdf")
+        pdf_path = pathlib.Path(tmpdir) / "test.pdf"
         html_to_pdf(html_path, pdf_path)
 
         # Check DPI
@@ -62,12 +62,12 @@ def test_check_pdf_image_dpi_with_high_dpi_images():
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create a high-res image
         img = Image.new("RGB", (3000, 2000), color="blue")
-        img_path = os.path.join(tmpdir, "highres.png")
+        img_path = pathlib.Path(tmpdir) / "highres.png"
         img.save(img_path, dpi=(600, 600))
 
         # Create HTML with CSS constraints
-        html_path = os.path.join(tmpdir, "test.html")
-        with open(html_path, "w", encoding="utf-8") as f:
+        html_path = pathlib.Path(tmpdir) / "test.html"
+        with Path(html_path).open("w", encoding="utf-8") as f:
             f.write(f"""<!DOCTYPE html>
 <html>
 <head>
@@ -82,7 +82,7 @@ img {{ max-width: 100%; height: auto; }}
 </html>""")
 
         # Generate PDF with DPI limit
-        pdf_path = os.path.join(tmpdir, "test.pdf")
+        pdf_path = pathlib.Path(tmpdir) / "test.pdf"
         html_to_pdf(html_path, pdf_path, dpi=300)
 
         # Check DPI
@@ -98,8 +98,8 @@ def test_check_pdf_image_dpi_no_images():
     """Test PDF with no images."""
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create HTML without images
-        html_path = os.path.join(tmpdir, "test.html")
-        with open(html_path, "w", encoding="utf-8") as f:
+        html_path = pathlib.Path(tmpdir) / "test.html"
+        with Path(html_path).open("w", encoding="utf-8") as f:
             f.write("""<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"></head>
@@ -107,7 +107,7 @@ def test_check_pdf_image_dpi_no_images():
 </html>""")
 
         # Generate PDF
-        pdf_path = os.path.join(tmpdir, "test.pdf")
+        pdf_path = pathlib.Path(tmpdir) / "test.pdf"
         html_to_pdf(html_path, pdf_path)
 
         # Check DPI
@@ -122,8 +122,8 @@ def test_check_pdf_image_dpi_invalid_pdf():
     """Test behavior with invalid PDF file."""
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create an invalid PDF (just text file)
-        invalid_pdf = os.path.join(tmpdir, "invalid.pdf")
-        with open(invalid_pdf, "w", encoding="utf-8") as f:
+        invalid_pdf = pathlib.Path(tmpdir) / "invalid.pdf"
+        with invalid_pdf.open("w", encoding="utf-8") as f:
             f.write("This is not a PDF")
 
         # Should raise an exception when PDF cannot be opened
@@ -135,7 +135,7 @@ def test_check_pdf_image_dpi_nonexistent_file():
     """Test behavior with nonexistent file."""
     # Should raise an exception when file doesn't exist
     with pytest.raises(RuntimeError):
-        check_pdf_image_dpi("/nonexistent/file.pdf")
+        check_pdf_image_dpi(Path("/nonexistent/file.pdf"))
 
 
 def test_validate_and_warn_pdf_images_with_warnings(caplog):
@@ -143,12 +143,12 @@ def test_validate_and_warn_pdf_images_with_warnings(caplog):
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create a small low-res image
         img = Image.new("RGB", (100, 100), color="yellow")
-        img_path = os.path.join(tmpdir, "lowres.png")
+        img_path = pathlib.Path(tmpdir) / "lowres.png"
         img.save(img_path)
 
         # Create HTML with image
-        html_path = os.path.join(tmpdir, "test.html")
-        with open(html_path, "w", encoding="utf-8") as f:
+        html_path = pathlib.Path(tmpdir) / "test.html"
+        with Path(html_path).open("w", encoding="utf-8") as f:
             f.write(f"""<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"></head>
@@ -158,7 +158,7 @@ def test_validate_and_warn_pdf_images_with_warnings(caplog):
 </html>""")
 
         # Generate PDF
-        pdf_path = os.path.join(tmpdir, "test.pdf")
+        pdf_path = pathlib.Path(tmpdir) / "test.pdf"
         html_to_pdf(html_path, pdf_path)
 
         # Validate
@@ -175,13 +175,13 @@ def test_check_pdf_image_dpi_at_threshold():
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create a 39x39 image (will be rendered at 39x39 in PDF)
         img = Image.new("RGB", (39, 39), color="red")
-        img_path = os.path.join(tmpdir, "test.png")
+        img_path = str(pathlib.Path(tmpdir) / "test.png")
         img.save(img_path)
 
         # Create HTML with image sized to exactly 0.52 inches (39 pixels / 75 DPI)
         # This should result in exactly 75 DPI
-        html_path = os.path.join(tmpdir, "test.html")
-        with open(html_path, "w", encoding="utf-8") as f:
+        html_path = pathlib.Path(tmpdir) / "test.html"
+        with Path(html_path).open("w", encoding="utf-8") as f:
             f.write(f"""<!DOCTYPE html>
 <html>
 <head>
@@ -196,7 +196,7 @@ img {{ width: 0.52in; height: 0.52in; }}
 </html>""")
 
         # Generate PDF
-        pdf_path = os.path.join(tmpdir, "test.pdf")
+        pdf_path = pathlib.Path(tmpdir) / "test.pdf"
         html_to_pdf(html_path, pdf_path)
 
         # Check DPI - threshold is 75, image should be at 75 DPI
@@ -215,12 +215,12 @@ def test_validate_and_warn_pdf_images_no_warnings(caplog):
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create a high-res image
         img = Image.new("RGB", (3000, 2000), color="green")
-        img_path = os.path.join(tmpdir, "highres.png")
+        img_path = pathlib.Path(tmpdir) / "highres.png"
         img.save(img_path, dpi=(600, 600))
 
         # Create HTML with CSS constraints
-        html_path = os.path.join(tmpdir, "test.html")
-        with open(html_path, "w", encoding="utf-8") as f:
+        html_path = pathlib.Path(tmpdir) / "test.html"
+        with Path(html_path).open("w", encoding="utf-8") as f:
             f.write(f"""<!DOCTYPE html>
 <html>
 <head>
@@ -235,7 +235,7 @@ img {{ max-width: 100%; height: auto; }}
 </html>""")
 
         # Generate PDF with DPI limit
-        pdf_path = os.path.join(tmpdir, "test.pdf")
+        pdf_path = pathlib.Path(tmpdir) / "test.pdf"
         html_to_pdf(html_path, pdf_path, dpi=300)
 
         # Clear caplog before validation
