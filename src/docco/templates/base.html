@@ -3,7 +3,187 @@
 
 <head>
     <meta charset="UTF-8">
+
+    <script src="https://unpkg.com/pagedjs@0.4.3/dist/paged.polyfill.js"></script>
+
+    <script type="text/javascript">
+        /**
+         * Generates a table of contents from h1-h6 headings and inserts it into the first <nav> element.
+         * Configure heading levels via data-toc-start and data-toc-end attributes (e.g., <nav data-toc-start="2" data-toc-end="4">).
+         * Add class="toc-ignore" to any heading to exclude it and all its sub-sections from the TOC.
+         */
+        function createToc(content) {
+            const tocContainer = content.querySelector('nav');
+            if (!tocContainer) {
+                console.info("No <nav> element found for TOC");
+                return;
+            }
+
+            const startLevel = parseInt(tocContainer.dataset.tocStart) || 1;
+            const endLevel = parseInt(tocContainer.dataset.tocEnd) || 6;
+
+            const tocList = document.createElement('ul');
+            tocList.id = 'list-toc-generated';
+            tocContainer.innerHTML = '';
+            tocContainer.appendChild(tocList);
+
+            let idCounter = 0;
+
+            // Collect ALL headings (needed for ignore logic and counter matching)
+            const headings = [...content.querySelectorAll('h1, h2, h3, h4, h5, h6')].map(el => ({
+                element: el,
+                level: parseInt(el.tagName[1])
+            }));
+
+            // Pass 1: Mark ALL elements with hierarchical ignore logic
+            let ignoreUntilLevel = null;
+            headings.forEach(({ element, level }) => {
+                if (ignoreUntilLevel !== null && level <= ignoreUntilLevel) {
+                    ignoreUntilLevel = null;
+                }
+
+                // Mark headings outside the configured range as ignored
+                if (level < startLevel || level > endLevel) {
+                    element.classList.add('toc-ignored');
+                    return;
+                }
+
+                if (element.classList.contains('toc-ignore')) {
+                    ignoreUntilLevel = level;
+                    element.classList.add('toc-ignored');
+                    return;
+                }
+
+                if (ignoreUntilLevel !== null && level > ignoreUntilLevel) {
+                    element.classList.add('toc-ignored');
+                    return;
+                }
+
+                element.classList.add('title-element');
+                if (!element.id) {
+                    element.id = `title-element-${++idCounter}`;
+                }
+            });
+
+            // Pass 2: Number headings and build TOC with JavaScript counters
+            const counters = [0, 0, 0, 0, 0, 0];
+            const listStack = [{ list: tocList, level: startLevel - 1 }];
+
+            content.querySelectorAll('.title-element').forEach(element => {
+                const level = parseInt(element.tagName[1]);
+                if (level >= startLevel && level <= endLevel) {
+                    const idx = level - startLevel;
+                    counters[idx]++;
+                    counters.fill(0, idx + 1);
+
+                    const number = counters.slice(0, idx + 1).join('.') + ' ';
+
+                    // Add number to heading
+                    element.textContent = number + element.textContent;
+
+                    // Navigate to correct nesting level
+                    while (listStack.length > 1 && listStack[listStack.length - 1].level >= level) {
+                        listStack.pop();
+                    }
+
+                    // Create new list item
+                    const li = document.createElement('li');
+                    li.className = `toc-element toc-element-level-${level}`;
+                    li.innerHTML = `<a href="#${element.id}">${element.textContent}</a>`;
+                    listStack[listStack.length - 1].list.appendChild(li);
+
+                    // Prepare for potential nested list
+                    const nestedList = document.createElement('ul');
+                    li.appendChild(nestedList);
+                    listStack.push({ list: nestedList, level });
+                }
+            });
+        }
+    </script>
+
+    <!-- register handler beforeParsed() and call createToc script -->
+    <script>
+        class TocHandler extends Paged.Handler {
+            beforeParsed(content) {
+                createToc(content);
+            }
+        }
+        Paged.registerHandlers(TocHandler);
+    </script>
+
+    <script>
+        /*
+        Rotate and shift content after rendering by applying CSS class `landscape_page`
+        More info: https://github.com/pagedjs/pagedjs/issues/281
+        */
+        class LandscapeHandler extends Paged.Handler {
+            constructor(chunker, polisher, caller) {
+                super(chunker, polisher, caller);
+            }
+            afterRendered(pages) {
+                for (const page of pages) {
+                    if (page.element.classList.contains('pagedjs_landscape_page'))
+                        page.element.classList.add("landscape_page");
+                }
+                // Signal that paged.js rendering is complete
+                window.pagedJsRenderingComplete = true;
+            }
+        }
+        Paged.registerHandlers(LandscapeHandler);
+    </script>
+
+    <style>
+        /* Define how the book looks on the screen
+         * Based on CSS for Paged.js interface – v0.4
+         * https://gitlab.coko.foundation/pagedjs/interface-polyfill
+        */
+
+        /* Show margin boxes. Set to transparent to hide. */
+        :root {
+            --color-marginBox: whitesmoke;
+        }
+
+        @media screen,
+        pagedjs-ignore {
+            body {
+                background-color: whitesmoke;
+            }
+
+            .pagedjs_page {
+                background-color: white;
+                box-shadow: 0 0 0 1px #cfcfcf;
+                flex-shrink: 0;
+                flex-grow: 0;
+                margin: 5mm;
+            }
+
+            .pagedjs_margin-top-left-corner-holder,
+            .pagedjs_margin-top,
+            .pagedjs_margin-top-left,
+            .pagedjs_margin-top-center,
+            .pagedjs_margin-top-right,
+            .pagedjs_margin-top-right-corner-holder,
+            .pagedjs_margin-bottom-left-corner-holder,
+            .pagedjs_margin-bottom,
+            .pagedjs_margin-bottom-left,
+            .pagedjs_margin-bottom-center,
+            .pagedjs_margin-bottom-right,
+            .pagedjs_margin-bottom-right-corner-holder,
+            .pagedjs_margin-right,
+            .pagedjs_margin-right-top,
+            .pagedjs_margin-right-middle,
+            .pagedjs_margin-right-bottom,
+            .pagedjs_margin-left,
+            .pagedjs_margin-left-top,
+            .pagedjs_margin-left-middle,
+            .pagedjs_margin-left-bottom {
+                box-shadow: 0 0 0 1px inset var(--color-marginBox);
+            }
+        }
+    </style>
+
     {HEAD_CONTENT}
+
 </head>
 
 <body>

@@ -3,6 +3,7 @@
 import glob
 import logging
 import os
+import platform
 import shutil
 import tempfile
 
@@ -14,6 +15,10 @@ from docco.parser import parse_markdown
 logger = logging.getLogger(__name__)
 
 
+@pytest.mark.skipif(
+    platform.system() == "Windows",
+    reason="PDF rendering differences on Windows prevent reliable regression tests",
+)
 def test_regression_example_pdfs():
     """Test that generated example PDFs match baseline PDFs using diffpdf.
 

@@ -26,17 +26,16 @@ dependencies = [
     "markdown-it-py>=4.0.0",
     "mdit-py-plugins>=0.5.0",
     "pyyaml>=6.0.3",
-    "weasyprint==67.0; sys_platform != 'win32'",
     "translate-toolkit>=3.17.4",
     "colorlog>=6.10.1",
     "polib>=1.2.0",
     "pymupdf>=1.26.7",
     "pillow>=12.0.0",
-
+    "playwright>=1.57.0",
     # Add a lower bound for unpinned transitive dependencies
     "cffi>=2.0.0",
     "pycparser>=2.21",
-    "ply>=3.11"
+    "ply>=3.11",
 ]
 
 [project.urls]
@@ -48,7 +47,7 @@ dev = [
     "pytest>=9",
     "pytest-cov>=6",
     "ruff>=0.10",
-    "diffpdf>=1.0.0",
+    "diffpdf>=1.1.1",
     "ty>=0.0.8",
 ]
 
@@ -79,11 +78,12 @@ addopts = [
 
 # Ruff configuration. More info: https://docs.astral.sh/ruff/configuration/
 [tool.ruff.lint]
+preview = true
 extend-select = [
     "I", # Sort imports
     "ANN", # Enforce type annotations
     "PT", # Common style issues or inconsistencies with pytest-based tests
-    # Available rulesets: https://docs.astral.sh/ruff/rules/
+    "PLW1514", # Must specify file encoding
 ]
 
 [tool.ruff.lint.isort]

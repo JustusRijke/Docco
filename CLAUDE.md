@@ -27,10 +27,9 @@ Processing pipeline:
 3. **Inline Processing** (`inline.py`): Embeds external files via `<!-- inline:"path" -->` directives; .md files inlined as-is, .html files trimmed, .py files executed (recursive, max depth 10)
 4. **HTML Conversion** (`core.py`): Converts markdown to HTML; collects CSS from frontmatter (files are embedded in `<style>` tags, external URLs become `<link>` tags)
 5. **Translation Application** (`translation.py`): Optionally applies PO file translations to HTML
-6. **TOC Generation** (`toc.py`): Generates table of contents with automatic heading numbering
-7. **Page Layout** (`page_layout.py`): Applies page layout directives (pagebreak, landscape/portrait)
-8. **PDF Generation** (`pdf.py`): Renders HTML to PDF with CSS support (both embedded and external CSS)
-9. **PDF Validation** (`pdf_validation.py`): Optionally validates image DPI in generated PDF (when `dpi` frontmatter is set)
+6. **Page Layout** (`page_layout.py`): Applies page layout directives (pagebreak, landscape/portrait)
+7. **PDF Generation** (`pdf.py`): Renders HTML to PDF with CSS support (both embedded and external CSS); includes paged.js polyfill for JavaScript-based TOC generation
+8. **PDF Validation** (`pdf_validation.py`): Optionally validates image DPI in generated PDF (when `dpi` frontmatter is set)
 
 Main entry point: `parse_markdown()` in `parser.py`. CLI orchestration in `cli.py`.
 
@@ -63,8 +62,8 @@ The `collect_css_content()` function in `pdf.py` separates CSS sources:
 
 Notes:
 - POT/PO files contain HTML (not Markdown) - translators must preserve HTML tags
-- Extracts strings from final HTML, enabling translation of dynamic content (TOC, page elements)
-- Applies translations before TOC generation so headings are numbered in target language
+- Extracts strings from final HTML, enabling translation of dynamic content
+- Translations are applied before PDF generation so TOC and page elements reflect translated content
 - Integrates with CAT tools supporting HTML
 
 ### Frontmatter Validation
@@ -160,10 +159,11 @@ src/docco/
   core.py             - Frontmatter parsing, validation, markdown/HTML conversion
   pdf.py              - CSS collection and HTML to PDF rendering
   pdf_validation.py   - PDF image DPI validation
-  toc.py              - Table of contents generation with heading numbering
   page_layout.py      - Page break and orientation directives
   translation.py      - PO file application and POT extraction
   logging_config.py   - Colored logging configuration
+  templates/
+    base.html         - HTML template with paged.js polyfill and JavaScript TOC generation
 
 examples/
   Feature_Showcase.md                 - Comprehensive feature demo

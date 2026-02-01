@@ -1,6 +1,7 @@
 """Core utilities: logging, frontmatter parsing, HTML wrapping."""
 
 import logging
+import os
 from pathlib import Path
 from typing import cast
 
@@ -84,8 +85,58 @@ def markdown_to_html(markdown_content: str) -> str:
     return html
 
 
+def _absolutize_html_urls(html_content: str, base_dir: str) -> str:
+    """
+    Convert relative URLs in HTML to absolute file:// URLs.
+
+    Converts src and href attributes while preserving:
+    - Anchor links (#section)
+    - Absolute URLs (http://, https://, file://)
+    - Data URLs (data:)
+
+    Args:
+        html_content: HTML content string
+        base_dir: Base directory for resolving relative paths
+
+    Returns:
+        str: HTML with absolutized URLs
+    """
+    import re
+    from urllib.parse import urljoin
+
+    # Ensure absolute path for cross-platform compatibility
+    abs_base_dir = os.path.abspath(base_dir)
+    base_url = Path(abs_base_dir).as_uri()
+
+    def replace_url(match: re.Match) -> str:
+        attr = match.group(1)
+        quote = match.group(2)
+        url = match.group(3)
+
+        # Preserve anchor links, absolute URLs, and data URLs
+        if (
+            url.startswith("#")
+            or url.startswith("http://")
+            or url.startswith("https://")
+            or url.startswith("file://")
+            or url.startswith("data:")
+        ):
+            return match.group(0)
+
+        # Convert relative URL to absolute file:// URL
+        abs_url = urljoin(base_url + "/", url)
+        return f"{attr}={quote}{abs_url}{quote}"
+
+    # Match src="..." or href="..." with single or double quotes
+    pattern = r'((?:src|href))=(["\'])(.*?)\2'
+    return re.sub(pattern, replace_url, html_content)
+
+
 def wrap_html(
-    html_content: str, css_content: str = "", external_css: list[str] | None = None
+    html_content: str,
+    css_content: str = "",
+    external_css: list[str] | None = None,
+    base_url: str | None = None,
 ) -> str:
     """
     Wrap HTML content in a complete HTML document.
@@ -94,10 +145,15 @@ def wrap_html(
         html_content: Raw HTML body content
         css_content: CSS content to embed in <style> tag (optional)
         external_css: List of external CSS URLs (optional)
+        base_url: Base directory for resolving relative paths (optional)
 
     Returns:
         str: Complete HTML document
     """
+    # Convert relative URLs to absolute if base_url provided
+    if base_url:
+        html_content = _absolutize_html_urls(html_content, base_url)
+
     style_tag = f"<style>\n{css_content}\n</style>\n" if css_content.strip() else ""
 
     # Generate <link> tags for external CSS URLs

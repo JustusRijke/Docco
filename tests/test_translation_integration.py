@@ -34,7 +34,7 @@ def baselines_dir():
 def test_extract_pot_file_from_html(translation_files):
     """Test that POT file can be extracted from HTML generated from markdown."""
     # Read source markdown
-    with open(translation_files["source"], "r") as f:
+    with open(translation_files["source"], "r", encoding="utf-8") as f:
         content = f.read()
 
     # Convert to HTML (frontmatter stripped automatically)
@@ -55,7 +55,7 @@ def test_extract_pot_file_from_html(translation_files):
         assert result == pot_path
 
         # Verify POT file has content
-        with open(pot_path, "r") as f:
+        with open(pot_path, "r", encoding="utf-8") as f:
             pot_content = f.read()
 
         assert "msgid" in pot_content
@@ -111,12 +111,12 @@ Hello world"""
 
     with tempfile.TemporaryDirectory() as tmpdir:
         md_path = os.path.join(tmpdir, "test.md")
-        with open(md_path, "w") as f:
+        with open(md_path, "w", encoding="utf-8") as f:
             f.write(md_content)
 
         # Create a simple PO file with HTML-style msgids
         po_path = os.path.join(tmpdir, "test.po")
-        with open(po_path, "w") as f:
+        with open(po_path, "w", encoding="utf-8") as f:
             f.write("""
 msgid "Test"
 msgstr "Prueba"
@@ -152,7 +152,7 @@ Hello world"""
 
     with tempfile.TemporaryDirectory() as tmpdir:
         md_path = os.path.join(tmpdir, "test.md")
-        with open(md_path, "w") as f:
+        with open(md_path, "w", encoding="utf-8") as f:
             f.write(md_content)
 
         output_dir = os.path.join(tmpdir, "output")
@@ -178,7 +178,7 @@ Hello world"""
 
     with tempfile.TemporaryDirectory() as tmpdir:
         md_path = os.path.join(tmpdir, "test.md")
-        with open(md_path, "w") as f:
+        with open(md_path, "w", encoding="utf-8") as f:
             f.write(md_content)
 
         output_dir = os.path.join(tmpdir, "output")

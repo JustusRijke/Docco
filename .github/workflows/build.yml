@@ -41,6 +41,9 @@ jobs:
       - name: Install gettext
         run: sudo apt-get install -y gettext
 
+      - name: Install Ghostscript
+        run: sudo apt-get install -y ghostscript
+
       - name: Install locked dependencies
         if: matrix.dependencies == 'locked'
         run: uv sync --locked
@@ -48,6 +51,9 @@ jobs:
       - name: Install oldest dependencies
         if: matrix.dependencies == 'oldest'
         run: uv sync --resolution lowest --python ${{ steps.python-version.outputs.min }}
+
+      - name: Install Playwright browsers
+        run: uv run playwright install chromium --with-deps
 
       - name: Run ruff (check)
         if: matrix.dependencies == 'locked'
@@ -130,24 +136,45 @@ jobs:
           }
           Write-Host "Verified: msginit found at $($cmd.Source)"
 
-      - name: Download and extract WeasyPrint executable
+      - name: Setup Ghostscript (portable)
         shell: pwsh
         run: |
-          $url = "https://github.com/Kozea/WeasyPrint/releases/download/v67.0/weasyprint-windows.zip"
-          $outfile = "weasyprint.zip"
-          Invoke-WebRequest -Uri $url -OutFile $outfile
-          Expand-Archive -Path $outfile -DestinationPath "weasyprint"
-          $binpath = "$PWD\weasyprint\dist"
-          echo "$binpath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          Write-Host "Added WeasyPrint to PATH: $binpath"
+          # Download installer (self-extracting archive)
+          $url = "https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10060/gs10060w64.exe"
+          $installer = "$env:TEMP\gs_installer.exe"
+          Write-Host "Downloading Ghostscript..."
+          Invoke-WebRequest -Uri $url -OutFile $installer
 
-          # Verify weasyprint is available
-          $env:PATH = "$binpath;$env:PATH"
-          $cmd = Get-Command weasyprint -ErrorAction SilentlyContinue
-          if (-not $cmd) {
-            throw "weasyprint not found after installation"
+          # Extract with 7-zip (pre-installed on GitHub Actions runners)
+          $extractDir = "$env:RUNNER_TEMP\ghostscript"
+          Write-Host "Extracting to $extractDir..."
+          & 7z x $installer -o"$extractDir" -y | Out-Null
+
+          # Find bin directory and add to PATH
+          $binPath = Get-ChildItem -Path $extractDir -Filter "bin" -Recurse -Directory | Select-Object -First 1
+          if ($binPath) {
+            $gsPath = $binPath.FullName
+            Write-Host "Adding to PATH: $gsPath"
+            if ($env:GITHUB_PATH) {
+              try {
+                echo "$gsPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+              } catch {
+                Write-Host "Warning: Could not write to GITHUB_PATH"
+              }
+            }
+            $env:PATH = "$gsPath;$env:PATH"
+
+            # Verify gswin64c.exe is available
+            $gsExe = Get-Command gswin64c -ErrorAction SilentlyContinue
+            if ($gsExe) {
+              Write-Host "Verified: gswin64c found at $($gsExe.Source)"
+              & gswin64c --version
+            } else {
+              throw "gswin64c command not found after extraction"
+            }
+          } else {
+            throw "Could not find bin directory in $extractDir"
           }
-          Write-Host "Verified: weasyprint found at $($cmd.Source)"
 
       - name: Install locked dependencies
         if: matrix.dependencies == 'locked'
@@ -156,6 +183,9 @@ jobs:
       - name: Install oldest dependencies
         if: matrix.dependencies == 'oldest'
         run: uv sync --resolution lowest --python ${{ steps.python-version.outputs.min }}
+
+      - name: Install Playwright browsers
+        run: uv run playwright install chromium --with-deps
 
       - name: Run ruff (check)
         if: matrix.dependencies == 'locked'
@@ -171,7 +201,7 @@ jobs:
 
       - name: Run pytest
         run: uv run pytest
-        
+
       - name: Upload test output on failure
         if: failure()
         uses: actions/upload-artifact@v6

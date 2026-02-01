@@ -1,10 +1,39 @@
 /* Page setup */
 @page {
     size: A4 portrait;
+    margin-left: 2cm;
+    margin-right: 2cm;
+    margin-top: 2.5cm;
+    margin-bottom: 2.5cm;
 }
 
 @page landscape {
     size: A4 landscape;
+}
+
+/* 
+Rotate and shift content as paged.js ignores page orientation 
+More info: https://github.com/pagedjs/pagedjs/issues/281
+Additional script in ./templates/base.html
+*/
+
+/* Rotate sheet */
+.landscape_page .pagedjs_sheet {
+    transform-origin: right top;
+    transform: translateX(-100%) rotate(-90deg);
+    width: 297mm;
+}
+
+/* Fix miscalulcated page size when printing */
+.landscape_page {
+    contain: size layout;
+}
+
+/* Fix empty pages after switchting from landscape to portrait */
+@media print {
+    .pagedjs_page_content {
+        column-width: auto !important;
+    }
 }
 
 /* Section orientation */

@@ -7,7 +7,7 @@ import fitz  # PyMuPDF
 import pytest
 from PIL import Image
 
-from docco.pdf import collect_css_content, html_to_pdf
+from docco.pdf import _absolutize_css_urls, collect_css_content, html_to_pdf
 
 
 def path_to_file_url(file_path):
@@ -117,6 +117,73 @@ def test_collect_css_empty_metadata(tmp_md):
     assert result["external"] == []
 
 
+def test_absolutize_css_urls_converts_relative_font(tmp_path):
+    """Test relative font URLs are converted to absolute file:// URLs."""
+    css = "@font-face { src: url('./fonts/font.ttf'); }"
+    css_path = str(tmp_path / "css" / "style.css")
+    result = _absolutize_css_urls(css, css_path)
+    # Check that result contains file:// URL and fonts/font.ttf
+    assert 'url("file://' in result
+    assert "fonts/font.ttf" in result
+
+
+def test_absolutize_css_urls_handles_various_quote_styles(tmp_path):
+    """Test CSS url() with different quote styles."""
+    css = """
+        .a { background: url('./img1.png'); }
+        .b { background: url("./img2.png"); }
+        .c { background: url(./img3.png); }
+    """
+    css_path = str(tmp_path / "css" / "style.css")
+    result = _absolutize_css_urls(css, css_path)
+    # Check that all three images are converted to file:// URLs
+    assert 'url("file://' in result
+    assert "img1.png" in result
+    assert "img2.png" in result
+    assert "img3.png" in result
+
+
+def test_absolutize_css_urls_preserves_absolute_urls():
+    """Test absolute URLs (http, https, file) are preserved."""
+    css = """
+        @font-face { src: url("https://fonts.com/font.woff2"); }
+        .a { background: url("http://example.com/bg.png"); }
+        .b { background: url("file:///etc/image.png"); }
+    """
+    css_path = "/path/to/css/style.css"
+    result = _absolutize_css_urls(css, css_path)
+    assert 'url("https://fonts.com/font.woff2")' in result
+    assert 'url("http://example.com/bg.png")' in result
+    assert 'url("file:///etc/image.png")' in result
+
+
+def test_absolutize_css_urls_preserves_data_urls():
+    """Test data URLs are preserved."""
+    css = ".icon { background: url('data:image/svg+xml;base64,abc123'); }"
+    css_path = "/path/to/css/style.css"
+    result = _absolutize_css_urls(css, css_path)
+    assert "url('data:image/svg+xml;base64,abc123')" in result
+
+
+def test_collect_css_absolutizes_font_urls(tmp_path):
+    """Test CSS collection converts font URLs to absolute paths."""
+    md_file = tmp_path / "document.md"
+    md_file.write_text("# Test")
+
+    css_dir = tmp_path / "css"
+    css_dir.mkdir()
+    css_file = css_dir / "fonts.css"
+    css_file.write_text("@font-face { src: url('./fonts/test.ttf'); }")
+
+    metadata = {"css": "css/fonts.css"}
+    result = collect_css_content(str(md_file), metadata)
+
+    # URL should be converted to absolute path
+    assert "url(" in result["inline"]
+    assert "file://" in result["inline"]
+    assert "fonts/test.ttf" in result["inline"]
+
+
 def test_html_to_pdf_creates_file(tmp_path):
     """Test that PDF file is created."""
     html_content = "<!DOCTYPE html><html><body><p>Test</p></body></html>"
@@ -172,39 +239,30 @@ def test_html_to_pdf_without_css(tmp_path):
 
 
 def test_html_to_pdf_with_base_url(tmp_path):
-    """Test PDF generation with base_url for relative image paths."""
-    # Create a valid image file
-    img = Image.new("RGB", (10, 10), color="red")
-    img_file = tmp_path / "test.png"
-    img.save(str(img_file))
+    """Test PDF generation without base tag (URLs are absolutized during HTML generation)."""
+    # Create test directory structure
+    base_dir = tmp_path / "source"
+    base_dir.mkdir()
 
-    # HTML with relative image path
-    html_content = "<!DOCTYPE html><html><body><img src='test.png'/></body></html>"
+    # Create HTML without base tag (absolutization happens earlier in pipeline)
+    html_content = """<!DOCTYPE html>
+<html>
+<head></head>
+<body><h1>Test</h1></body>
+</html>"""
+
     html_path = tmp_path / "test.html"
-    output_path_with_base = tmp_path / "with_base.pdf"
-    output_path_without_base = tmp_path / "without_base.pdf"
+    output_path = tmp_path / "test.pdf"
 
     with open(html_path, "w", encoding="utf-8") as f:
         f.write(html_content)
 
-    # Generate PDF with base_url - should succeed and include the image
-    result_with_base = html_to_pdf(
-        str(html_path), str(output_path_with_base), base_url=str(tmp_path)
-    )
-    assert os.path.exists(str(output_path_with_base))
-    assert result_with_base == str(output_path_with_base)
-    size_with_base = os.path.getsize(str(output_path_with_base))
-
-    # When HTML is provided as a file, WeasyPrint uses the file's directory as base_url by default
-    # So even without explicit base_url, the relative image will resolve
-    html_to_pdf(str(html_path), str(output_path_without_base))
-    assert os.path.exists(str(output_path_without_base))
-    size_without_base = os.path.getsize(str(output_path_without_base))
-
-    # Both PDFs should contain the image (both have same size) since HTML file location provides base path
-    assert size_with_base == size_without_base
-    # Verify PDF is not empty (contains image)
-    assert size_with_base > 1000
+    # Generate PDF - should succeed
+    result = html_to_pdf(str(html_path), str(output_path))
+    assert os.path.exists(str(output_path))
+    assert result == str(output_path)
+    # Verify PDF was created with content
+    assert os.path.getsize(str(output_path)) > 500
 
 
 def test_html_to_pdf_dpi_with_basic_img_tag(tmp_path, highres_image):
