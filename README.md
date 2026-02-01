@@ -7,7 +7,7 @@
 
 **A CLI tool for generating professional PDFs from Markdown with CSS styling.**
 
-Docco converts Markdown documents into styled PDFs using WeasyPrint. Specify your content in Markdown, configure styling with CSS, and generate beautiful PDFs.
+Docco converts Markdown documents into styled PDFs using Playwright and paged.js. Specify your content in Markdown, configure styling with CSS, and generate beautiful PDFs.
 
 ## Features
 
@@ -25,20 +25,16 @@ Docco converts Markdown documents into styled PDFs using WeasyPrint. Specify you
 ## Requirements
 
 - Python ≥ 3.10
-- WeasyPrint (for PDF generation)
+- Playwright (for PDF generation)
 
 ## Installation
 
 ```bash
 pip install -e .
+playwright install chromium --only-shell
 ```
 
-### Note on WeasyPrint
-
-WeasyPrint installation varies by platform.
-See the [WeasyPrint installation guide](https://doc.courtbouillon.org/weasyprint/stable/first_steps.html) for platform-specific instructions.
-
-On Windows, WeasyPrint is not available via pip. Docco will automatically use the WeasyPrint executable if the Python library is unavailable.
+The `--only-shell` flag installs only the Chromium headless browser needed for PDF generation.
 
 ## Quick Start
 
