@@ -135,6 +135,8 @@ docco Feature_Showcase.md --allow-python
 
 The test suite includes regression tests that verify generated PDFs match baseline versions stored in `tests/baselines/` using [DiffPDF](https://github.com/JustusRijke/DiffPDF).
 
+**Note:** Regression tests are skipped on Windows due to platform-specific PDF rendering differences that prevent reliable comparison.
+
 When adding features or fixing bugs, update baselines by running:
 
 ```bash
