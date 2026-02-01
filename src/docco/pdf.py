@@ -8,6 +8,9 @@ from playwright.sync_api import sync_playwright
 
 logger = logging.getLogger(__name__)
 
+# Signal set by paged.js template when rendering is complete
+PAGED_RENDERING_COMPLETE_FLAG = "pagedJsRenderingComplete"
+
 
 class CSSContent(TypedDict):
     """CSS content from frontmatter."""
@@ -243,8 +246,15 @@ def html_to_pdf(
 
         page.goto(f"file://{abs_html_path}", wait_until="networkidle")
 
-        # Wait for paged.js rendering to complete
-        page.wait_for_function("window.pagedJsRenderingComplete === true")
+        # Wait for paged.js rendering only if template is used
+        with open(abs_html_path, "r", encoding="utf-8") as f:
+            html_content = f.read()
+
+        if PAGED_RENDERING_COMPLETE_FLAG in html_content:
+            page.wait_for_function(
+                f"window.{PAGED_RENDERING_COMPLETE_FLAG} === true",
+                timeout=5 * 60 * 1000,
+            )  # Long timeout (5 minutes) due to slow github runner
 
         page.pdf(
             path=str(output_path),
