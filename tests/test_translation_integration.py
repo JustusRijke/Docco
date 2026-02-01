@@ -75,7 +75,7 @@ def test_translation_workflow_all_languages(translation_files, baselines_dir):
     with tempfile.TemporaryDirectory() as tmpdir:
         # With multilingual: true and base_language in frontmatter, parse_markdown generates all language PDFs
         output_files = parse_markdown(
-            translation_files["source"],
+            pathlib.Path(translation_files["source"]),
             pathlib.Path(tmpdir),
             allow_python=True,
             keep_intermediate=False,

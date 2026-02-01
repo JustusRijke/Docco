@@ -247,7 +247,7 @@ def html_to_pdf(
         page.goto(f"file://{abs_html_path}", wait_until="networkidle")
 
         # Wait for paged.js rendering only if template is used
-        with open(abs_html_path, "r", encoding="utf-8") as f:
+        with abs_html_path.open("r", encoding="utf-8") as f:
             html_content = f.read()
 
         if PAGED_RENDERING_COMPLETE_FLAG in html_content:
