@@ -160,7 +160,7 @@ def _downscale_pdf_images(pdf_path: Path, target_dpi: int) -> None:
         return
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-        tmp_path = tmp.name
+        tmp_path = Path(tmp.name)
 
     try:
         subprocess.run(
@@ -183,13 +183,13 @@ def _downscale_pdf_images(pdf_path: Path, target_dpi: int) -> None:
                 "-dNOPAUSE",
                 "-dQUIET",
                 "-dBATCH",
-                f"-sOutputFile={tmp_path}",
+                f"-sOutputFile={str(tmp_path)}",
                 str(pdf_path),
             ],
             check=True,
             capture_output=True,
         )
-        Path(tmp_path).replace(str(pdf_path))
+        tmp_path.replace(pdf_path)
         logger.info(f"Downscaled images in PDF to {target_dpi} DPI")
     except subprocess.CalledProcessError as e:  # pragma: no cover
         logger.error(f"Ghostscript failed: {e.stderr.decode()}")
@@ -197,8 +197,8 @@ def _downscale_pdf_images(pdf_path: Path, target_dpi: int) -> None:
             Path(tmp_path).unlink()
         raise
     except Exception:  # pragma: no cover
-        if os.path.exists(tmp_path):
-            os.unlink(tmp_path)
+        if tmp_path.exists():
+            tmp_path.unlink()
         raise
 
 
