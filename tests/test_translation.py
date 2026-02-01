@@ -1,7 +1,7 @@
 """Tests for POT/PO translation functionality (HTML-based)."""
 
-import os
 import tempfile
+from pathlib import Path
 
 import pytest
 
@@ -21,18 +21,18 @@ def test_extract_html_to_pot_creates_file():
     html_content = markdown_to_html(md_content)
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        html_path = os.path.join(tmpdir, "test.html")
-        with open(html_path, "w", encoding="utf-8") as f:
+        html_path = Path(tmpdir) / "test.html"
+        with html_path.open("w", encoding="utf-8") as f:
             f.write(html_content)
 
-        pot_path = os.path.join(tmpdir, "test.pot")
+        pot_path = Path(tmpdir) / "test.pot"
         result = extract_html_to_pot(html_path, pot_path)
 
-        assert os.path.exists(pot_path)
+        assert pot_path.exists()
         assert result == pot_path
 
         # Check file is not empty
-        with open(pot_path, "r", encoding="utf-8") as f:
+        with pot_path.open("r", encoding="utf-8") as f:
             pot_content = f.read()
         assert len(pot_content) > 0
 
@@ -43,14 +43,14 @@ def test_extract_html_to_pot_contains_strings():
     html_content = markdown_to_html(md_content)
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        html_path = os.path.join(tmpdir, "test.html")
-        with open(html_path, "w", encoding="utf-8") as f:
+        html_path = Path(tmpdir) / "test.html"
+        with html_path.open("w", encoding="utf-8") as f:
             f.write(html_content)
 
-        pot_path = os.path.join(tmpdir, "test.pot")
+        pot_path = Path(tmpdir) / "test.pot"
         extract_html_to_pot(html_path, pot_path)
 
-        with open(pot_path, "r", encoding="utf-8") as f:
+        with pot_path.open("r", encoding="utf-8") as f:
             pot_content = f.read()
 
         # Should contain the title and paragraph
@@ -64,14 +64,14 @@ def test_extract_html_to_pot_with_formatting():
     html_content = markdown_to_html(md_content)
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        html_path = os.path.join(tmpdir, "test.html")
-        with open(html_path, "w", encoding="utf-8") as f:
+        html_path = Path(tmpdir) / "test.html"
+        with html_path.open("w", encoding="utf-8") as f:
             f.write(html_content)
 
-        pot_path = os.path.join(tmpdir, "test.pot")
+        pot_path = Path(tmpdir) / "test.pot"
         extract_html_to_pot(html_path, pot_path)
 
-        with open(pot_path, "r", encoding="utf-8") as f:
+        with pot_path.open("r", encoding="utf-8") as f:
             pot_content = f.read()
 
         # Should contain HTML tags in msgids, not markdown syntax
@@ -87,14 +87,14 @@ def test_apply_po_to_html_with_translations():
 
     # Create a PO file with translations
     with tempfile.TemporaryDirectory() as tmpdir:
-        html_input_path = os.path.join(tmpdir, "input.html")
-        html_output_path = os.path.join(tmpdir, "output.html")
-        po_path = os.path.join(tmpdir, "test.po")
+        html_input_path = Path(tmpdir) / "input.html"
+        html_output_path = Path(tmpdir) / "output.html"
+        po_path = Path(tmpdir) / "test.po"
 
-        with open(html_input_path, "w", encoding="utf-8") as f:
+        with html_input_path.open("w", encoding="utf-8") as f:
             f.write(html_content)
 
-        with open(po_path, "w", encoding="utf-8") as f:
+        with po_path.open("w", encoding="utf-8") as f:
             f.write("""# German Translation
 msgid "Hello"
 msgstr "Hallo"
@@ -107,10 +107,10 @@ msgstr "Welt"
         result_path = apply_po_to_html(html_input_path, po_path, html_output_path)
 
         assert result_path == html_output_path
-        assert os.path.exists(result_path)
+        assert Path(result_path).exists()
 
         # Read result and verify translations
-        with open(result_path, "r", encoding="utf-8") as f:
+        with Path(result_path).open("r", encoding="utf-8") as f:
             result = f.read()
 
         assert "Hallo" in result
@@ -120,14 +120,16 @@ msgstr "Welt"
 def test_apply_po_to_html_file_not_found():
     """Test that apply_po_to_html raises error when PO file doesn't exist."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        html_input_path = os.path.join(tmpdir, "input.html")
-        html_output_path = os.path.join(tmpdir, "output.html")
+        html_input_path = Path(tmpdir) / "input.html"
+        html_output_path = Path(tmpdir) / "output.html"
 
-        with open(html_input_path, "w", encoding="utf-8") as f:
+        with html_input_path.open("w", encoding="utf-8") as f:
             f.write("<h1>Title</h1>")
 
         with pytest.raises(FileNotFoundError):
-            apply_po_to_html(html_input_path, "/nonexistent/path.po", html_output_path)
+            apply_po_to_html(
+                html_input_path, Path("/nonexistent/path.po"), html_output_path
+            )
 
 
 def test_extract_roundtrip():
@@ -136,19 +138,19 @@ def test_extract_roundtrip():
     html_content = markdown_to_html(original_md)
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        html_path = os.path.join(tmpdir, "test.html")
-        with open(html_path, "w", encoding="utf-8") as f:
+        html_path = Path(tmpdir) / "test.html"
+        with html_path.open("w", encoding="utf-8") as f:
             f.write(html_content)
 
-        pot_path = os.path.join(tmpdir, "test.pot")
+        pot_path = Path(tmpdir) / "test.pot"
 
         # Extract
         extract_html_to_pot(html_path, pot_path)
 
         # Verify POT was created
-        assert os.path.exists(pot_path)
+        assert Path(pot_path).exists()
 
-        with open(pot_path, "r", encoding="utf-8") as f:
+        with Path(pot_path).open("r", encoding="utf-8") as f:
             pot_content = f.read()
 
         # POT should be valid
@@ -162,14 +164,14 @@ def test_apply_po_empty_translations():
     html_content = markdown_to_html(md_content)
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        html_input_path = os.path.join(tmpdir, "input.html")
-        html_output_path = os.path.join(tmpdir, "output.html")
-        po_path = os.path.join(tmpdir, "test.po")
+        html_input_path = Path(tmpdir) / "input.html"
+        html_output_path = Path(tmpdir) / "output.html"
+        po_path = Path(tmpdir) / "test.po"
 
-        with open(html_input_path, "w", encoding="utf-8") as f:
+        with html_input_path.open("w", encoding="utf-8") as f:
             f.write(html_content)
 
-        with open(po_path, "w", encoding="utf-8") as f:
+        with po_path.open("w", encoding="utf-8") as f:
             # PO file with no translations (empty msgstr)
             f.write("""
 msgid "Hello"
@@ -183,7 +185,7 @@ msgstr ""
         result_path = apply_po_to_html(html_input_path, po_path, html_output_path)
 
         # Read result
-        with open(result_path, "r", encoding="utf-8") as f:
+        with Path(result_path).open("r", encoding="utf-8") as f:
             result = f.read()
 
         # Result should contain original text when translation is empty
@@ -194,8 +196,8 @@ msgstr ""
 def test_get_po_stats_all_translated():
     """Test get_po_stats with fully translated PO file."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        po_path = os.path.join(tmpdir, "test.po")
-        with open(po_path, "w", encoding="utf-8") as f:
+        po_path = Path(tmpdir) / "test.po"
+        with po_path.open("w", encoding="utf-8") as f:
             f.write("""# German Translation
 msgid "Hello"
 msgstr "Hallo"
@@ -217,8 +219,8 @@ msgstr "Prüfung"
 def test_get_po_stats_with_untranslated():
     """Test get_po_stats with untranslated strings."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        po_path = os.path.join(tmpdir, "test.po")
-        with open(po_path, "w", encoding="utf-8") as f:
+        po_path = Path(tmpdir) / "test.po"
+        with po_path.open("w", encoding="utf-8") as f:
             f.write("""# German Translation
 msgid "Hello"
 msgstr "Hallo"
@@ -240,8 +242,8 @@ msgstr ""
 def test_get_po_stats_with_fuzzy():
     """Test get_po_stats with fuzzy translations."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        po_path = os.path.join(tmpdir, "test.po")
-        with open(po_path, "w", encoding="utf-8") as f:
+        po_path = Path(tmpdir) / "test.po"
+        with po_path.open("w", encoding="utf-8") as f:
             f.write("""# German Translation
 msgid "Hello"
 msgstr "Hallo"
@@ -264,8 +266,8 @@ msgstr ""
 def test_get_po_stats_empty_po():
     """Test get_po_stats with empty PO file (only header)."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        po_path = os.path.join(tmpdir, "test.po")
-        with open(po_path, "w", encoding="utf-8") as f:
+        po_path = Path(tmpdir) / "test.po"
+        with po_path.open("w", encoding="utf-8") as f:
             f.write("""# Translation file
 msgid ""
 msgstr ""
@@ -282,8 +284,8 @@ msgstr ""
 def test_update_po_files_no_existing_po():
     """Test update_po_files with no existing PO files (should not crash)."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        pot_path = os.path.join(tmpdir, "test.pot")
-        with open(pot_path, "w", encoding="utf-8") as f:
+        pot_path = Path(tmpdir) / "test.pot"
+        with pot_path.open("w", encoding="utf-8") as f:
             f.write(
                 """
 msgid "Hello"
@@ -292,15 +294,15 @@ msgstr ""
             )
 
         # Call update_po_files with empty directory - should not raise an error
-        update_po_files(pot_path, tmpdir)
+        update_po_files(pot_path, Path(tmpdir))
 
 
 def test_update_po_files_preserves_translations():
     """Test that update_po_files preserves existing translations."""
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create original POT with 2 strings
-        pot_path = os.path.join(tmpdir, "test.pot")
-        with open(pot_path, "w", encoding="utf-8") as f:
+        pot_path = Path(tmpdir) / "test.pot"
+        with pot_path.open("w", encoding="utf-8") as f:
             f.write("""
 msgid "Hello"
 msgstr ""
@@ -310,8 +312,8 @@ msgstr ""
 """)
 
         # Create PO with translations
-        po_path = os.path.join(tmpdir, "test.po")
-        with open(po_path, "w", encoding="utf-8") as f:
+        po_path = Path(tmpdir) / "test.po"
+        with po_path.open("w", encoding="utf-8") as f:
             f.write("""
 msgid "Hello"
 msgstr "Hallo"
@@ -325,7 +327,7 @@ msgstr "Welt"
         assert orig_stats["translated"] == 2
 
         # Update with same POT (should preserve translations)
-        update_po_files(pot_path, tmpdir)
+        update_po_files(pot_path, Path(tmpdir))
 
         # Stats should be unchanged
         updated_stats = get_po_stats(po_path)
@@ -337,8 +339,8 @@ def test_update_po_files_adds_new_strings():
     """Test that update_po_files adds new strings to PO."""
     with tempfile.TemporaryDirectory() as tmpdir:
         # Original POT
-        pot_path = os.path.join(tmpdir, "test.pot")
-        with open(pot_path, "w", encoding="utf-8") as f:
+        pot_path = Path(tmpdir) / "test.pot"
+        with pot_path.open("w", encoding="utf-8") as f:
             f.write("""
 msgid "Hello"
 msgstr ""
@@ -351,8 +353,8 @@ msgstr ""
 """)
 
         # PO with translations for original strings only
-        po_path = os.path.join(tmpdir, "test.po")
-        with open(po_path, "w", encoding="utf-8") as f:
+        po_path = Path(tmpdir) / "test.po"
+        with po_path.open("w", encoding="utf-8") as f:
             f.write("""
 msgid "Hello"
 msgstr "Hallo"
@@ -367,7 +369,7 @@ msgstr "Welt"
         assert orig_stats["untranslated"] == 0
 
         # Update with new POT containing extra string
-        update_po_files(pot_path, tmpdir)
+        update_po_files(pot_path, Path(tmpdir))
 
         # Stats should reflect new untranslated string
         updated_stats = get_po_stats(po_path)
@@ -379,11 +381,11 @@ msgstr "Welt"
 def test_check_po_sync_in_sync():
     """Test check_po_sync returns True when POT and PO match."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        pot_path = os.path.join(tmpdir, "test.pot")
-        po_path = os.path.join(tmpdir, "test.po")
+        pot_path = Path(tmpdir) / "test.pot"
+        po_path = Path(tmpdir) / "test.po"
 
         # Create POT
-        with open(pot_path, "w", encoding="utf-8") as f:
+        with pot_path.open("w", encoding="utf-8") as f:
             f.write(
                 """
 msgid "Hello"
@@ -395,7 +397,7 @@ msgstr ""
             )
 
         # Create PO with same strings
-        with open(po_path, "w", encoding="utf-8") as f:
+        with Path(po_path).open("w", encoding="utf-8") as f:
             f.write(
                 """
 msgid "Hello"
@@ -413,11 +415,11 @@ msgstr "Welt"
 def test_check_po_sync_out_of_sync_new_string():
     """Test check_po_sync returns False when POT has new string."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        pot_path = os.path.join(tmpdir, "test.pot")
-        po_path = os.path.join(tmpdir, "test.po")
+        pot_path = Path(tmpdir) / "test.pot"
+        po_path = Path(tmpdir) / "test.po"
 
         # Create POT with 3 strings
-        with open(pot_path, "w", encoding="utf-8") as f:
+        with pot_path.open("w", encoding="utf-8") as f:
             f.write(
                 """
 msgid "Hello"
@@ -432,7 +434,7 @@ msgstr ""
             )
 
         # Create PO with only 2 strings
-        with open(po_path, "w", encoding="utf-8") as f:
+        with Path(po_path).open("w", encoding="utf-8") as f:
             f.write(
                 """
 msgid "Hello"
@@ -450,11 +452,11 @@ msgstr "Welt"
 def test_check_po_sync_out_of_sync_removed_string():
     """Test check_po_sync returns False when string is removed from POT."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        pot_path = os.path.join(tmpdir, "test.pot")
-        po_path = os.path.join(tmpdir, "test.po")
+        pot_path = Path(tmpdir) / "test.pot"
+        po_path = Path(tmpdir) / "test.po"
 
         # Create POT with 1 string
-        with open(pot_path, "w", encoding="utf-8") as f:
+        with pot_path.open("w", encoding="utf-8") as f:
             f.write(
                 """
 msgid "Hello"
@@ -463,7 +465,7 @@ msgstr ""
             )
 
         # Create PO with 2 strings
-        with open(po_path, "w", encoding="utf-8") as f:
+        with Path(po_path).open("w", encoding="utf-8") as f:
             f.write(
                 """
 msgid "Hello"
@@ -481,11 +483,11 @@ msgstr "Entfernt"
 def test_check_po_sync_out_of_sync_changed_string():
     """Test check_po_sync returns False when string content changes."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        pot_path = os.path.join(tmpdir, "test.pot")
-        po_path = os.path.join(tmpdir, "test.po")
+        pot_path = Path(tmpdir) / "test.pot"
+        po_path = Path(tmpdir) / "test.po"
 
         # Create POT with modified string
-        with open(pot_path, "w", encoding="utf-8") as f:
+        with pot_path.open("w", encoding="utf-8") as f:
             f.write(
                 """
 msgid "Hello World"
@@ -497,7 +499,7 @@ msgstr ""
             )
 
         # Create PO with original string (before change)
-        with open(po_path, "w", encoding="utf-8") as f:
+        with Path(po_path).open("w", encoding="utf-8") as f:
             f.write(
                 """
 msgid "Hello"

@@ -1,6 +1,6 @@
 """Tests for inline file processing."""
 
-import os
+from pathlib import Path
 
 import pytest
 
@@ -10,7 +10,7 @@ from docco.inline import process_inlines
 @pytest.fixture
 def fixture_dir():
     """Return path to fixtures directory."""
-    return os.path.join(os.path.dirname(__file__), "fixtures")
+    return str(Path(__file__).parent / "fixtures")
 
 
 def test_simple_inline(fixture_dir):
@@ -22,7 +22,7 @@ Start
 <!-- inline:"tests/fixtures/inline_target.md" -->
 
 End"""
-    result = process_inlines(content, ".")
+    result = process_inlines(content, Path())
     assert "# Inlined Content" in result
     assert "This file is meant to be inlined" in result
 
@@ -32,7 +32,7 @@ def test_inline_with_one_arg(fixture_dir):
     content = """# Document
 
 <!-- inline:"tests/fixtures/inline_target.md" name="TestName" -->"""
-    result = process_inlines(content, ".")
+    result = process_inlines(content, Path())
     assert "TestName" in result
     assert "{{name}}" not in result
 
@@ -42,7 +42,7 @@ def test_inline_with_multiple_args(fixture_dir):
     content = """# Document
 
 <!-- inline:"tests/fixtures/inline_target.md" name="TestName" value="TestValue" -->"""
-    result = process_inlines(content, ".")
+    result = process_inlines(content, Path())
     assert "TestName" in result
     assert "TestValue" in result
     assert "{{name}}" not in result
@@ -54,7 +54,7 @@ def test_nested_inline_two_levels(fixture_dir):
     content = """# Document
 
 <!-- inline:"tests/fixtures/nested_inline_1.md" -->"""
-    result = process_inlines(content, ".")
+    result = process_inlines(content, Path())
     # Should contain first level of inlining
     assert "# Document" in result
     assert "# Document with Nested Inline" in result
@@ -71,7 +71,7 @@ def test_recursion_limit_exceeded(fixture_dir):
 
 <!-- inline:"tests/fixtures/inline_target.md" -->"""
     # Should NOT raise - just does one pass
-    result = process_inlines(content, ".")
+    result = process_inlines(content, Path())
     assert "# Inlined Content" in result
 
 
@@ -81,7 +81,7 @@ def test_missing_inline_file(fixture_dir):
 
 <!-- inline:"tests/fixtures/nonexistent.md" -->"""
     with pytest.raises(FileNotFoundError):
-        process_inlines(content, ".")
+        process_inlines(content, Path())
 
 
 def test_inline_path_resolution(fixture_dir):
@@ -89,7 +89,7 @@ def test_inline_path_resolution(fixture_dir):
     content = """# Document
 
 <!-- inline:"tests/fixtures/inline_target.md" -->"""
-    result = process_inlines(content, ".")
+    result = process_inlines(content, Path())
     # Should find and inline the file
     assert "# Inlined Content" in result
 
@@ -103,7 +103,7 @@ Before inline
 <!-- inline:"tests/fixtures/inline_target.md" -->
 
 After inline"""
-    result = process_inlines(content, ".")
+    result = process_inlines(content, Path())
     assert "Before inline" in result
     assert "After inline" in result
 
@@ -117,7 +117,7 @@ First:
 
 Second:
 <!-- inline:"tests/fixtures/inline_target.md" name="Second" -->"""
-    result = process_inlines(content, ".")
+    result = process_inlines(content, Path())
     assert result.count("# Inlined Content") == 2
     assert "First" in result
     assert "Second" in result
@@ -128,7 +128,7 @@ def test_inline_not_processed_mid_line(fixture_dir):
     content = """# Document
 
 Some text <!-- inline:"tests/fixtures/inline_target.md" --> more text"""
-    result = process_inlines(content, ".")
+    result = process_inlines(content, Path())
     # NEW BEHAVIOR: Mid-line directives ARE now processed
     assert '<!-- inline:"tests/fixtures/inline_target.md" -->' not in result
     assert "# Inlined Content" in result
@@ -139,7 +139,7 @@ def test_inline_processed_with_leading_spaces(fixture_dir):
     content = """# Document
 
     <!-- inline:"tests/fixtures/inline_target.md" -->"""
-    result = process_inlines(content, ".")
+    result = process_inlines(content, Path())
     assert "# Inlined Content" in result
 
 
@@ -148,7 +148,7 @@ def test_inline_with_spaces_around_keyword(fixture_dir):
     content = """# Document
 
 <!--   inline   :   "tests/fixtures/inline_target.md"   -->"""
-    result = process_inlines(content, ".")
+    result = process_inlines(content, Path())
     assert "# Inlined Content" in result
 
 
@@ -157,7 +157,7 @@ def test_inline_md_file_no_processing(fixture_dir):
     content = """# Document
 
 <!-- inline:"tests/fixtures/simple.md" -->"""
-    result = process_inlines(content, ".")
+    result = process_inlines(content, Path())
     # MD files should preserve exact content
     assert "This is a simple markdown document" in result
 
@@ -167,7 +167,7 @@ def test_inline_html_file_trimming(fixture_dir):
     content = """# Document
 
 <!-- inline:"tests/fixtures/simple.html" -->"""
-    result = process_inlines(content, ".")
+    result = process_inlines(content, Path())
     # Lines should be trimmed (no leading spaces)
     assert "<div>" in result
     assert "<p>This is indented HTML</p>" in result
@@ -179,7 +179,7 @@ def test_inline_html_empty_lines_preserved(fixture_dir):
     content = """# Document
 
 <!-- inline:"tests/fixtures/simple.html" -->"""
-    result = process_inlines(content, ".")
+    result = process_inlines(content, Path())
     # Should contain trimmed content with preserved line structure
     lines = result.split("\n")
     assert any(line == "" for line in lines)  # Empty lines preserved
@@ -190,7 +190,7 @@ def test_inline_html_with_placeholders(fixture_dir):
     content = """# Document
 
 <!-- inline:"tests/fixtures/placeholder.html" name="Alice" count="42" -->"""
-    result = process_inlines(content, ".")
+    result = process_inlines(content, Path())
     # Placeholders should be replaced
     assert "Alice" in result
     assert "42" in result
@@ -206,7 +206,7 @@ def test_inline_py_file_execution(fixture_dir):
     content = """# Document
 
 <!-- inline:"tests/fixtures/simple.py" -->"""
-    result = process_inlines(content, ".", allow_python=True)
+    result = process_inlines(content, Path(), allow_python=True)
     assert "Hello from Python!" in result
     assert "Line 2" in result
 
@@ -216,7 +216,7 @@ def test_inline_py_file_with_arguments(fixture_dir):
     content = """# Document
 
 <!-- inline:"tests/fixtures/args.py" count="10" name="test" -->"""
-    result = process_inlines(content, ".", allow_python=True)
+    result = process_inlines(content, Path(), allow_python=True)
     # Arguments should be in key=value format
     assert "count=10" in result
     assert "name=test" in result
@@ -228,7 +228,7 @@ def test_inline_py_file_requires_allow_python(fixture_dir):
 
 <!-- inline:"tests/fixtures/simple.py" -->"""
     with pytest.raises(ValueError, match="Python file execution not allowed"):
-        process_inlines(content, ".", allow_python=False)
+        process_inlines(content, Path(), allow_python=False)
 
 
 def test_inline_py_file_execution_error(fixture_dir):
@@ -237,7 +237,7 @@ def test_inline_py_file_execution_error(fixture_dir):
 
 <!-- inline:"tests/fixtures/error.py" -->"""
     with pytest.raises(ValueError, match="Python execution error"):
-        process_inlines(content, ".", allow_python=True)
+        process_inlines(content, Path(), allow_python=True)
 
 
 def test_inline_py_output_contains_directives(fixture_dir):
@@ -245,7 +245,7 @@ def test_inline_py_output_contains_directives(fixture_dir):
     content = """# Document
 
 <!-- inline:"tests/fixtures/nested.py" -->"""
-    result = process_inlines(content, ".", allow_python=True)
+    result = process_inlines(content, Path(), allow_python=True)
     # Should output the directive (to be processed in next iteration)
     assert '<!-- inline:"simple.md" -->' in result
 
@@ -255,7 +255,7 @@ def test_inline_unknown_file_type_warning(fixture_dir, caplog):
     content = """# Document
 
 <!-- inline:"tests/fixtures/unknown.txt" -->"""
-    result = process_inlines(content, ".")
+    result = process_inlines(content, Path())
     # Content should be inserted as-is
     assert "This is a text file with unknown type." in result
     # Warning should be logged
@@ -267,7 +267,7 @@ def test_inline_unused_arguments_warning(fixture_dir, caplog):
     content = """# Document
 
 <!-- inline:"tests/fixtures/inline_target.md" name="TestName" unused="NotUsed" extra="AlsoNotUsed" -->"""
-    result = process_inlines(content, ".")
+    result = process_inlines(content, Path())
     # Arguments should still be processed
     assert "TestName" in result
     # Warning should be logged for unused arguments
@@ -281,7 +281,7 @@ def test_inline_unfulfilled_placeholders_warning(fixture_dir, caplog):
     content = """# Document
 
 <!-- inline:"tests/fixtures/inline_target.md" name="TestName" -->"""
-    result = process_inlines(content, ".")
+    result = process_inlines(content, Path())
     # Name should be replaced
     assert "TestName" in result
     # Warning should be logged for unfulfilled placeholder
@@ -294,7 +294,7 @@ def test_inline_all_args_used_no_warning(fixture_dir, caplog):
     content = """# Document
 
 <!-- inline:"tests/fixtures/inline_target.md" name="TestName" value="TestValue" -->"""
-    result = process_inlines(content, ".")
+    result = process_inlines(content, Path())
     # Both should be replaced
     assert "TestName" in result
     assert "TestValue" in result

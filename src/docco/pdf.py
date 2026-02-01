@@ -1,7 +1,6 @@
 """Convert HTML to PDF using Playwright/Chromium with CSS styling."""
 
 import logging
-import os
 from pathlib import Path
 from typing import TypedDict
 
@@ -20,7 +19,7 @@ class CSSContent(TypedDict):
     external: list[str]
 
 
-def _check_file_writable(file_path: str | Path) -> None:  # pragma: no cover
+def _check_file_writable(file_path: Path) -> None:  # pragma: no cover
     """
     Check if output file can be written (not open in another process).
     Works on Windows and Linux.
@@ -29,7 +28,7 @@ def _check_file_writable(file_path: str | Path) -> None:  # pragma: no cover
         RuntimeError: If file is locked or inaccessible
     """
     try:
-        with open(file_path, "w", encoding="utf-8"):
+        with file_path.open("w", encoding="utf-8"):
             pass
     except (PermissionError, OSError):
         raise RuntimeError(
@@ -60,8 +59,8 @@ def _absolutize_css_urls(css_content: str, css_file_path: str) -> str:
     from urllib.parse import urljoin
 
     # Ensure absolute path for cross-platform compatibility
-    abs_css_path = os.path.abspath(css_file_path)
-    css_dir = os.path.dirname(abs_css_path)
+    abs_css_path = Path(css_file_path).resolve()
+    css_dir = Path(abs_css_path).parent
     base_url = Path(css_dir).as_uri()
 
     def replace_url(match: re.Match) -> str:
@@ -85,9 +84,7 @@ def _absolutize_css_urls(css_content: str, css_file_path: str) -> str:
     return re.sub(pattern, replace_url, css_content)
 
 
-def collect_css_content(
-    markdown_file: str | Path, metadata: dict[str, object]
-) -> CSSContent:
+def collect_css_content(markdown_file: Path, metadata: dict[str, object]) -> CSSContent:
     """
     Collect CSS content from frontmatter.
 
@@ -107,7 +104,7 @@ def collect_css_content(
     """
     css_content = []
     external_urls = []
-    md_dir = os.path.dirname(os.path.abspath(markdown_file))
+    md_dir = Path(Path(markdown_file).resolve()).parent
 
     # Extract CSS from frontmatter
     frontmatter_css_raw = metadata.get("css", [])
@@ -128,12 +125,12 @@ def collect_css_content(
             external_urls.append(css_path)
             logger.debug(f"Using external CSS: {css_path}")
         else:
-            abs_path = os.path.join(md_dir, css_path)
-            if os.path.exists(abs_path):
-                with open(abs_path, "r", encoding="utf-8") as f:
+            abs_path = Path(md_dir) / css_path
+            if abs_path.exists():
+                with abs_path.open("r", encoding="utf-8") as f:
                     raw_css = f.read()
                 # Convert relative URLs in CSS to absolute paths
-                absolutized_css = _absolutize_css_urls(raw_css, abs_path)
+                absolutized_css = _absolutize_css_urls(raw_css, str(abs_path))
                 css_content.append(absolutized_css)
                 logger.debug(f"Using CSS from frontmatter: {css_path}")
             else:
@@ -142,7 +139,7 @@ def collect_css_content(
     return {"inline": "\n".join(css_content), "external": external_urls}
 
 
-def _downscale_pdf_images(pdf_path: str | Path, target_dpi: int) -> None:
+def _downscale_pdf_images(pdf_path: Path, target_dpi: int) -> None:
     """
     Downscale images in PDF to target DPI using Ghostscript.
 
@@ -192,12 +189,12 @@ def _downscale_pdf_images(pdf_path: str | Path, target_dpi: int) -> None:
             check=True,
             capture_output=True,
         )
-        os.replace(tmp_path, str(pdf_path))
+        Path(tmp_path).replace(str(pdf_path))
         logger.info(f"Downscaled images in PDF to {target_dpi} DPI")
     except subprocess.CalledProcessError as e:  # pragma: no cover
         logger.error(f"Ghostscript failed: {e.stderr.decode()}")
-        if os.path.exists(tmp_path):
-            os.unlink(tmp_path)
+        if Path(tmp_path).exists():
+            Path(tmp_path).unlink()
         raise
     except Exception:  # pragma: no cover
         if os.path.exists(tmp_path):
@@ -206,10 +203,10 @@ def _downscale_pdf_images(pdf_path: str | Path, target_dpi: int) -> None:
 
 
 def html_to_pdf(
-    html_path: str | Path,
-    output_path: str | Path,
+    html_path: Path,
+    output_path: Path,
     dpi: int | None = None,
-) -> str:
+) -> Path:
     """
     Convert HTML file to PDF.
 
@@ -222,13 +219,13 @@ def html_to_pdf(
         dpi: Maximum image resolution in DPI
 
     Returns:
-        str: Path to generated PDF file
+        Path: Path to generated PDF file
     """
     _check_file_writable(output_path)
 
-    logger.info("Using Playwright/Chromium for PDF generation")
+    abs_html_path = html_path.resolve()
 
-    abs_html_path = os.path.abspath(html_path)
+    logger.info("Using Playwright/Chromium for PDF generation")
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -255,7 +252,7 @@ def html_to_pdf(
         page.goto(f"file://{abs_html_path}", wait_until="networkidle")
 
         # Wait for paged.js rendering only if template is used
-        with open(abs_html_path, "r", encoding="utf-8") as f:
+        with abs_html_path.open("r", encoding="utf-8") as f:
             html_content = f.read()
 
         if PAGED_RENDERING_COMPLETE_FLAG in html_content:
@@ -278,4 +275,4 @@ def html_to_pdf(
     if dpi:
         _downscale_pdf_images(output_path, dpi)
 
-    return str(output_path)
+    return output_path

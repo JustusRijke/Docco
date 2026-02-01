@@ -2,8 +2,8 @@
 
 import argparse
 import logging
-import os
 import sys
+from pathlib import Path
 
 from docco.logging_config import setup_logging
 from docco.parser import parse_markdown
@@ -48,22 +48,24 @@ def main() -> None:
     counter = setup_logging(verbose=args.verbose)
 
     try:
-        input_file = args.input_file
+        input_file = Path(args.input_file)
+        output_dir = Path(args.output)
+        po_file = Path(args.po) if args.po else None
 
-        if not os.path.exists(input_file):
+        if not input_file.exists():
             logger.error(f"Input file not found: {input_file}")
             sys.exit(1)
 
-        if not os.path.exists(args.output):
-            os.makedirs(args.output)
+        if not output_dir.exists():
+            output_dir.mkdir(parents=True)
 
         # Convert markdown to PDF
         output_files = parse_markdown(
             input_file,
-            args.output,
+            output_dir,
             keep_intermediate=args.keep_intermediate,
             allow_python=args.allow_python,
-            po_file=args.po,
+            po_file=po_file,
         )
 
         for output_file in output_files:

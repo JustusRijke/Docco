@@ -1,8 +1,6 @@
 """Main parser orchestrator for markdown to PDF conversion."""
 
-import glob
 import logging
-import os
 import re
 from pathlib import Path
 
@@ -24,8 +22,8 @@ MAX_ITERATIONS = 10
 
 
 def preprocess_document(
-    content: str, input_file: str | Path, allow_python: bool = False
-) -> tuple[dict[str, object], str, str]:
+    content: str, input_file: Path, allow_python: bool = False
+) -> tuple[dict[str, object], str, Path]:
     """
     Parse frontmatter and process directives.
 
@@ -38,7 +36,7 @@ def preprocess_document(
         tuple: (metadata dict, processed content string, base directory path)
     """
     metadata = parse_frontmatter(content)
-    base_dir = os.path.dirname(os.path.abspath(input_file))
+    base_dir = input_file.resolve().parent
     processed_content = process_directives_iteratively(content, base_dir, allow_python)
     return metadata, processed_content, base_dir
 
@@ -51,7 +49,7 @@ def has_directives(content: str) -> bool:
 
 
 def process_directives_iteratively(
-    content: str, base_dir: str, allow_python: bool
+    content: str, base_dir: Path, allow_python: bool
 ) -> str:
     """
     Iteratively process inline directives until none remain.
@@ -90,16 +88,16 @@ def process_directives_iteratively(
 def _generate_single_pdf(
     body: str,
     metadata: dict[str, object],
-    input_file: str | Path,
+    input_file: Path,
     input_basename: str,
-    output_dir: str | Path,
-    base_dir: str,
+    output_dir: Path,
+    base_dir: Path,
     keep_intermediate: bool,
     allow_python: bool,
     lang_suffix: str | None = None,
-    po_file: str | Path | None = None,
+    po_file: Path | None = None,
     validate_images: bool = True,
-) -> str:
+) -> Path:
     """
     Generate a single PDF from processed markdown body.
 
@@ -117,7 +115,7 @@ def _generate_single_pdf(
         validate_images: Validate image DPI if DPI frontmatter is set (default: True)
 
     Returns:
-        str: Path to generated PDF file
+        Path: Path to generated PDF file
     """
     suffix = lang_suffix or ""
 
@@ -130,8 +128,8 @@ def _generate_single_pdf(
     css_result = collect_css_content(input_file, metadata)
 
     # Write intermediate MD
-    md_path = os.path.join(output_dir, md_filename)
-    with open(md_path, "w", encoding="utf-8") as f:
+    md_path = output_dir / md_filename
+    with md_path.open("w", encoding="utf-8") as f:
         f.write(body)
     logger.debug(f"Wrote intermediate: {md_filename}")
 
@@ -140,23 +138,21 @@ def _generate_single_pdf(
 
     # Apply translation if needed (before layout)
     if po_file:
-        temp_body_path = os.path.join(output_dir, f"{html_filename}.body_temp")
-        temp_translated_path = os.path.join(
-            output_dir, f"{html_filename}.translated_temp"
-        )
+        temp_body_path = output_dir / f"{html_filename}.body_temp"
+        temp_translated_path = output_dir / f"{html_filename}.translated_temp"
 
         # Wrap body HTML temporarily for translation
         temp_wrapped = wrap_html(
-            body_html, css_content="", external_css=[], base_url=base_dir
+            body_html, css_content="", external_css=[], base_url=str(base_dir)
         )
-        with open(temp_body_path, "w", encoding="utf-8") as f:
+        with temp_body_path.open("w", encoding="utf-8") as f:
             f.write(temp_wrapped)
 
         # Apply translation
         apply_po_to_html(temp_body_path, po_file, temp_translated_path)
 
         # Extract translated body from wrapped HTML
-        with open(temp_translated_path, "r", encoding="utf-8") as f:
+        with temp_translated_path.open("r", encoding="utf-8") as f:
             translated_html = f.read()
         # Extract body content (between <body> and </body>)
         import re
@@ -166,8 +162,8 @@ def _generate_single_pdf(
             body_html = body_match.group(1)
 
         # Clean up temp files
-        os.remove(temp_body_path)
-        os.remove(temp_translated_path)
+        temp_body_path.unlink()
+        temp_translated_path.unlink()
         logger.debug("Applied translations")
 
     # Process layout (on potentially translated body HTML)
@@ -178,17 +174,17 @@ def _generate_single_pdf(
         body_html,
         css_content=css_result["inline"],
         external_css=css_result["external"],
-        base_url=base_dir,
+        base_url=str(base_dir),
     )
 
     # Write final HTML to file
-    html_path = os.path.join(output_dir, html_filename)
-    with open(html_path, "w", encoding="utf-8") as f:
+    html_path = output_dir / html_filename
+    with html_path.open("w", encoding="utf-8") as f:
         f.write(html_wrapped)
     logger.debug(f"Wrote HTML: {html_filename}")
 
     # Convert to PDF
-    pdf_path = os.path.join(output_dir, pdf_filename)
+    pdf_path = output_dir / pdf_filename
     dpi_raw = metadata.get("dpi")
     dpi = int(dpi_raw) if isinstance(dpi_raw, int) else None
     html_to_pdf(html_path, pdf_path, dpi=dpi)
@@ -199,10 +195,10 @@ def _generate_single_pdf(
 
     # Clean up intermediate files if not keeping them
     if not keep_intermediate:
-        if os.path.exists(md_path):
-            os.remove(md_path)
-        if os.path.exists(html_path):
-            os.remove(html_path)
+        if md_path.exists():
+            md_path.unlink()
+        if html_path.exists():
+            html_path.unlink()
 
     return pdf_path
 
@@ -210,12 +206,12 @@ def _generate_single_pdf(
 def _generate_multilingual_pdfs(
     body: str,
     metadata: dict[str, object],
-    input_file: str | Path,
-    output_dir: str | Path,
-    base_dir: str,
+    input_file: Path,
+    output_dir: Path,
+    base_dir: Path,
     keep_intermediate: bool,
     allow_python: bool,
-) -> list[str]:
+) -> list[Path]:
     """
     Generate PDFs for all languages in multilingual mode.
 
@@ -229,7 +225,7 @@ def _generate_multilingual_pdfs(
         allow_python: Allow python code execution in directives
 
     Returns:
-        list: Paths to generated PDF files
+        list[Path]: Paths to generated PDF files
 
     Raises:
         ValueError: If base_language not specified in frontmatter
@@ -241,9 +237,9 @@ def _generate_multilingual_pdfs(
 
     base_language: str = base_language_raw
 
-    input_basename = os.path.splitext(os.path.basename(input_file))[0]
-    translations_dir = os.path.join(base_dir, input_basename)
-    os.makedirs(translations_dir, exist_ok=True)
+    input_basename = input_file.stem
+    translations_dir = base_dir / input_basename
+    translations_dir.mkdir(exist_ok=True, parents=True)
 
     pdf_paths = []
     base_lang_code = base_language.upper()
@@ -256,21 +252,21 @@ def _generate_multilingual_pdfs(
         body_html,
         css_content=css_result["inline"],
         external_css=css_result["external"],
-        base_url=base_dir,
+        base_url=str(base_dir),
     )
 
     # Write HTML for POT extraction (without layout)
-    pot_html_path = os.path.join(output_dir, f"{input_basename}_for_pot.html")
-    with open(pot_html_path, "w", encoding="utf-8") as f:
+    pot_html_path = output_dir / f"{input_basename}_for_pot.html"
+    with pot_html_path.open("w", encoding="utf-8") as f:
         f.write(html_for_pot)
 
     # Step 2: Extract POT file from HTML to translations subfolder
-    pot_path = os.path.join(translations_dir, f"{input_basename}.pot")
+    pot_path = translations_dir / f"{input_basename}.pot"
     extract_html_to_pot(pot_html_path, pot_path)
     logger.debug(f"Extracted POT for multilingual: {pot_path}")
 
     # Clean up POT HTML
-    os.remove(pot_html_path)
+    pot_html_path.unlink()
 
     # Step 3: Update existing PO files with new POT content
     update_po_files(pot_path, translations_dir)
@@ -291,9 +287,9 @@ def _generate_multilingual_pdfs(
     pdf_paths.append(pdf_path)
 
     # Step 5: Find and process .po files in translations subfolder
-    po_files = sorted(glob.glob(os.path.join(translations_dir, "*.po")))
+    po_files = sorted(translations_dir.glob("*.po"))
     for po_file in po_files:
-        lang_code = os.path.splitext(os.path.basename(po_file))[0].upper()
+        lang_code = po_file.stem.upper()
         logger.info(f"Processing language: {lang_code}")
 
         # Check if PO file is in sync with current POT
@@ -331,12 +327,12 @@ def _generate_multilingual_pdfs(
 
 
 def parse_markdown(
-    input_file: str | Path,
-    output_dir: str | Path,
+    input_file: Path,
+    output_dir: Path,
     keep_intermediate: bool = False,
     allow_python: bool = False,
-    po_file: str | Path | None = None,
-) -> list[str]:
+    po_file: Path | None = None,
+) -> list[Path]:
     """
     Convert markdown file to PDF through full pipeline.
 
@@ -360,18 +356,18 @@ def parse_markdown(
         po_file: Path to PO file for translations (optional, ignored in multilingual mode)
 
     Returns:
-        list: Paths to generated PDF files
+        list[Path]: Paths to generated PDF files
     """
     logger.info(f"Processing markdown: {input_file}")
 
     # Read file
-    with open(input_file, "r", encoding="utf-8") as f:
+    with input_file.open("r", encoding="utf-8") as f:
         content = f.read()
 
     # Step 1 & 2: Preprocess document (parse frontmatter and process directives)
     metadata, body, base_dir = preprocess_document(content, input_file, allow_python)
     logger.debug(f"Parsed frontmatter: {metadata}")
-    input_basename = os.path.splitext(os.path.basename(input_file))[0]
+    input_basename = input_file.stem
 
     # Step 3: Route to appropriate workflow based on multilingual flag
     if metadata.get("multilingual", False):

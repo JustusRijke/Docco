@@ -1,11 +1,10 @@
 """Regression tests comparing generated PDFs against baseline PDFs."""
 
-import glob
 import logging
-import os
 import platform
 import shutil
 import tempfile
+from pathlib import Path
 
 import pytest
 from diffpdf import diffpdf
@@ -24,16 +23,16 @@ def test_regression_example_pdfs():
 
     Outputs all files (PDF + HTML) to tests/output for inspection.
     """
-    examples_dir = os.path.join(os.path.dirname(__file__), "..", "examples")
-    baselines_dir = os.path.join(os.path.dirname(__file__), "baselines")
-    output_dir = os.path.join(os.path.dirname(__file__), "output")
+    examples_dir = Path(__file__).parent / ".." / "examples"
+    baselines_dir = Path(__file__).parent / "baselines"
+    output_dir = Path(__file__).parent / "output"
 
     # Ensure output and baselines directories exist
-    os.makedirs(output_dir, exist_ok=True)
-    os.makedirs(baselines_dir, exist_ok=True)
+    output_dir.mkdir(exist_ok=True, parents=True)
+    baselines_dir.mkdir(exist_ok=True, parents=True)
 
     # Find all example markdown files
-    md_files = glob.glob(os.path.join(examples_dir, "*.md"))
+    md_files = list(examples_dir.glob("*.md"))
 
     assert len(md_files) > 0, "No example markdown files found"
 
@@ -45,31 +44,35 @@ def test_regression_example_pdfs():
 
         # Check each generated PDF against baseline
         for pdf_file in output_files:
-            filename = os.path.basename(pdf_file)
-            baseline_pdf = os.path.join(baselines_dir, filename)
+            filename = pdf_file.name
+            baseline_pdf = baselines_dir / filename
 
-            assert os.path.exists(baseline_pdf), (
-                f"Baseline missing for {filename} (generated from {os.path.basename(md_file)})"
+            assert baseline_pdf.exists(), (
+                f"Baseline missing for {filename} (generated from {md_file.name})"
             )
 
             # Compare PDFs using diffpdf
             with tempfile.TemporaryDirectory() as diff_dir:  # pragma: no cover
-                if diffpdf(baseline_pdf, pdf_file, threshold=0.1, output_dir=diff_dir):
+                if diffpdf(
+                    str(baseline_pdf), pdf_file, threshold=0.1, output_dir=diff_dir
+                ):
                     logger.info(f"✓ Pass: {filename}")
                     continue
 
                 # PDF comparison failed - copy diff files for debugging
-                diff_output_dir = os.path.join(output_dir, f"{filename}_diff")
-                os.makedirs(diff_output_dir, exist_ok=True)
-                for item in os.listdir(diff_dir):
-                    src = os.path.join(diff_dir, item)
-                    dst = os.path.join(diff_output_dir, item)
-                    if os.path.isfile(src):
-                        shutil.copy2(src, dst)
-                    elif os.path.isdir(src):
-                        shutil.copytree(src, dst, dirs_exist_ok=True)
+                diff_output_dir = output_dir / f"{filename}_diff"
+                diff_output_dir.mkdir(exist_ok=True, parents=True)
+                for item in Path(diff_dir).iterdir():
+                    if item.is_file():
+                        shutil.copy2(str(item), str(diff_output_dir / item.name))
+                    elif item.is_dir():
+                        shutil.copytree(
+                            str(item),
+                            str(diff_output_dir / item.name),
+                            dirs_exist_ok=True,
+                        )
 
                 pytest.fail(
-                    f"PDF mismatch for {filename} (from {os.path.basename(md_file)}). "
+                    f"PDF mismatch for {filename} (from {Path(md_file).name}). "
                     f"Diff files saved to {diff_output_dir}"
                 )
