@@ -57,7 +57,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+          key: playwright-${{ runner.os }}-${{ matrix.dependencies }}-${{ hashFiles('uv.lock') }}
 
       - name: Install Playwright browsers
         run: uv run playwright install chromium --only-shell --with-deps
@@ -135,7 +135,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ runner.temp }}\gettext
-          key: gettext-windows-${{ env.GETTEXT_VERSION }}
+          key: gettext-windows-${{ matrix.dependencies }}-${{ env.GETTEXT_VERSION }}
 
       - name: Download and install gettext
         if: steps.cache-gettext.outputs.cache-hit != 'true'
@@ -169,7 +169,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ runner.temp }}\ghostscript
-          key: ghostscript-windows-${{ env.GHOSTSCRIPT_VERSION }}
+          key: ghostscript-windows-${{ matrix.dependencies }}-${{ env.GHOSTSCRIPT_VERSION }}
 
       - name: Download and extract Ghostscript
         if: steps.cache-ghostscript.outputs.cache-hit != 'true'
@@ -226,7 +226,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~\AppData\Local\ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+          key: playwright-${{ runner.os }}-${{ matrix.dependencies }}-${{ hashFiles('uv.lock') }}
 
       - name: Install Playwright browsers
         run: uv run playwright install chromium --with-deps
