@@ -1,8 +1,8 @@
 """Integration tests for POT/PO translation workflow (HTML-based)."""
 
-import pathlib
 import subprocess
 import tempfile
+from pathlib import Path
 
 import pytest
 
@@ -14,8 +14,8 @@ from docco.translation import extract_html_to_pot, get_po_stats
 @pytest.fixture
 def translation_files():
     """Path to translation files in examples directory."""
-    examples_dir = pathlib.Path(__file__).parent / ".." / "examples"
-    output_dir = pathlib.Path(__file__).parent / "output"
+    examples_dir = Path(__file__).parent / ".." / "examples"
+    output_dir = Path(__file__).parent / "output"
     output_dir.mkdir(exist_ok=True, parents=True)
     return {
         "source": str(examples_dir / "Multilingual_Document_Example.md"),
@@ -28,13 +28,13 @@ def translation_files():
 @pytest.fixture
 def baselines_dir():
     """Path to baseline PDFs directory."""
-    return str(pathlib.Path(__file__).parent / "baselines")
+    return str(Path(__file__).parent / "baselines")
 
 
 def test_extract_pot_file_from_html(translation_files):
     """Test that POT file can be extracted from HTML generated from markdown."""
     # Read source markdown
-    with pathlib.Path(translation_files["source"]).open("r", encoding="utf-8") as f:
+    with Path(translation_files["source"]).open("r", encoding="utf-8") as f:
         content = f.read()
 
     # Convert to HTML (frontmatter stripped automatically)
@@ -42,12 +42,12 @@ def test_extract_pot_file_from_html(translation_files):
 
     # Write HTML to file
     with tempfile.TemporaryDirectory() as tmpdir:
-        html_path = pathlib.Path(tmpdir) / "test.html"
+        html_path = Path(tmpdir) / "test.html"
         with html_path.open("w", encoding="utf-8") as f:
             f.write(html_content)
 
         # Extract POT from HTML file
-        pot_path = pathlib.Path(translation_files["pot"])
+        pot_path = Path(translation_files["pot"])
         result = extract_html_to_pot(html_path, pot_path)
 
         # Verify POT file was created
@@ -75,8 +75,8 @@ def test_translation_workflow_all_languages(translation_files, baselines_dir):
     with tempfile.TemporaryDirectory() as tmpdir:
         # With multilingual: true and base_language in frontmatter, parse_markdown generates all language PDFs
         output_files = parse_markdown(
-            pathlib.Path(translation_files["source"]),
-            pathlib.Path(tmpdir),
+            Path(translation_files["source"]),
+            Path(tmpdir),
             allow_python=True,
             keep_intermediate=False,
         )
@@ -110,13 +110,13 @@ title: Test
 Hello world"""
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        md_path = pathlib.Path(tmpdir) / "test.md"
-        with pathlib.Path(md_path).open("w", encoding="utf-8") as f:
+        md_path = Path(tmpdir) / "test.md"
+        with Path(md_path).open("w", encoding="utf-8") as f:
             f.write(md_content)
 
         # Create a simple PO file with HTML-style msgids
-        po_path = pathlib.Path(tmpdir) / "test.po"
-        with pathlib.Path(po_path).open("w", encoding="utf-8") as f:
+        po_path = Path(tmpdir) / "test.po"
+        with Path(po_path).open("w", encoding="utf-8") as f:
             f.write("""
 msgid "Test"
 msgstr "Prueba"
@@ -125,12 +125,12 @@ msgid "Hello world"
 msgstr "Hola mundo"
 """)
 
-        output_dir = pathlib.Path(tmpdir) / "output"
-        pathlib.Path(output_dir).mkdir(parents=True)
+        output_dir = Path(tmpdir) / "output"
+        Path(output_dir).mkdir(parents=True)
 
         # Generate PDF with po_file parameter
         output_files = parse_markdown(
-            md_path, pathlib.Path(output_dir), po_file=po_path, allow_python=False
+            md_path, Path(output_dir), po_file=po_path, allow_python=False
         )
 
         # Should generate 1 PDF with no language suffix
@@ -151,18 +151,16 @@ multilingual: true
 Hello world"""
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        md_path = pathlib.Path(tmpdir) / "test.md"
-        with pathlib.Path(md_path).open("w", encoding="utf-8") as f:
+        md_path = Path(tmpdir) / "test.md"
+        with Path(md_path).open("w", encoding="utf-8") as f:
             f.write(md_content)
 
-        output_dir = pathlib.Path(tmpdir) / "output"
-        pathlib.Path(output_dir).mkdir(parents=True)
+        output_dir = Path(tmpdir) / "output"
+        Path(output_dir).mkdir(parents=True)
 
         # Should raise ValueError because base_language is missing
         with pytest.raises(ValueError, match="base_language") as exc_info:
-            parse_markdown(
-                pathlib.Path(md_path), pathlib.Path(output_dir), allow_python=False
-            )
+            parse_markdown(Path(md_path), Path(output_dir), allow_python=False)
 
         assert "base_language" in str(exc_info.value)
 
@@ -179,16 +177,16 @@ base_language: en
 Hello world"""
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        md_path = pathlib.Path(tmpdir) / "test.md"
-        with pathlib.Path(md_path).open("w", encoding="utf-8") as f:
+        md_path = Path(tmpdir) / "test.md"
+        with Path(md_path).open("w", encoding="utf-8") as f:
             f.write(md_content)
 
-        output_dir = pathlib.Path(tmpdir) / "output"
-        pathlib.Path(output_dir).mkdir(parents=True)
+        output_dir = Path(tmpdir) / "output"
+        Path(output_dir).mkdir(parents=True)
 
         # Should generate PDF for base language even without translations
         output_files = parse_markdown(
-            pathlib.Path(md_path), pathlib.Path(output_dir), allow_python=False
+            Path(md_path), Path(output_dir), allow_python=False
         )
 
         # Should have 1 PDF for base language
@@ -209,26 +207,26 @@ base_language: en
 Original content."""
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        md_path = pathlib.Path(tmpdir) / "test.md"
-        with pathlib.Path(md_path).open("w", encoding="utf-8") as f:
+        md_path = Path(tmpdir) / "test.md"
+        with Path(md_path).open("w", encoding="utf-8") as f:
             f.write(initial_content)
 
-        output_dir = pathlib.Path(tmpdir) / "output"
-        pathlib.Path(output_dir).mkdir(parents=True)
+        output_dir = Path(tmpdir) / "output"
+        Path(output_dir).mkdir(parents=True)
 
         # First build: creates POT file
         output_files = parse_markdown(
-            pathlib.Path(md_path), pathlib.Path(output_dir), allow_python=False
+            Path(md_path), Path(output_dir), allow_python=False
         )
         assert len(output_files) == 1  # Base language only
 
         # Verify POT file was created
-        translations_dir = pathlib.Path(tmpdir) / "test"
-        pot_path = pathlib.Path(translations_dir) / "test.pot"
-        assert pathlib.Path(pot_path).exists()
+        translations_dir = Path(tmpdir) / "test"
+        pot_path = Path(translations_dir) / "test.pot"
+        assert Path(pot_path).exists()
 
         # Create a PO file by copying POT and adding translations
-        po_path = pathlib.Path(translations_dir) / "de.po"
+        po_path = Path(translations_dir) / "de.po"
         subprocess.run(
             [
                 "msginit",
@@ -254,18 +252,18 @@ Original content.
 
 New paragraph added."""
 
-        with pathlib.Path(md_path).open("w", encoding="utf-8") as f:
+        with Path(md_path).open("w", encoding="utf-8") as f:
             f.write(updated_content)
 
         # Second build: should auto-update PO file with new strings
         output_files = parse_markdown(
-            pathlib.Path(md_path), pathlib.Path(output_dir), allow_python=False
+            Path(md_path), Path(output_dir), allow_python=False
         )
         assert len(output_files) == 2  # Base + German
 
         # Verify PO file still exists and was updated
-        assert pathlib.Path(po_path).exists()
-        with pathlib.Path(po_path).open("r", encoding="utf-8") as f:
+        assert Path(po_path).exists()
+        with Path(po_path).open("r", encoding="utf-8") as f:
             po_content = f.read()
 
         # Check that new string is in PO file

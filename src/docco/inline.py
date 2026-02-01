@@ -2,9 +2,9 @@
 
 import io
 import logging
-import pathlib
 import re
 import sys
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -95,9 +95,7 @@ def restore_code_blocks(content: str, code_blocks: dict[str, str]) -> str:
     return result
 
 
-def process_inlines(
-    content: str, base_dir: pathlib.Path, allow_python: bool = False
-) -> str:
+def process_inlines(content: str, base_dir: Path, allow_python: bool = False) -> str:
     """
     Process inline directives with file-type aware post-processing.
 
@@ -229,7 +227,7 @@ def parse_inline_args(args_str: str) -> dict[str, str]:
     return args
 
 
-def get_file_type(filepath: pathlib.Path) -> str:
+def get_file_type(filepath: Path) -> str:
     """Extract file extension from filepath."""
     return filepath.suffix.lower()
 
@@ -242,8 +240,8 @@ def trim_html_lines(content: str) -> str:
 
 
 def execute_python_file(
-    filepath: pathlib.Path,
-    base_dir: pathlib.Path,
+    filepath: Path,
+    base_dir: Path,
     allow_python: bool,
     args_dict: dict[str, str],
 ) -> str:
@@ -288,8 +286,8 @@ def execute_python_file(
 
 def post_process_content(
     content: str,
-    file_path: pathlib.Path,
-    base_dir: pathlib.Path,
+    file_path: Path,
+    base_dir: Path,
     allow_python: bool,
     args_dict: dict[str, str],
 ) -> str:

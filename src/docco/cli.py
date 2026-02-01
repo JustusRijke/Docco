@@ -2,8 +2,8 @@
 
 import argparse
 import logging
-import pathlib
 import sys
+from pathlib import Path
 
 from docco.logging_config import setup_logging
 from docco.parser import parse_markdown
@@ -48,9 +48,9 @@ def main() -> None:
     counter = setup_logging(verbose=args.verbose)
 
     try:
-        input_file = pathlib.Path(args.input_file)
-        output_dir = pathlib.Path(args.output)
-        po_file = pathlib.Path(args.po) if args.po else None
+        input_file = Path(args.input_file)
+        output_dir = Path(args.output)
+        po_file = Path(args.po) if args.po else None
 
         if not input_file.exists():
             logger.error(f"Input file not found: {input_file}")

@@ -1,7 +1,7 @@
 """Integration tests for the parser module."""
 
-import pathlib
 import tempfile
+from pathlib import Path
 from unittest.mock import patch
 
 import fitz  # PyMuPDF
@@ -14,14 +14,14 @@ from docco.parser import MAX_ITERATIONS, parse_markdown, process_directives_iter
 @pytest.fixture
 def fixture_dir():
     """Return path to fixtures directory."""
-    return str(pathlib.Path(__file__).parent / "fixtures")
+    return str(Path(__file__).parent / "fixtures")
 
 
 def test_end_to_end_simple(fixture_dir):
     """Test simple markdown parsing and PDF output."""
-    input_file = pathlib.Path(fixture_dir) / "simple.md"
+    input_file = Path(fixture_dir) / "simple.md"
     with tempfile.TemporaryDirectory() as tmpdir:
-        outputs = parse_markdown(input_file, pathlib.Path(tmpdir))
+        outputs = parse_markdown(input_file, Path(tmpdir))
         assert len(outputs) == 1
         assert outputs[0].name.endswith(".pdf")
         assert outputs[0].exists()
@@ -29,9 +29,9 @@ def test_end_to_end_simple(fixture_dir):
 
 def test_end_to_end_with_frontmatter(fixture_dir):
     """Test parsing with frontmatter."""
-    input_file = pathlib.Path(fixture_dir) / "with_frontmatter.md"
+    input_file = Path(fixture_dir) / "with_frontmatter.md"
     with tempfile.TemporaryDirectory() as tmpdir:
-        outputs = parse_markdown(input_file, pathlib.Path(tmpdir))
+        outputs = parse_markdown(input_file, Path(tmpdir))
         assert len(outputs) == 1
         assert outputs[0].name.endswith(".pdf")
         assert outputs[0].exists()
@@ -41,13 +41,13 @@ def test_end_to_end_with_inline(fixture_dir):
     """Test parsing with inline directives."""
     # Create a temp file with inline
     with tempfile.TemporaryDirectory() as tmpdir:
-        input_file = pathlib.Path(tmpdir) / "with_inline.md"
+        input_file = Path(tmpdir) / "with_inline.md"
         # Copy inline target to tmpdir so it's relative to the markdown file
-        inline_target = str(pathlib.Path(tmpdir) / "inline_target.md")
-        with pathlib.Path(inline_target).open("w", encoding="utf-8") as f:
+        inline_target = str(Path(tmpdir) / "inline_target.md")
+        with Path(inline_target).open("w", encoding="utf-8") as f:
             f.write("Inlined: {{name}}")
 
-        with pathlib.Path(input_file).open("w", encoding="utf-8") as f:
+        with Path(input_file).open("w", encoding="utf-8") as f:
             f.write("""# Document
 
 Before
@@ -56,7 +56,7 @@ Before
 
 After""")
 
-        outputs = parse_markdown(input_file, pathlib.Path(tmpdir))
+        outputs = parse_markdown(input_file, Path(tmpdir))
         assert len(outputs) == 1
         assert outputs[0].name.endswith(".pdf")
         assert outputs[0].exists()
@@ -64,20 +64,20 @@ After""")
 
 def test_output_file_naming_simple(fixture_dir):
     """Test that output files are named correctly for simple docs."""
-    input_file = pathlib.Path(fixture_dir) / "simple.md"
+    input_file = Path(fixture_dir) / "simple.md"
     with tempfile.TemporaryDirectory() as tmpdir:
-        outputs = parse_markdown(input_file, pathlib.Path(tmpdir))
+        outputs = parse_markdown(input_file, Path(tmpdir))
         basename = outputs[0].name
         assert basename == "simple.pdf"
 
 
 def test_keep_intermediate_false(fixture_dir):
     """Test that intermediate files are removed by default."""
-    input_file = pathlib.Path(fixture_dir) / "simple.md"
+    input_file = Path(fixture_dir) / "simple.md"
     with tempfile.TemporaryDirectory() as tmpdir:
-        parse_markdown(input_file, pathlib.Path(tmpdir), keep_intermediate=False)
+        parse_markdown(input_file, Path(tmpdir), keep_intermediate=False)
         # Should only have PDF files
-        all_files = [f.name for f in pathlib.Path(tmpdir).iterdir()]
+        all_files = [f.name for f in Path(tmpdir).iterdir()]
         assert any(f.endswith(".pdf") for f in all_files)
         assert not any(f.endswith("_intermediate.md") for f in all_files)
         assert not any(f.endswith(".html") for f in all_files)
@@ -85,10 +85,10 @@ def test_keep_intermediate_false(fixture_dir):
 
 def test_keep_intermediate_true(fixture_dir):
     """Test that intermediate files are kept when flag is True."""
-    input_file = pathlib.Path(fixture_dir) / "simple.md"
+    input_file = Path(fixture_dir) / "simple.md"
     with tempfile.TemporaryDirectory() as tmpdir:
-        parse_markdown(input_file, pathlib.Path(tmpdir), keep_intermediate=True)
-        all_files = [f.name for f in pathlib.Path(tmpdir).iterdir()]
+        parse_markdown(input_file, Path(tmpdir), keep_intermediate=True)
+        all_files = [f.name for f in Path(tmpdir).iterdir()]
         # Should have PDF, HTML, and intermediate MD files
         assert any(f.endswith(".pdf") for f in all_files)
         assert any(f.endswith("_intermediate.md") for f in all_files)
@@ -99,8 +99,8 @@ def test_max_iterations_exceeded_self_referencing():
     """Test that ValueError is raised when inline creates infinite recursion."""
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create a markdown file that references itself
-        self_ref_file = str(pathlib.Path(tmpdir) / "self_ref.md")
-        with pathlib.Path(self_ref_file).open("w", encoding="utf-8") as f:
+        self_ref_file = str(Path(tmpdir) / "self_ref.md")
+        with Path(self_ref_file).open("w", encoding="utf-8") as f:
             f.write('# Self Reference\n<!-- inline:"self_ref.md" -->')
 
         # Create content that inlines the self-referencing file
@@ -109,15 +109,15 @@ def test_max_iterations_exceeded_self_referencing():
         with pytest.raises(
             ValueError, match=f"Max iterations \\({MAX_ITERATIONS}\\) exceeded"
         ):
-            process_directives_iteratively(content, pathlib.Path(tmpdir), False)
+            process_directives_iteratively(content, Path(tmpdir), False)
 
 
 def test_multilingual_build_logs_translation_warnings(caplog):
     """Test that incomplete translations trigger warnings in multilingual mode."""
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create markdown file with multilingual frontmatter
-        input_file = pathlib.Path(tmpdir) / "test.md"
-        with pathlib.Path(input_file).open("w", encoding="utf-8") as f:
+        input_file = Path(tmpdir) / "test.md"
+        with Path(input_file).open("w", encoding="utf-8") as f:
             f.write("""---
 multilingual: true
 base_language: en
@@ -129,15 +129,15 @@ This is a test document.
 """)
 
         # Create translations directory and incomplete PO file
-        translations_dir = str(pathlib.Path(tmpdir) / "test")
-        pathlib.Path(translations_dir).mkdir(exist_ok=True, parents=True)
+        translations_dir = str(Path(tmpdir) / "test")
+        Path(translations_dir).mkdir(exist_ok=True, parents=True)
 
         # Create PO file with incomplete translation (fuzzy)
         # Note: When multilingual mode runs, it auto-updates the PO file,
         # so we need to create a PO file that will result in fuzzy/untranslated
         # entries after being merged with the actual POT content
-        de_po = str(pathlib.Path(translations_dir) / "de.po")
-        with pathlib.Path(de_po).open("w", encoding="utf-8") as f:
+        de_po = str(Path(translations_dir) / "de.po")
+        with Path(de_po).open("w", encoding="utf-8") as f:
             f.write("""# German translations
 msgid ""
 msgstr ""
@@ -149,7 +149,7 @@ msgstr "<h1>Hallo</h1>"
 """)
 
         # Build multilingual PDF
-        outputs = parse_markdown(input_file, pathlib.Path(tmpdir))
+        outputs = parse_markdown(input_file, Path(tmpdir))
 
         # Should generate PDFs for EN and DE
         assert len(outputs) == 2
@@ -163,8 +163,8 @@ def test_multilingual_po_sync_warning(caplog):
     """Test that out-of-sync PO files trigger sync warnings in multilingual mode."""
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create markdown file
-        input_file = pathlib.Path(tmpdir) / "test.md"
-        with pathlib.Path(input_file).open("w", encoding="utf-8") as f:
+        input_file = Path(tmpdir) / "test.md"
+        with Path(input_file).open("w", encoding="utf-8") as f:
             f.write("""---
 multilingual: true
 base_language: en
@@ -176,12 +176,12 @@ This has changed.
 """)
 
         # Create translations directory with old PO file
-        translations_dir = str(pathlib.Path(tmpdir) / "test")
-        pathlib.Path(translations_dir).mkdir(exist_ok=True, parents=True)
+        translations_dir = str(Path(tmpdir) / "test")
+        Path(translations_dir).mkdir(exist_ok=True, parents=True)
 
         # Create a PO file with old content that won't match new POT
-        de_po = str(pathlib.Path(translations_dir) / "de.po")
-        with pathlib.Path(de_po).open("w", encoding="utf-8") as f:
+        de_po = str(Path(translations_dir) / "de.po")
+        with Path(de_po).open("w", encoding="utf-8") as f:
             f.write("""# German translations
 msgid ""
 msgstr ""
@@ -193,7 +193,7 @@ msgstr "<h1>Alter Inhalt</h1>"
 
         with patch("subprocess.run"):
             # Build multilingual PDF
-            parse_markdown(input_file, pathlib.Path(tmpdir))
+            parse_markdown(input_file, Path(tmpdir))
 
             # Should have logged warning about out-of-sync PO file
             assert (
@@ -205,8 +205,8 @@ def test_multilingual_missing_base_language():
     """Test that multilingual mode requires base_language in frontmatter."""
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create markdown file without base_language
-        input_file = pathlib.Path(tmpdir) / "test.md"
-        with pathlib.Path(input_file).open("w", encoding="utf-8") as f:
+        input_file = Path(tmpdir) / "test.md"
+        with Path(input_file).open("w", encoding="utf-8") as f:
             f.write("""---
 multilingual: true
 ---
@@ -220,15 +220,15 @@ This should fail.
         with pytest.raises(
             ValueError, match="Multilingual mode requires 'base_language'"
         ):
-            parse_markdown(input_file, pathlib.Path(tmpdir))
+            parse_markdown(input_file, Path(tmpdir))
 
 
 def test_dpi_frontmatter_parameter(fixture_dir):
     """Test that DPI frontmatter parameter is extracted and used."""
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create markdown with DPI setting
-        input_file = pathlib.Path(tmpdir) / "test_dpi.md"
-        with pathlib.Path(input_file).open("w", encoding="utf-8") as f:
+        input_file = Path(tmpdir) / "test_dpi.md"
+        with Path(input_file).open("w", encoding="utf-8") as f:
             f.write("""---
 dpi: 300
 ---
@@ -239,7 +239,7 @@ This document has a DPI setting in frontmatter.
 """)
 
         # Generate PDF
-        outputs = parse_markdown(input_file, pathlib.Path(tmpdir))
+        outputs = parse_markdown(input_file, Path(tmpdir))
         assert len(outputs) == 1
         assert outputs[0].exists()
 
@@ -252,17 +252,17 @@ def test_dpi_frontmatter_with_image():
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create a high-resolution test image
         img = Image.new("RGB", (3000, 2000), color="red")
-        img_path = str(pathlib.Path(tmpdir) / "test_image.png")
+        img_path = str(Path(tmpdir) / "test_image.png")
         img.save(img_path, dpi=(600, 600))
 
         # Create CSS file with image sizing
-        css_path = str(pathlib.Path(tmpdir) / "style.css")
-        with pathlib.Path(css_path).open("w", encoding="utf-8") as f:
+        css_path = str(Path(tmpdir) / "style.css")
+        with Path(css_path).open("w", encoding="utf-8") as f:
             f.write("img { max-width: 100%; height: auto; }")
 
         # Create markdown with DPI and image
-        input_file = pathlib.Path(tmpdir) / "test.md"
-        with pathlib.Path(input_file).open("w", encoding="utf-8") as f:
+        input_file = Path(tmpdir) / "test.md"
+        with Path(input_file).open("w", encoding="utf-8") as f:
             f.write("""---
 css: style.css
 dpi: 300
@@ -274,11 +274,11 @@ dpi: 300
 """)
 
         # Generate PDF with DPI=300
-        outputs_300 = parse_markdown(input_file, pathlib.Path(tmpdir))
+        outputs_300 = parse_markdown(input_file, Path(tmpdir))
         assert len(outputs_300) == 1
 
         # Generate PDF without DPI
-        input_file_no_dpi = pathlib.Path(tmpdir) / "test_no_dpi.md"
+        input_file_no_dpi = Path(tmpdir) / "test_no_dpi.md"
         with input_file_no_dpi.open("w", encoding="utf-8") as f:
             f.write("""---
 css: style.css
@@ -289,7 +289,7 @@ css: style.css
 ![Test Image](test_image.png)
 """)
 
-        outputs_no_dpi = parse_markdown(input_file_no_dpi, pathlib.Path(tmpdir))
+        outputs_no_dpi = parse_markdown(input_file_no_dpi, Path(tmpdir))
         assert len(outputs_no_dpi) == 1
 
         # Extract and compare image dimensions using PyMuPDF
@@ -316,12 +316,12 @@ def test_dpi_validation_warns_on_low_dpi_images(caplog):
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create a small low-resolution image
         img = Image.new("RGB", (100, 100), color="blue")
-        img_path = str(pathlib.Path(tmpdir) / "lowres.png")
+        img_path = str(Path(tmpdir) / "lowres.png")
         img.save(img_path)
 
         # Create markdown with DPI setting
-        input_file = pathlib.Path(tmpdir) / "test.md"
-        with pathlib.Path(input_file).open("w", encoding="utf-8") as f:
+        input_file = Path(tmpdir) / "test.md"
+        with Path(input_file).open("w", encoding="utf-8") as f:
             f.write("""---
 dpi: 300
 ---
@@ -332,7 +332,7 @@ dpi: 300
 """)
 
         # Generate PDF
-        outputs = parse_markdown(input_file, pathlib.Path(tmpdir))
+        outputs = parse_markdown(input_file, Path(tmpdir))
         assert len(outputs) == 1
 
         # Should have warned about low DPI
@@ -344,12 +344,12 @@ def test_dpi_validation_multilingual_base_only(caplog):
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create a small low-resolution image
         img = Image.new("RGB", (100, 100), color="green")
-        img_path = str(pathlib.Path(tmpdir) / "lowres.png")
+        img_path = str(Path(tmpdir) / "lowres.png")
         img.save(img_path)
 
         # Create markdown with multilingual and DPI
-        input_file = pathlib.Path(tmpdir) / "test.md"
-        with pathlib.Path(input_file).open("w", encoding="utf-8") as f:
+        input_file = Path(tmpdir) / "test.md"
+        with Path(input_file).open("w", encoding="utf-8") as f:
             f.write("""---
 multilingual: true
 base_language: en
@@ -362,11 +362,11 @@ dpi: 300
 """)
 
         # Create translations directory with a DE translation
-        translations_dir = str(pathlib.Path(tmpdir) / "test")
-        pathlib.Path(translations_dir).mkdir(exist_ok=True, parents=True)
+        translations_dir = str(Path(tmpdir) / "test")
+        Path(translations_dir).mkdir(exist_ok=True, parents=True)
 
-        de_po = str(pathlib.Path(translations_dir) / "de.po")
-        with pathlib.Path(de_po).open("w", encoding="utf-8") as f:
+        de_po = str(Path(translations_dir) / "de.po")
+        with Path(de_po).open("w", encoding="utf-8") as f:
             f.write("""# German translations
 msgid ""
 msgstr ""
@@ -374,7 +374,7 @@ msgstr ""
 """)
 
         # Generate PDFs (EN and DE)
-        outputs = parse_markdown(input_file, pathlib.Path(tmpdir))
+        outputs = parse_markdown(input_file, Path(tmpdir))
         assert len(outputs) == 2  # EN and DE
 
         # Should only warn once (for base language EN)

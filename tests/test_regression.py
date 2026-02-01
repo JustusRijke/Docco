@@ -1,10 +1,10 @@
 """Regression tests comparing generated PDFs against baseline PDFs."""
 
 import logging
-import pathlib
 import platform
 import shutil
 import tempfile
+from pathlib import Path
 
 import pytest
 from diffpdf import diffpdf
@@ -23,9 +23,9 @@ def test_regression_example_pdfs():
 
     Outputs all files (PDF + HTML) to tests/output for inspection.
     """
-    examples_dir = pathlib.Path(__file__).parent / ".." / "examples"
-    baselines_dir = pathlib.Path(__file__).parent / "baselines"
-    output_dir = pathlib.Path(__file__).parent / "output"
+    examples_dir = Path(__file__).parent / ".." / "examples"
+    baselines_dir = Path(__file__).parent / "baselines"
+    output_dir = Path(__file__).parent / "output"
 
     # Ensure output and baselines directories exist
     output_dir.mkdir(exist_ok=True, parents=True)
@@ -62,7 +62,7 @@ def test_regression_example_pdfs():
                 # PDF comparison failed - copy diff files for debugging
                 diff_output_dir = output_dir / f"{filename}_diff"
                 diff_output_dir.mkdir(exist_ok=True, parents=True)
-                for item in pathlib.Path(diff_dir).iterdir():
+                for item in Path(diff_dir).iterdir():
                     if item.is_file():
                         shutil.copy2(str(item), str(diff_output_dir / item.name))
                     elif item.is_dir():
@@ -73,6 +73,6 @@ def test_regression_example_pdfs():
                         )
 
                 pytest.fail(
-                    f"PDF mismatch for {filename} (from {pathlib.Path(md_file).name}). "
+                    f"PDF mismatch for {filename} (from {Path(md_file).name}). "
                     f"Diff files saved to {diff_output_dir}"
                 )
