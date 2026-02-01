@@ -247,7 +247,9 @@ def html_to_pdf(
         page.goto(f"file://{abs_html_path}", wait_until="networkidle")
 
         # Wait for paged.js rendering to complete
-        page.wait_for_function("window.pagedJsRenderingComplete === true")
+        page.wait_for_function(
+            "window.pagedJsRenderingComplete === true", timeout=5 * 60 * 1000
+        )  # Long timeout (5 minutes) due to slow github runner
 
         page.pdf(
             path=str(output_path),
