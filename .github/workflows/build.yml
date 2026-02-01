@@ -53,16 +53,8 @@ jobs:
         if: matrix.dependencies == 'oldest'
         run: uv sync --resolution lowest --python ${{ steps.python-version.outputs.min }}
 
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        with:
-          path: ${{ runner.temp }}/pw-browsers
-          key: playwright-${{ runner.os }}-${{ matrix.dependencies }}-${{ hashFiles('uv.lock') }}
-
       - name: Install Playwright browsers
         run: uv run playwright install chromium --only-shell --with-deps
-        env:
-          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/pw-browsers
 
       - name: Run ruff (check)
         if: matrix.dependencies == 'locked'
@@ -78,8 +70,6 @@ jobs:
 
       - name: Run pytest
         run: uv run pytest
-        env:
-          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/pw-browsers
 
       - name: Upload test output on failure
         if: failure()
@@ -176,7 +166,6 @@ jobs:
           key: ghostscript-windows-${{ matrix.dependencies }}-${{ env.GHOSTSCRIPT_VERSION }}
 
       - name: Download and extract Ghostscript
-        if: steps.cache-ghostscript.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
           $tag = "${{ env.GHOSTSCRIPT_TAG }}"
@@ -226,16 +215,8 @@ jobs:
         if: matrix.dependencies == 'oldest'
         run: uv sync --resolution lowest --python ${{ steps.python-version.outputs.min }}
 
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        with:
-          path: ${{ runner.temp }}/pw-browsers
-          key: playwright-${{ runner.os }}-${{ matrix.dependencies }}-${{ hashFiles('uv.lock') }}
-
       - name: Install Playwright browsers
-        run: uv run playwright install chromium --only-shell --with-deps
-        env:
-          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/pw-browsers
+        run: uv run playwright install chromium --with-deps
 
       - name: Run ruff (check)
         if: matrix.dependencies == 'locked'
@@ -251,8 +232,6 @@ jobs:
 
       - name: Run pytest
         run: uv run pytest
-        env:
-          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/pw-browsers
 
       - name: Upload test output on failure
         if: failure()
