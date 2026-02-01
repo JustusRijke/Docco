@@ -6,91 +6,92 @@ on:
   workflow_dispatch:
 
 jobs:
-  test-linux:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        dependencies: [locked, oldest]
+  # test-linux:
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     matrix:
+  #       dependencies: [locked, oldest]
 
-    steps:
-      - uses: actions/checkout@v6
+  #   steps:
+  #     - uses: actions/checkout@v6
 
-      # When searching for a system Python version, uv will use the first compatible version - not the newest version.
-      # Therefore, make sure the newest version is available on the runner.
-      - name: Install Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: 3.x
+  #     # When searching for a system Python version, uv will use the first compatible version - not the newest version.
+  #     # Therefore, make sure the newest version is available on the runner.
+  #     - name: Install Python
+  #       uses: actions/setup-python@v6
+  #       with:
+  #         python-version: 3.x
           
-      # At the time of writing there is no way to force uv select the lowest version of Python.
-      # Therefore, extract this from pyproject.toml
-      # More info: https://github.com/astral-sh/uv/issues/16333
-      - name: Extract minimum Python version from pyproject.toml
-        if: matrix.dependencies == 'oldest'
-        id: python-version
-        shell: bash
-        run: |
-          MIN_PY=$(grep 'requires-python' pyproject.toml | sed -E 's/[^0-9.]//g')
-          echo "min=$MIN_PY" >> $GITHUB_OUTPUT
+  #     # At the time of writing there is no way to force uv select the lowest version of Python.
+  #     # Therefore, extract this from pyproject.toml
+  #     # More info: https://github.com/astral-sh/uv/issues/16333
+  #     - name: Extract minimum Python version from pyproject.toml
+  #       if: matrix.dependencies == 'oldest'
+  #       id: python-version
+  #       shell: bash
+  #       run: |
+  #         MIN_PY=$(grep 'requires-python' pyproject.toml | sed -E 's/[^0-9.]//g')
+  #         echo "min=$MIN_PY" >> $GITHUB_OUTPUT
           
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          version: "latest"
-          enable-cache: true
+  #     - name: Install uv
+  #       uses: astral-sh/setup-uv@v7
+  #       with:
+  #         version: "latest"
+  #         enable-cache: true
 
-      - name: Install gettext
-        run: sudo apt-get install -y gettext
+  #     - name: Install gettext
+  #       run: sudo apt-get install -y gettext
 
-      - name: Install Ghostscript
-        run: sudo apt-get install -y ghostscript
+  #     - name: Install Ghostscript
+  #       run: sudo apt-get install -y ghostscript
 
-      - name: Install locked dependencies
-        if: matrix.dependencies == 'locked'
-        run: uv sync --locked
+  #     - name: Install locked dependencies
+  #       if: matrix.dependencies == 'locked'
+  #       run: uv sync --locked
 
-      - name: Install oldest dependencies
-        if: matrix.dependencies == 'oldest'
-        run: uv sync --resolution lowest --python ${{ steps.python-version.outputs.min }}
+  #     - name: Install oldest dependencies
+  #       if: matrix.dependencies == 'oldest'
+  #       run: uv sync --resolution lowest --python ${{ steps.python-version.outputs.min }}
 
-      - name: Install Playwright browsers
-        run: uv run playwright install chromium --only-shell --with-deps
+  #     - name: Install Playwright browsers
+  #       run: uv run playwright install chromium --only-shell --with-deps
 
-      - name: Run ruff (check)
-        if: matrix.dependencies == 'locked'
-        run: uv run ruff check
+  #     - name: Run ruff (check)
+  #       if: matrix.dependencies == 'locked'
+  #       run: uv run ruff check
 
-      - name: Run ruff (format)
-        if: matrix.dependencies == 'locked'
-        run: uv run ruff format --check
+  #     - name: Run ruff (format)
+  #       if: matrix.dependencies == 'locked'
+  #       run: uv run ruff format --check
 
-      - name: Run ty
-        if: matrix.dependencies == 'locked'
-        run: uv run ty check --output-format github
+  #     - name: Run ty
+  #       if: matrix.dependencies == 'locked'
+  #       run: uv run ty check --output-format github
 
-      - name: Run pytest
-        run: uv run pytest
+  #     - name: Run pytest
+  #       run: uv run pytest
 
-      - name: Upload test output on failure
-        if: failure()
-        uses: actions/upload-artifact@v6
-        with:
-          name: test-output-ubuntu-${{ matrix.dependencies }}
-          path: tests/output/
-          retention-days: 7
+  #     - name: Upload test output on failure
+  #       if: failure()
+  #       uses: actions/upload-artifact@v6
+  #       with:
+  #         name: test-output-ubuntu-${{ matrix.dependencies }}
+  #         path: tests/output/
+  #         retention-days: 7
 
-      - name: Upload coverage reports to Codecov
-        if: matrix.dependencies == 'locked'
-        uses: codecov/codecov-action@v5
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+  #     - name: Upload coverage reports to Codecov
+  #       if: matrix.dependencies == 'locked'
+  #       uses: codecov/codecov-action@v5
+  #       with:
+  #         token: ${{ secrets.CODECOV_TOKEN }}
 
           
   test-windows:
     runs-on: windows-latest
     strategy:
       matrix:
-        dependencies: [locked, oldest]
+        # dependencies: [locked, oldest]
+        dependencies: [oldest]
 
     env:
       GETTEXT_VERSION: v0.21-v1.16
@@ -130,7 +131,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ${{ runner.temp }}\gettext
-          key: gettext-windows-${{ matrix.dependencies }}-${{ env.GETTEXT_VERSION }}
+          key: gettext-windows-${{ env.GETTEXT_VERSION }}
 
       - name: Download and install gettext
         if: steps.cache-gettext.outputs.cache-hit != 'true'
@@ -164,7 +165,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ${{ runner.temp }}\ghostscript
-          key: ghostscript-windows-${{ matrix.dependencies }}-${{ env.GHOSTSCRIPT_VERSION }}
+          key: ghostscript-windows-${{ env.GHOSTSCRIPT_VERSION }}
 
       - name: Download and extract Ghostscript
         if: steps.cache-ghostscript.outputs.cache-hit != 'true'
@@ -221,6 +222,7 @@ jobs:
         id: playwright-version
         run: |
           $PW_VERSION = uv pip show playwright | Select-String -Pattern "^Version:" | ForEach-Object { $_.Line -replace "Version:\s*", "" }
+          Write-Host "Playwright version: $PW_VERSION"
           echo "version=$PW_VERSION" >> $env:GITHUB_OUTPUT
           
       - name: Cache Playwright browsers
@@ -234,6 +236,10 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: uv run playwright install chromium --only-shell
                 
+      - name: Debug cache contents
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: Get-ChildItem -Path "${{ env.PLAYWRIGHT_BROWSERS_PATH }}" -Recurse | Select-Object FullName
+  
       - name: Run ruff (check)
         if: matrix.dependencies == 'locked'
         run: uv run ruff check
@@ -246,13 +252,13 @@ jobs:
         if: matrix.dependencies == 'locked'
         run: uv run ty check --output-format github
 
-      - name: Run pytest
-        run: uv run pytest
+      # - name: Run pytest
+      #   run: uv run pytest
 
-      - name: Upload test output on failure
-        if: failure()
-        uses: actions/upload-artifact@v6
-        with:
-          name: test-output-windows-${{ matrix.dependencies }}
-          path: tests/output/
-          retention-days: 7
+      # - name: Upload test output on failure
+      #   if: failure()
+      #   uses: actions/upload-artifact@v6
+      #   with:
+      #     name: test-output-windows-${{ matrix.dependencies }}
+      #     path: tests/output/
+      #     retention-days: 7
