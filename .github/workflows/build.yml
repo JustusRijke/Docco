@@ -96,6 +96,7 @@ jobs:
       GETTEXT_VERSION: v0.21-v1.16
       GHOSTSCRIPT_VERSION: 10.06.0
       GHOSTSCRIPT_TAG: gs10060
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}\pw-browsers
 
     steps:
       - uses: actions/checkout@v6
@@ -126,7 +127,7 @@ jobs:
 
       - name: Cache gettext
         id: cache-gettext
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ runner.temp }}\gettext
           key: gettext-windows-${{ matrix.dependencies }}-${{ env.GETTEXT_VERSION }}
@@ -160,12 +161,13 @@ jobs:
 
       - name: Cache Ghostscript
         id: cache-ghostscript
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ runner.temp }}\ghostscript
           key: ghostscript-windows-${{ matrix.dependencies }}-${{ env.GHOSTSCRIPT_VERSION }}
 
       - name: Download and extract Ghostscript
+        if: steps.cache-ghostscript.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
           $tag = "${{ env.GHOSTSCRIPT_TAG }}"
@@ -215,9 +217,26 @@ jobs:
         if: matrix.dependencies == 'oldest'
         run: uv sync --resolution lowest --python ${{ steps.python-version.outputs.min }}
 
+      - name: Get Playwright version
+        id: playwright-version
+        run: |
+          $PW_VERSION = uv pip show playwright | Select-String -Pattern "^Version:" | ForEach-Object { $_.Line -replace "Version:\s*", "" }
+          echo "version=$PW_VERSION" >> $env:GITHUB_OUTPUT
+          
       - name: Install Playwright browsers
-        run: uv run playwright install chromium --with-deps
+        run: uv run playwright install chromium --only-shell
 
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v5
+        with:
+          path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: uv run playwright install chromium --with-deps
+        
       - name: Run ruff (check)
         if: matrix.dependencies == 'locked'
         run: uv run ruff check
