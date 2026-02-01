@@ -37,6 +37,7 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           version: "latest"
+          enable-cache: true
 
       - name: Install gettext
         run: sudo apt-get install -y gettext
@@ -52,8 +53,14 @@ jobs:
         if: matrix.dependencies == 'oldest'
         run: uv sync --resolution lowest --python ${{ steps.python-version.outputs.min }}
 
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+
       - name: Install Playwright browsers
-        run: uv run playwright install chromium --with-deps
+        run: uv run playwright install chromium --only-shell --with-deps
 
       - name: Run ruff (check)
         if: matrix.dependencies == 'locked'
@@ -91,6 +98,11 @@ jobs:
       matrix:
         dependencies: [locked, oldest]
 
+    env:
+      GETTEXT_VERSION: v0.21-v1.16
+      GHOSTSCRIPT_VERSION: 10.06.0
+      GHOSTSCRIPT_TAG: gs10060
+
     steps:
       - uses: actions/checkout@v6
 
@@ -116,14 +128,28 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           version: "latest"
+          enable-cache: true
+
+      - name: Cache gettext
+        id: cache-gettext
+        uses: actions/cache@v4
+        with:
+          path: gettext
+          key: gettext-windows-${{ env.GETTEXT_VERSION }}
 
       - name: Download and install gettext
+        if: steps.cache-gettext.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
-          $url = "https://github.com/mlocati/gettext-iconv-windows/releases/download/v0.21-v1.16/gettext0.21-iconv1.16-static-64.zip"
+          $version = "${{ env.GETTEXT_VERSION }}"
+          $url = "https://github.com/mlocati/gettext-iconv-windows/releases/download/$version/gettext0.21-iconv1.16-static-64.zip"
           $outfile = "gettext.zip"
           Invoke-WebRequest -Uri $url -OutFile $outfile
           Expand-Archive -Path $outfile -DestinationPath "gettext"
+
+      - name: Add gettext to PATH
+        shell: pwsh
+        run: |
           $binpath = "$PWD\gettext\bin"
           echo "$binpath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           Write-Host "Added gettext to PATH: $binpath"
@@ -136,22 +162,30 @@ jobs:
           }
           Write-Host "Verified: msginit found at $($cmd.Source)"
 
-      - name: Setup Ghostscript (portable)
+      - name: Cache Ghostscript
+        id: cache-ghostscript
+        uses: actions/cache@v4
+        with:
+          path: ghostscript
+          key: ghostscript-windows-${{ env.GHOSTSCRIPT_VERSION }}
+
+      - name: Download and extract Ghostscript
+        if: steps.cache-ghostscript.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
-          # Download installer (self-extracting archive)
-          $url = "https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10060/gs10060w64.exe"
+          $tag = "${{ env.GHOSTSCRIPT_TAG }}"
+          $url = "https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/$tag/${tag}w64.exe"
           $installer = "$env:TEMP\gs_installer.exe"
           Write-Host "Downloading Ghostscript..."
           Invoke-WebRequest -Uri $url -OutFile $installer
 
-          # Extract with 7-zip (pre-installed on GitHub Actions runners)
-          $extractDir = "$env:RUNNER_TEMP\ghostscript"
-          Write-Host "Extracting to $extractDir..."
-          & 7z x $installer -o"$extractDir" -y | Out-Null
+          Write-Host "Extracting Ghostscript..."
+          & 7z x $installer -o"ghostscript" -y | Out-Null
 
-          # Find bin directory and add to PATH
-          $binPath = Get-ChildItem -Path $extractDir -Filter "bin" -Recurse -Directory | Select-Object -First 1
+      - name: Add Ghostscript to PATH
+        shell: pwsh
+        run: |
+          $binPath = Get-ChildItem -Path "ghostscript" -Filter "bin" -Recurse -Directory | Select-Object -First 1
           if ($binPath) {
             $gsPath = $binPath.FullName
             Write-Host "Adding to PATH: $gsPath"
@@ -170,10 +204,10 @@ jobs:
               Write-Host "Verified: gswin64c found at $($gsExe.Source)"
               & gswin64c --version
             } else {
-              throw "gswin64c command not found after extraction"
+              throw "gswin64c command not found"
             }
           } else {
-            throw "Could not find bin directory in $extractDir"
+            throw "Could not find bin directory in ghostscript"
           }
 
       - name: Install locked dependencies
@@ -183,6 +217,12 @@ jobs:
       - name: Install oldest dependencies
         if: matrix.dependencies == 'oldest'
         run: uv sync --resolution lowest --python ${{ steps.python-version.outputs.min }}
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~\AppData\Local\ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('uv.lock') }}
 
       - name: Install Playwright browsers
         run: uv run playwright install chromium --with-deps
