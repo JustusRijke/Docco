@@ -84,7 +84,7 @@ def markdown_to_html(markdown_content: str) -> str:
     return html
 
 
-def _absolutize_html_urls(html_content: str, base_dir: str) -> str:
+def _absolutize_html_urls(html_content: str, base_dir: Path) -> str:
     """
     Convert relative URLs in HTML to absolute file:// URLs.
 
@@ -103,9 +103,7 @@ def _absolutize_html_urls(html_content: str, base_dir: str) -> str:
     import re
     from urllib.parse import urljoin
 
-    # Ensure absolute path for cross-platform compatibility
-    abs_base_dir = Path(base_dir).resolve()
-    base_url = Path(abs_base_dir).as_uri()
+    base_url = base_dir.resolve().as_uri()
 
     def replace_url(match: re.Match) -> str:
         attr = match.group(1)
@@ -135,7 +133,7 @@ def wrap_html(
     html_content: str,
     css_content: str = "",
     external_css: list[str] | None = None,
-    base_url: str | None = None,
+    base_dir: Path | None = None,
 ) -> str:
     """
     Wrap HTML content in a complete HTML document.
@@ -144,14 +142,14 @@ def wrap_html(
         html_content: Raw HTML body content
         css_content: CSS content to embed in <style> tag (optional)
         external_css: List of external CSS URLs (optional)
-        base_url: Base directory for resolving relative paths (optional)
+        base_dir: Base directory for resolving relative paths (optional)
 
     Returns:
         str: Complete HTML document
     """
-    # Convert relative URLs to absolute if base_url provided
-    if base_url:
-        html_content = _absolutize_html_urls(html_content, base_url)
+    # Convert relative URLs to absolute if base_dir provided
+    if base_dir:
+        html_content = _absolutize_html_urls(html_content, base_dir)
 
     style_tag = f"<style>\n{css_content}\n</style>\n" if css_content.strip() else ""
 

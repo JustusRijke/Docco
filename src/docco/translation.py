@@ -20,7 +20,7 @@ def clean_po_file(po_path: Path) -> None:
     Args:
         po_path: Path to PO or POT file to clean
     """
-    po_file = polib.pofile(str(po_path))
+    po_file = polib.pofile(po_path)
 
     # Clear all metadata and keep only essential
     po_file.metadata = {}
@@ -31,7 +31,7 @@ def clean_po_file(po_path: Path) -> None:
         entry.occurrences = []
 
     po_file.sort()
-    po_file.save(str(po_path))
+    po_file.save(po_path)
 
 
 def extract_html_to_pot(html_path: Path, output_path: Path) -> Path:
@@ -172,7 +172,7 @@ def update_po_files(pot_path: Path, translations_dir: Path) -> None:
         try:
             # Use pot2po to merge POT into PO file
             result = subprocess.run(
-                ["pot2po", "-t", str(po_file), "-i", str(pot_path), "-o", temp_po],
+                ["pot2po", "-t", po_file, "-i", pot_path, "-o", temp_po],
                 capture_output=True,
                 text=True,
                 timeout=30,

@@ -143,7 +143,7 @@ def _generate_single_pdf(
 
         # Wrap body HTML temporarily for translation
         temp_wrapped = wrap_html(
-            body_html, css_content="", external_css=[], base_url=str(base_dir)
+            body_html, css_content="", external_css=[], base_dir=base_dir
         )
         with temp_body_path.open("w", encoding="utf-8") as f:
             f.write(temp_wrapped)
@@ -174,7 +174,7 @@ def _generate_single_pdf(
         body_html,
         css_content=css_result["inline"],
         external_css=css_result["external"],
-        base_url=str(base_dir),
+        base_dir=base_dir,
     )
 
     # Write final HTML to file
@@ -252,7 +252,7 @@ def _generate_multilingual_pdfs(
         body_html,
         css_content=css_result["inline"],
         external_css=css_result["external"],
-        base_url=str(base_dir),
+        base_dir=base_dir,
     )
 
     # Write HTML for POT extraction (without layout)

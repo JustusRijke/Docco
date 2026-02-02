@@ -60,8 +60,8 @@ def _absolutize_css_urls(css_content: str, css_file_path: str) -> str:
 
     # Ensure absolute path for cross-platform compatibility
     abs_css_path = Path(css_file_path).resolve()
-    css_dir = Path(abs_css_path).parent
-    base_url = Path(css_dir).as_uri()
+    css_dir = abs_css_path.parent
+    base_url = css_dir.as_uri()
 
     def replace_url(match: re.Match) -> str:
         url = match.group(1).strip("'\" ")
@@ -104,7 +104,7 @@ def collect_css_content(markdown_file: Path, metadata: dict[str, object]) -> CSS
     """
     css_content = []
     external_urls = []
-    md_dir = Path(Path(markdown_file).resolve()).parent
+    md_dir = Path(markdown_file).resolve().parent
 
     # Extract CSS from frontmatter
     frontmatter_css_raw = metadata.get("css", [])
@@ -125,7 +125,7 @@ def collect_css_content(markdown_file: Path, metadata: dict[str, object]) -> CSS
             external_urls.append(css_path)
             logger.debug(f"Using external CSS: {css_path}")
         else:
-            abs_path = Path(md_dir) / css_path
+            abs_path = md_dir / css_path
             if abs_path.exists():
                 with abs_path.open("r", encoding="utf-8") as f:
                     raw_css = f.read()
@@ -183,8 +183,8 @@ def _downscale_pdf_images(pdf_path: Path, target_dpi: int) -> None:
                 "-dNOPAUSE",
                 "-dQUIET",
                 "-dBATCH",
-                f"-sOutputFile={str(tmp_path)}",
-                str(pdf_path),
+                f"-sOutputFile={tmp_path}",
+                pdf_path,
             ],
             check=True,
             capture_output=True,
@@ -193,8 +193,8 @@ def _downscale_pdf_images(pdf_path: Path, target_dpi: int) -> None:
         logger.info(f"Downscaled images in PDF to {target_dpi} DPI")
     except subprocess.CalledProcessError as e:  # pragma: no cover
         logger.error(f"Ghostscript failed: {e.stderr.decode()}")
-        if Path(tmp_path).exists():
-            Path(tmp_path).unlink()
+        if tmp_path.exists():
+            tmp_path.unlink()
         raise
     except Exception:  # pragma: no cover
         if tmp_path.exists():
@@ -262,7 +262,7 @@ def html_to_pdf(
             )  # Long timeout (5 minutes) due to slow github runner
 
         page.pdf(
-            path=str(output_path),
+            path=output_path,
             print_background=True,
             prefer_css_page_size=True,
             display_header_footer=False,
