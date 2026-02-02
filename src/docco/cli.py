@@ -68,9 +68,6 @@ def main() -> None:
             po_file=po_file,
         )
 
-        for output_file in output_files:
-            print(output_file)
-
         # Print summary
         if counter.error_count > 0 or counter.warning_count > 0:
             parts = []
