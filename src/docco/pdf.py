@@ -189,7 +189,7 @@ def _downscale_pdf_images(pdf_path: Path, target_dpi: int) -> None:
             check=True,
             capture_output=True,
         )
-        tmp_path.replace(pdf_path)
+        shutil.move(tmp_path, pdf_path)
         logger.info(f"Downscaled images in PDF to {target_dpi} DPI")
     except subprocess.CalledProcessError as e:  # pragma: no cover
         logger.error(f"Ghostscript failed: {e.stderr.decode()}")

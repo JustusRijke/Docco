@@ -1,6 +1,7 @@
 """POT/PO translation support for Docco using translate-toolkit."""
 
 import logging
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -167,7 +168,7 @@ def update_po_files(pot_path: Path, translations_dir: Path) -> None:
         logger.debug(f"Updating {lang} with new POT...")
 
         # Create temporary file for merged PO
-        temp_po = f"{str(po_file)}.new"
+        temp_po = po_file.with_suffix(po_file.suffix + ".new")
 
         try:
             # Use pot2po to merge POT into PO file
@@ -181,12 +182,12 @@ def update_po_files(pot_path: Path, translations_dir: Path) -> None:
             if result.returncode != 0:  # pragma: no cover
                 logger.error(f"Failed to update {lang}: {result.stderr}")
                 # Clean up temp file
-                if Path(temp_po).exists():
-                    Path(temp_po).unlink()
+                if temp_po.exists():
+                    temp_po.unlink()
                 continue
 
             # Replace old PO with merged version
-            Path(temp_po).replace(po_file)
+            shutil.move(temp_po, po_file)
 
             # Clean bloat from PO file for VCS
             clean_po_file(po_file)
