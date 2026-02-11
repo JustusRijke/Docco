@@ -109,6 +109,14 @@
             }
         }
         Paged.registerHandlers(TocHandler);
+
+        // Log page overflow (should never happen!)
+        class DebugHandler extends Paged.Handler {
+            afterPageLayout(pageElement, page) {
+                console.log('Page', page.id, 'overflow:', pageElement.querySelector('.pagedjs_page_content')?.scrollHeight);
+            }
+        }
+        Paged.registerHandlers(DebugHandler);
     </script>
 
     <script>
