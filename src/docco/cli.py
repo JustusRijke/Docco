@@ -7,6 +7,7 @@ from pathlib import Path
 
 from docco.logging_config import setup_logging
 from docco.parser import parse_markdown
+from docco.pdf import html_to_pdf
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +18,11 @@ def main() -> None:
         description="Convert Markdown to PDF with POT/PO translation support"
     )
 
-    parser.add_argument("input_file", help="Input markdown file")
+    parser.add_argument(
+        "input_file",
+        type=str,
+        help="Input markdown (.md) or HTML (.html, .htm) file",
+    )
     parser.add_argument(
         "-o",
         "--output",
@@ -56,17 +61,33 @@ def main() -> None:
             logger.error(f"Input file not found: {input_file}")
             sys.exit(1)
 
+        # Validate file extension
+        valid_extensions = {".md", ".html", ".htm"}
+        if input_file.suffix.lower() not in valid_extensions:
+            logger.error(
+                f"Invalid file type: {input_file.suffix}\n"
+                f"Supported formats: {', '.join(sorted(valid_extensions))}"
+            )
+            sys.exit(1)
+
         if not output_dir.exists():
             output_dir.mkdir(parents=True)
 
-        # Convert markdown to PDF
-        output_files = parse_markdown(
-            input_file,
-            output_dir,
-            keep_intermediate=args.keep_intermediate,
-            allow_python=args.allow_python,
-            po_file=po_file,
-        )
+        # Direct HTML to PDF conversion (bypass all processing)
+        if input_file.suffix.lower() in [".html", ".htm"]:
+            logger.info(f"Processing HTML: {input_file}")
+            output_pdf = output_dir / f"{input_file.stem}.pdf"
+            html_to_pdf(input_file, output_pdf)
+            output_files = [output_pdf]
+        else:
+            # Convert markdown to PDF
+            output_files = parse_markdown(
+                input_file,
+                output_dir,
+                keep_intermediate=args.keep_intermediate,
+                allow_python=args.allow_python,
+                po_file=po_file,
+            )
 
         # Print summary
         if counter.error_count > 0 or counter.warning_count > 0:
