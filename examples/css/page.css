@@ -29,13 +29,6 @@ Additional script in ./templates/base.html
     contain: size layout;
 }
 
-/* Fix empty pages after switchting from landscape to portrait */
-@media print {
-    .pagedjs_page_content {
-        column-width: auto !important;
-    }
-}
-
 /* Section orientation */
 .section-wrapper.landscape {
     page: landscape;
