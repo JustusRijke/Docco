@@ -7,7 +7,7 @@ from pathlib import Path
 from docco.core import markdown_to_html, parse_frontmatter, wrap_html
 from docco.inline import extract_code_blocks, process_inlines
 from docco.page_layout import process_page_layout
-from docco.pdf import collect_css_content, html_to_pdf
+from docco.pdf import collect_css_content, collect_js_content, html_to_pdf
 from docco.pdf_validation import validate_and_warn_pdf_images
 from docco.translation import (
     apply_po_to_html,
@@ -143,8 +143,9 @@ def _generate_single_pdf(
     html_filename = f"{input_basename}{suffix}.html"
     pdf_filename = f"{input_basename}{suffix}.pdf"
 
-    # Collect CSS content from frontmatter
+    # Collect CSS and JS content from frontmatter
     css_result = collect_css_content(input_file, metadata)
+    js_result = collect_js_content(input_file, metadata)
 
     # Write intermediate MD
     md_path = output_dir / md_filename
@@ -193,11 +194,13 @@ def _generate_single_pdf(
     # Process layout (on potentially translated body HTML)
     body_html = process_page_layout(body_html)
 
-    # Wrap in complete HTML document with CSS
+    # Wrap in complete HTML document with CSS and JS
     html_wrapped = wrap_html(
         body_html,
         css_content=css_result["inline"],
         external_css=css_result["external"],
+        js_content=js_result["inline"],
+        external_js=js_result["external"],
         base_dir=base_dir,
     )
 

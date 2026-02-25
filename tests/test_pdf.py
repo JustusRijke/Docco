@@ -6,7 +6,12 @@ import fitz  # PyMuPDF
 import pytest
 from PIL import Image
 
-from docco.pdf import _absolutize_css_urls, collect_css_content, html_to_pdf
+from docco.pdf import (
+    _absolutize_css_urls,
+    collect_css_content,
+    collect_js_content,
+    html_to_pdf,
+)
 
 
 def path_to_file_url(file_path):
@@ -181,6 +186,60 @@ def test_collect_css_absolutizes_font_urls(tmp_path):
     assert "url(" in result["inline"]
     assert "file://" in result["inline"]
     assert "fonts/test.ttf" in result["inline"]
+
+
+def test_collect_js_single_file(tmp_path):
+    """Test single JS file from frontmatter."""
+    md_file = tmp_path / "document.md"
+    md_file.write_text("# Test")
+    js_file = tmp_path / "script.js"
+    js_file.write_text("console.log('hi');")
+
+    result = collect_js_content(md_file, {"js": "script.js"})
+    assert result["inline"] == "console.log('hi');"
+    assert result["external"] == []
+
+
+def test_collect_js_multiple_files(tmp_path):
+    """Test multiple JS files are concatenated."""
+    md_file = tmp_path / "document.md"
+    md_file.write_text("# Test")
+    (tmp_path / "a.js").write_text("var a = 1;")
+    (tmp_path / "b.js").write_text("var b = 2;")
+
+    result = collect_js_content(md_file, {"js": ["a.js", "b.js"]})
+    assert result["inline"] == "var a = 1;\nvar b = 2;"
+    assert result["external"] == []
+
+
+def test_collect_js_external_url(tmp_path):
+    """Test external JS URLs are collected separately."""
+    md_file = tmp_path / "document.md"
+    md_file.write_text("# Test")
+
+    result = collect_js_content(md_file, {"js": "https://example.com/lib.js"})
+    assert result["inline"] == ""
+    assert result["external"] == ["https://example.com/lib.js"]
+
+
+def test_collect_js_missing_file_warns(tmp_path, caplog):
+    """Test missing JS file logs warning."""
+    md_file = tmp_path / "document.md"
+    md_file.write_text("# Test")
+
+    result = collect_js_content(md_file, {"js": "missing.js"})
+    assert result["inline"] == ""
+    assert "JS file not found" in caplog.text
+
+
+def test_collect_js_empty_metadata(tmp_path):
+    """Test with no js key in metadata."""
+    md_file = tmp_path / "document.md"
+    md_file.write_text("# Test")
+
+    result = collect_js_content(md_file, {})
+    assert result["inline"] == ""
+    assert result["external"] == []
 
 
 def test_html_to_pdf_creates_file(tmp_path):

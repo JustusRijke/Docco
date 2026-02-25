@@ -59,6 +59,15 @@ File paths are relative to the markdown file and are embedded in the generated H
 External CSS URLs (starting with `http://` or `https://`) are included as `<link>` tags in the HTML, allowing WeasyPrint to fetch them during PDF generation.
 This enables use of web fonts like Google Fonts directly in your PDF documents.
 
+**`js`** - JavaScript file(s) or URLs to inject into the HTML `<head>` as `<script>` tags. Same format as `css`:
+
+- Single file: `js: "scripts/custom.js"`
+- Multiple files: `js: ["scripts/a.js", "scripts/b.js"]`
+- External URL: `js: "https://example.com/lib.js"`
+
+Local files are embedded as inline `<script>` tags; external URLs become `<script src="...">` tags.
+This is useful for custom paged.js handlers or other browser-based rendering logic.
+
 **`multilingual`** - Enable multilingual mode (boolean, default: `false`). When set to `true`, Docco automatically extracts translatable strings to a POT file and generates PDFs for the base language plus all discovered translations.
 
 **`base_language`** - The language code of the source document (required when `multilingual: true`). Example: `base_language: en`. This will be used as the suffix for the base language PDF (e.g., `Document_EN.pdf`).
@@ -432,6 +441,30 @@ When enabled, Docco will:
 - `Multilingual_Document_Example_EN.pdf`
 - `Multilingual_Document_Example_DE.pdf`
 - `Multilingual_Document_Example_NL.pdf`
+
+### Language Filter Directive
+
+Use `<!-- filter: <lang> -->` blocks to include content only in a specific language version. This works in both markdown and inlined HTML files.
+
+**Syntax:**
+
+```markdown
+<!-- filter: en -->
+## English Only Section
+
+This content only appears in the English PDF.
+<!-- /filter -->
+
+<!-- filter: de -->
+## Nur auf Deutsch
+
+Dieser Abschnitt erscheint nur in der deutschen Version.
+<!-- /filter -->
+```
+
+The language code is matched case-insensitively against the output language (e.g., `<!-- filter: NL -->`, `<!-- filter: nl -->`, and `<!-- filter: Nl -->` all match the NL output).
+
+Content outside filter blocks appears in all language versions.
 
 ### Manual Translation Workflow
 

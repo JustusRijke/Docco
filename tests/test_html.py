@@ -78,3 +78,18 @@ def test_wrap_html_no_base_tag(tmp_path):
     base_dir = tmp_path / "docs"
     wrapped = wrap_html(html_content, base_dir=base_dir)
     assert "<base" not in wrapped
+
+
+def test_wrap_html_inline_js_in_head():
+    """Test inline JS is placed as <script> tag in <head>."""
+    wrapped = wrap_html("<p>Body</p>", js_content="console.log('hi');")
+    head = wrapped[: wrapped.index("<body>")]
+    assert "<script>" in head
+    assert "console.log('hi');" in head
+
+
+def test_wrap_html_external_js_in_head():
+    """Test external JS URLs become <script src> tags in <head>."""
+    wrapped = wrap_html("<p>Body</p>", external_js=["https://example.com/lib.js"])
+    head = wrapped[: wrapped.index("<body>")]
+    assert '<script src="https://example.com/lib.js"></script>' in head

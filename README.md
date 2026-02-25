@@ -104,6 +104,7 @@ The language code is case-insensitive. Filter blocks work in both Markdown and i
 Supported frontmatter keys:
 
 - `css`: CSS stylesheet paths or URLs (string or list)
+- `js`: JavaScript file paths or URLs (string or list) — injected as `<script>` tags in `<head>`
 - `dpi`: Maximum image resolution for PDF output (integer)
 - `multilingual`: Enable multilingual mode (boolean)
 - `base_language`: Base language code for multilingual documents (string)

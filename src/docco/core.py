@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 # Known frontmatter keys that docco understands
 KNOWN_FRONTMATTER_KEYS = {
     "css",
+    "js",
     "dpi",
     "multilingual",
     "base_language",
@@ -133,6 +134,8 @@ def wrap_html(
     html_content: str,
     css_content: str = "",
     external_css: list[str] | None = None,
+    js_content: str = "",
+    external_js: list[str] | None = None,
     base_dir: Path | None = None,
 ) -> str:
     """
@@ -142,6 +145,8 @@ def wrap_html(
         html_content: Raw HTML body content
         css_content: CSS content to embed in <style> tag (optional)
         external_css: List of external CSS URLs (optional)
+        js_content: JS content to embed in <script> tag (optional)
+        external_js: List of external JS URLs (optional)
         base_dir: Base directory for resolving relative paths (optional)
 
     Returns:
@@ -160,7 +165,14 @@ def wrap_html(
     )
     link_tags = f"{link_tags}\n" if link_tags else ""
 
-    head_content = f"{link_tags}{style_tag}"
+    script_tag = f"<script>\n{js_content}\n</script>\n" if js_content.strip() else ""
+
+    # Generate <script src="..."> tags for external JS URLs
+    external_js = external_js or []
+    script_src_tags = "\n".join(f'<script src="{url}"></script>' for url in external_js)
+    script_src_tags = f"{script_src_tags}\n" if script_src_tags else ""
+
+    head_content = f"{link_tags}{style_tag}{script_tag}{script_src_tags}"
 
     # Load template and replace placeholders
     template_path = Path(__file__).parent / "templates" / "base.html"

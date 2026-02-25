@@ -19,6 +19,13 @@ class CSSContent(TypedDict):
     external: list[str]
 
 
+class JSContent(TypedDict):
+    """JS content from frontmatter."""
+
+    inline: str
+    external: list[str]
+
+
 def _check_file_writable(file_path: Path) -> None:  # pragma: no cover
     """
     Check if output file can be written (not open in another process).
@@ -137,6 +144,53 @@ def collect_css_content(markdown_file: Path, metadata: dict[str, object]) -> CSS
                 logger.warning(f"CSS file not found: {abs_path}")
 
     return {"inline": "\n".join(css_content), "external": external_urls}
+
+
+def collect_js_content(markdown_file: Path, metadata: dict[str, object]) -> JSContent:
+    """
+    Collect JS content from frontmatter.
+
+    Separates file-based JS (embedded as inline script) from external JS URLs
+    (added as <script src="..."> tags). File paths are resolved relative to the
+    markdown file directory.
+
+    Args:
+        markdown_file: Path to markdown file
+        metadata: Parsed frontmatter metadata dict
+
+    Returns:
+        dict: {
+            "inline": str (concatenated JS content from files),
+            "external": list (JS URLs)
+        }
+    """
+    js_content = []
+    external_urls = []
+    md_dir = Path(markdown_file).resolve().parent
+
+    frontmatter_js_raw = metadata.get("js", [])
+
+    if isinstance(frontmatter_js_raw, str):
+        frontmatter_js: list[str] = [frontmatter_js_raw]
+    elif isinstance(frontmatter_js_raw, list):
+        frontmatter_js = [str(item) for item in frontmatter_js_raw]
+    else:
+        frontmatter_js = []
+
+    for js_path in frontmatter_js:
+        if js_path.startswith("http://") or js_path.startswith("https://"):
+            external_urls.append(js_path)
+            logger.debug(f"Using external JS: {js_path}")
+        else:
+            abs_path = md_dir / js_path
+            if abs_path.exists():
+                with abs_path.open("r", encoding="utf-8") as f:
+                    js_content.append(f.read())
+                logger.debug(f"Using JS from frontmatter: {js_path}")
+            else:
+                logger.warning(f"JS file not found: {abs_path}")
+
+    return {"inline": "\n".join(js_content), "external": external_urls}
 
 
 def _downscale_pdf_images(pdf_path: Path, target_dpi: int) -> None:
