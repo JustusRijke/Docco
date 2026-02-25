@@ -79,6 +79,26 @@ docco input.md -o output/
 
 Docco will generate `input_EN.pdf`, `input_DE.pdf`, etc., based on available PO files in the `input/` directory.
 
+### Language Filter Directive
+
+Use `<!-- filter: <lang> -->` blocks to include content only in a specific language version:
+
+```markdown
+<!-- filter: en -->
+## English Only Section
+
+This section is only included in the English PDF.
+<!-- /filter -->
+
+<!-- filter: de -->
+## Nur auf Deutsch
+
+Dieser Abschnitt erscheint nur in der deutschen Version.
+<!-- /filter -->
+```
+
+The language code is case-insensitive. Filter blocks work in both Markdown and inlined HTML files.
+
 ## Frontmatter Configuration
 
 Supported frontmatter keys:

@@ -8,7 +8,12 @@ import fitz  # PyMuPDF
 import pytest
 from PIL import Image
 
-from docco.parser import MAX_ITERATIONS, parse_markdown, process_directives_iteratively
+from docco.parser import (
+    MAX_ITERATIONS,
+    parse_markdown,
+    process_directives_iteratively,
+    process_filter_directives,
+)
 
 
 @pytest.fixture
@@ -381,3 +386,84 @@ msgstr ""
         # Count occurrences of the warning
         warning_count = caplog.text.count("below 300 DPI")
         assert warning_count == 1  # Only base language validated
+
+
+def test_filter_directives_keeps_matching_language():
+    """Matching language block is kept with directives stripped."""
+    html = "<p>Shared</p>\n<!-- filter: nl -->\n<p>Dutch</p>\n<!-- /filter -->"
+    result = process_filter_directives(html, "nl")
+    assert "<p>Dutch</p>" in result
+    assert "filter" not in result
+
+
+def test_filter_directives_removes_other_language():
+    """Non-matching language block is removed entirely."""
+    html = "<!-- filter: de --><p>German</p><!-- /filter --><p>Common</p>"
+    result = process_filter_directives(html, "nl")
+    assert "<p>German</p>" not in result
+    assert "<p>Common</p>" in result
+
+
+def test_filter_directives_case_insensitive():
+    """Language matching is case-insensitive."""
+    html = "<!-- filter: NL --><p>Dutch</p><!-- /filter -->"
+    assert "<p>Dutch</p>" in process_filter_directives(html, "nl")
+    assert "<p>Dutch</p>" in process_filter_directives(html, "NL")
+    assert "<p>Dutch</p>" in process_filter_directives(html, "Nl")
+
+
+def test_filter_directives_multiple_blocks():
+    """Multiple filter blocks: only matching language kept."""
+    html = (
+        "<!-- filter: en --><p>English</p><!-- /filter -->"
+        "<!-- filter: de --><p>German</p><!-- /filter -->"
+        "<!-- filter: nl --><p>Dutch</p><!-- /filter -->"
+    )
+    result = process_filter_directives(html, "de")
+    assert "<p>German</p>" in result
+    assert "<p>English</p>" not in result
+    assert "<p>Dutch</p>" not in result
+
+
+def test_filter_applied_in_multilingual_pdf():
+    """Filter directives are applied per language when generating multilingual PDFs."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        input_file = Path(tmpdir) / "test.md"
+        input_file.write_text(
+            """---
+multilingual: true
+base_language: en
+---
+
+<!-- filter: en -->
+English only content.
+<!-- /filter -->
+
+<!-- filter: de -->
+German only content.
+<!-- /filter -->
+
+Shared content.
+""",
+            encoding="utf-8",
+        )
+
+        translations_dir = Path(tmpdir) / "test"
+        translations_dir.mkdir()
+        (translations_dir / "de.po").write_text(
+            'msgid ""\nmsgstr ""\n"Content-Type: text/plain; charset=UTF-8\\n"\n',
+            encoding="utf-8",
+        )
+
+        outputs = parse_markdown(input_file, Path(tmpdir), keep_intermediate=True)
+        assert len(outputs) == 2  # EN and DE
+
+        en_html = (Path(tmpdir) / "test_EN.html").read_text(encoding="utf-8")
+        de_html = (Path(tmpdir) / "test_DE.html").read_text(encoding="utf-8")
+
+        assert "English only content" in en_html
+        assert "German only content" not in en_html
+        assert "German only content" in de_html
+        assert "English only content" not in de_html
+        assert "Shared content" in en_html
+        assert "Shared content" in de_html

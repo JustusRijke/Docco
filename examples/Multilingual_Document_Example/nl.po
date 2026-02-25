@@ -5,17 +5,35 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8\n"
 
+msgid "Alleen in het Nederlands"
+msgstr ""
+
 msgid "Date 2025-10-31"
 msgstr "Datum 2025-10-31"
+
+msgid "Dieser Abschnitt erscheint nur in der deutschen Version."
+msgstr ""
+
+msgid "Dit gedeelte verschijnt alleen in de Nederlandse versie."
+msgstr ""
 
 msgid "Docco Multilingual Document Example - Docco Team"
 msgstr "Docco Meertalig Documentvoorbeeld - Docco Team"
 
+msgid "English Only Section"
+msgstr ""
+
 msgid "Hello World"
 msgstr "Hallo Wereld"
+
+msgid "Nur auf Deutsch"
+msgstr ""
 
 msgid "Page"
 msgstr "Pagina"
 
 msgid "This is a simple multilingual document example."
 msgstr "Dit is een eenvoudig meertalig documentvoorbeeld."
+
+msgid "This section is only included in the English version."
+msgstr ""

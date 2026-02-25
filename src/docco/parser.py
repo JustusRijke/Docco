@@ -48,6 +48,25 @@ def has_directives(content: str) -> bool:
     return bool(re.search(r"<!--\s*inline\s*:", protected_content))
 
 
+def process_filter_directives(html: str, language: str) -> str:
+    """Remove filter blocks not matching the given language code.
+
+    Blocks matching the language are kept (with the directives stripped).
+    Blocks for other languages are removed entirely.
+    """
+    lang = language.lower()
+
+    def replace_block(m: re.Match) -> str:
+        return m.group(2) if m.group(1).strip().lower() == lang else ""
+
+    return re.sub(
+        r"<!--\s*filter\s*:\s*(\S+)\s*-->(.*?)<!--\s*/filter\s*-->",
+        replace_block,
+        html,
+        flags=re.DOTALL,
+    )
+
+
 def process_directives_iteratively(
     content: str, base_dir: Path, allow_python: bool
 ) -> str:
@@ -135,6 +154,11 @@ def _generate_single_pdf(
 
     # Convert markdown to body HTML (no layout yet)
     body_html = markdown_to_html(body)
+
+    # Apply language filter directives if a language is set
+    if lang_suffix:
+        lang_code = lang_suffix.lstrip("_")
+        body_html = process_filter_directives(body_html, lang_code)
 
     # Apply translation if needed (before layout)
     if po_file:
