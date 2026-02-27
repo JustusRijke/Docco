@@ -1,9 +1,12 @@
 """CLI interface for Docco."""
 
-import argparse
 import logging
 import sys
 from pathlib import Path
+from typing import Annotated
+
+import cyclopts
+from cyclopts import Parameter
 
 from docco.logging_config import setup_logging
 from docco.parser import parse_markdown
@@ -11,85 +14,106 @@ from docco.pdf import html_to_pdf
 
 logger = logging.getLogger(__name__)
 
+CONFIG_FILENAME = ".docco"
 
-def main() -> None:
-    """Main CLI entry point."""
-    parser = argparse.ArgumentParser(
-        description="Convert Markdown to PDF with POT/PO translation support"
-    )
 
-    parser.add_argument(
-        "input_file",
-        type=str,
-        help="Input markdown (.md) or HTML (.html, .htm) file",
-    )
-    parser.add_argument(
-        "-o",
-        "--output",
-        default=".",
-        help="Output directory (default: current directory)",
-    )
-    parser.add_argument(
-        "--po",
-        help="PO file for single-language translations (ignored in multilingual mode)",
-    )
-    parser.add_argument(
-        "--keep-intermediate",
-        action="store_true",
-        help="Keep intermediate markdown and HTML files (for debugging)",
-    )
-    parser.add_argument(
-        "-v", "--verbose", action="store_true", help="Enable verbose logging"
-    )
-    parser.add_argument(
-        "--allow-python",
-        action="store_true",
-        help="Allow execution of Python code in directives (security risk)",
-    )
+def _find_config_dir() -> Path | None:
+    """Walk up from CWD to find the directory containing .docco."""
+    current = Path.cwd().resolve()
+    while True:
+        if (current / CONFIG_FILENAME).is_file():
+            return current
+        parent = current.parent
+        if parent == current:
+            return None
+        current = parent
 
-    args = parser.parse_args()
 
-    # Set up logging and get counter
-    counter = setup_logging(verbose=args.verbose)
+app = cyclopts.App(
+    name="docco",
+    help="Convert Markdown to PDF with POT/PO translation support",
+    config=cyclopts.config.Toml(  # type: ignore[arg-type]
+        ".docco",
+        search_parents=True,
+        must_exist=False,
+        allow_unknown=True,
+    ),
+    result_action="return_value",
+)
+
+
+@app.default
+def main(
+    input_file: Annotated[Path | None, Parameter(name=["input-file", "file"])] = None,
+    *,
+    output: Annotated[Path, Parameter(name=["--output", "-o"])] = Path(),
+    po: Path | None = None,
+    keep_intermediate: bool = False,
+    verbose: Annotated[bool, Parameter(name=["--verbose", "-v"])] = False,
+    allow_python: bool = False,
+    createdir: bool = False,
+    filename_template: str | None = None,
+) -> None:
+    """Convert Markdown (or HTML) to PDF."""
+    counter = setup_logging(verbose=verbose)
 
     try:
-        input_file = Path(args.input_file)
-        output_dir = Path(args.output)
-        po_file = Path(args.po) if args.po else None
-
-        if not input_file.exists():
-            logger.error(f"Input file not found: {input_file}")
-            sys.exit(1)
-
-        # Validate file extension
-        valid_extensions = {".md", ".html", ".htm"}
-        if input_file.suffix.lower() not in valid_extensions:
-            logger.error(
-                f"Invalid file type: {input_file.suffix}\n"
-                f"Supported formats: {', '.join(sorted(valid_extensions))}"
+        if input_file is None:
+            print(
+                "error: No input file specified "
+                "(pass as argument or set 'file' in .docco)",
+                file=sys.stderr,
             )
-            sys.exit(1)
+            raise SystemExit(1)
 
-        if not output_dir.exists():
-            output_dir.mkdir(parents=True)
+        input_files = [input_file] if not isinstance(input_file, list) else input_file
 
-        # Direct HTML to PDF conversion (bypass all processing)
-        if input_file.suffix.lower() in [".html", ".htm"]:
-            logger.info(f"Processing HTML: {input_file}")
-            output_pdf = output_dir / f"{input_file.stem}.pdf"
-            html_to_pdf(input_file, output_pdf)
-            output_files = [output_pdf]
-        else:
-            # Convert markdown to PDF
-            output_files = parse_markdown(
-                input_file,
-                output_dir,
-                keep_intermediate=args.keep_intermediate,
-                allow_python=args.allow_python,
-                po_file=po_file,
-            )
+        # Resolve relative paths against the config file's directory, not CWD
+        config_dir = _find_config_dir()
+        if config_dir is not None:
+            input_files = [
+                config_dir / f if not f.is_absolute() else f for f in input_files
+            ]
+        po_file = po
 
-        # Print summary
+        effective_output = output
+        if not createdir and not effective_output.exists():
+            effective_output.mkdir(parents=True)
+
+        all_output_files: list[Path] = []
+        for ifile in input_files:
+            if not ifile.exists():
+                logger.error(f"Input file not found: {ifile}")
+                raise SystemExit(1)
+
+            valid_extensions = {".md", ".html", ".htm"}
+            if ifile.suffix.lower() not in valid_extensions:
+                logger.error(
+                    f"Invalid file type: {ifile.suffix}\n"
+                    f"Supported formats: {', '.join(sorted(valid_extensions))}"
+                )
+                raise SystemExit(1)
+
+            out_dir = effective_output / ifile.stem if createdir else effective_output
+            if not out_dir.exists():
+                out_dir.mkdir(parents=True)
+
+            if ifile.suffix.lower() in {".html", ".htm"}:
+                logger.info(f"Processing HTML: {ifile}")
+                output_pdf = out_dir / f"{ifile.stem}.pdf"
+                html_to_pdf(ifile, output_pdf)
+                all_output_files.append(output_pdf)
+            else:
+                output_files = parse_markdown(
+                    ifile,
+                    out_dir,
+                    keep_intermediate=keep_intermediate,
+                    allow_python=allow_python,
+                    po_file=po_file,
+                    filename_template=filename_template,
+                )
+                all_output_files.extend(output_files)
+
         if counter.error_count > 0 or counter.warning_count > 0:
             parts = []
             if counter.error_count > 0:
@@ -98,11 +122,19 @@ def main() -> None:
                 parts.append(f"{counter.warning_count} warning(s)")
             logger.warning(f"Completed with {', '.join(parts)}")
         else:
-            logger.info(f"Successfully generated {len(output_files)} output file(s)")
+            logger.info(
+                f"Successfully generated {len(all_output_files)} output file(s)"
+            )
+    except SystemExit:
+        raise
     except Exception as e:
         logger.error(f"Error: {e}", exc_info=True)
-        sys.exit(1)
+        raise SystemExit(1)
+
+
+def entry_point() -> None:
+    app()
 
 
 if __name__ == "__main__":
-    main()
+    entry_point()

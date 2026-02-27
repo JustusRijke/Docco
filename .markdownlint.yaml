@@ -5,3 +5,4 @@ line-length:
 no-alt-text: false
 blanks-around-tables: false
 no-duplicate-heading: false
+blanks-around-lists: false
