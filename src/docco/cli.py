@@ -5,6 +5,7 @@ import logging
 import sys
 from pathlib import Path
 
+from docco.config import find_config, load_config
 from docco.logging_config import setup_logging
 from docco.parser import parse_markdown
 from docco.pdf import html_to_pdf
@@ -20,7 +21,8 @@ def main() -> None:
 
     parser.add_argument(
         "input_file",
-        type=str,
+        nargs="?",
+        default=None,
         help="Input markdown (.md) or HTML (.html, .htm) file",
     )
     parser.add_argument(
@@ -53,41 +55,58 @@ def main() -> None:
     counter = setup_logging(verbose=args.verbose)
 
     try:
-        input_file = Path(args.input_file)
+        # Load config file if present
+        config_path = find_config(Path.cwd())
+        config = load_config(config_path) if config_path else {}
+
+        # Resolve input files: CLI arg takes precedence over config
+        config_files: list[Path] = config.get("input", {}).get("file", [])
+        if args.input_file:
+            input_files = [Path(args.input_file)]
+        elif config_files:
+            input_files = config_files
+        else:
+            parser.error(
+                "No input file specified (pass as argument or set [input] file in .docco)"
+            )
+
         output_dir = Path(args.output)
         po_file = Path(args.po) if args.po else None
-
-        if not input_file.exists():
-            logger.error(f"Input file not found: {input_file}")
-            sys.exit(1)
-
-        # Validate file extension
-        valid_extensions = {".md", ".html", ".htm"}
-        if input_file.suffix.lower() not in valid_extensions:
-            logger.error(
-                f"Invalid file type: {input_file.suffix}\n"
-                f"Supported formats: {', '.join(sorted(valid_extensions))}"
-            )
-            sys.exit(1)
 
         if not output_dir.exists():
             output_dir.mkdir(parents=True)
 
-        # Direct HTML to PDF conversion (bypass all processing)
-        if input_file.suffix.lower() in [".html", ".htm"]:
-            logger.info(f"Processing HTML: {input_file}")
-            output_pdf = output_dir / f"{input_file.stem}.pdf"
-            html_to_pdf(input_file, output_pdf)
-            output_files = [output_pdf]
-        else:
-            # Convert markdown to PDF
-            output_files = parse_markdown(
-                input_file,
-                output_dir,
-                keep_intermediate=args.keep_intermediate,
-                allow_python=args.allow_python,
-                po_file=po_file,
-            )
+        all_output_files: list[Path] = []
+        for input_file in input_files:
+            if not input_file.exists():
+                logger.error(f"Input file not found: {input_file}")
+                sys.exit(1)
+
+            # Validate file extension
+            valid_extensions = {".md", ".html", ".htm"}
+            if input_file.suffix.lower() not in valid_extensions:
+                logger.error(
+                    f"Invalid file type: {input_file.suffix}\n"
+                    f"Supported formats: {', '.join(sorted(valid_extensions))}"
+                )
+                sys.exit(1)
+
+            # Direct HTML to PDF conversion (bypass all processing)
+            if input_file.suffix.lower() in [".html", ".htm"]:
+                logger.info(f"Processing HTML: {input_file}")
+                output_pdf = output_dir / f"{input_file.stem}.pdf"
+                html_to_pdf(input_file, output_pdf)
+                all_output_files.append(output_pdf)
+            else:
+                # Convert markdown to PDF
+                output_files = parse_markdown(
+                    input_file,
+                    output_dir,
+                    keep_intermediate=args.keep_intermediate,
+                    allow_python=args.allow_python,
+                    po_file=po_file,
+                )
+                all_output_files.extend(output_files)
 
         # Print summary
         if counter.error_count > 0 or counter.warning_count > 0:
@@ -98,7 +117,9 @@ def main() -> None:
                 parts.append(f"{counter.warning_count} warning(s)")
             logger.warning(f"Completed with {', '.join(parts)}")
         else:
-            logger.info(f"Successfully generated {len(output_files)} output file(s)")
+            logger.info(
+                f"Successfully generated {len(all_output_files)} output file(s)"
+            )
     except Exception as e:
         logger.error(f"Error: {e}", exc_info=True)
         sys.exit(1)

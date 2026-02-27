@@ -256,6 +256,7 @@ dependencies = [
     { name = "pycparser" },
     { name = "pymupdf" },
     { name = "pyyaml" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
     { name = "translate-toolkit" },
 ]
 
@@ -281,6 +282,7 @@ requires-dist = [
     { name = "pycparser", specifier = ">=2.21" },
     { name = "pymupdf", specifier = ">=1.26.7" },
     { name = "pyyaml", specifier = ">=6.0.3" },
+    { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=2.0.0" },
     { name = "translate-toolkit", specifier = ">=3.17.4" },
 ]
 

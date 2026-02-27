@@ -4,89 +4,34 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Docco** is a CLI tool that converts Markdown documents (with YAML frontmatter) into professional PDFs. Key capabilities:
-
-- Markdown parsing with YAML frontmatter configuration
-- Inline file inclusion with placeholder substitution
-- CSS styling with support for external fonts (Google Fonts, etc.)
-- Automatic table of contents with heading numbering
-- Page layout control (breaks, orientation, headers, footers)
-- Professional translation workflows with POT/PO files
-- Dynamic content via Python code execution (opt-in)
-
-Target audience: developers and technical writers familiar with Markdown, HTML, and CSS.
-
-`examples/Feature_Showcase.md` demonstrates all features with detailed explanations.
+Docco converts Markdown (with YAML frontmatter) to PDF. See `examples/Feature_Showcase.md` for full feature documentation.
 
 ## Architecture
 
 Processing pipeline:
 
-1. **Frontmatter Parsing** (`core.py`): Extracts YAML metadata and document body, validates frontmatter keys (warns about unknown keys)
+1. **Frontmatter Parsing** (`core.py`): Extracts YAML metadata; validates against `KNOWN_FRONTMATTER_KEYS`, warns on unknown keys
 2. **Directive Processing** (`parser.py`): Iteratively processes inline directives with file-type aware post-processing
-3. **Inline Processing** (`inline.py`): Embeds external files via `<!-- inline:"path" -->` directives; .md files inlined as-is, .html files trimmed, .py files executed (recursive, max depth 10)
-4. **HTML Conversion** (`core.py`): Converts markdown to HTML; collects CSS from frontmatter (files are embedded in `<style>` tags, external URLs become `<link>` tags)
-5. **Translation Application** (`translation.py`): Optionally applies PO file translations to HTML
-6. **Page Layout** (`page_layout.py`): Applies page layout directives (pagebreak, landscape/portrait)
-7. **PDF Generation** (`pdf.py`): Renders HTML to PDF with CSS support (both embedded and external CSS); includes paged.js polyfill for JavaScript-based TOC generation
-8. **PDF Validation** (`pdf_validation.py`): Optionally validates image DPI in generated PDF (when `dpi` frontmatter is set)
+3. **Inline Processing** (`inline.py`): Embeds files via `<!-- inline:"path" -->`; .md inlined as-is, .html trimmed, .py executed (recursive, max depth 10)
+4. **HTML Conversion** (`core.py`): Markdown to HTML; CSS files embedded in `<style>`, external URLs as `<link>`
+5. **Translation Application** (`translation.py`): Applies PO file translations to HTML
+6. **Page Layout** (`page_layout.py`): Applies pagebreak/landscape/portrait directives
+7. **PDF Generation** (`pdf.py`): Chromium via Playwright; `collect_css_content()` separates file vs URL CSS
+8. **PDF Validation** (`pdf_validation.py`): Validates image DPI when `dpi` frontmatter is set
 
 Main entry point: `parse_markdown()` in `parser.py`. CLI orchestration in `cli.py`.
 
+### `.docco` Config File
+
+`config.py` — `find_config(start)` walks up from CWD; `load_config(path)` parses TOML, normalizes `[input] file` to `list[Path]` relative to the config. Unknown sections/keys warn. CLI args take precedence.
+
 ### Language Filter Directives
 
-In multilingual mode, content can be conditionally included per language using HTML comment directives:
+`process_filter_directives()` in `parser.py` — strips `<!-- filter:en -->...<!-- /filter -->` blocks that don't match the current language code.
 
-```html
-<!-- filter:en -->English-only content<!-- /filter -->
-<!-- filter:de -->German-only content<!-- /filter -->
-```
+### Multilingual Mode
 
-`process_filter_directives()` in `parser.py` removes blocks not matching the current language code. Blocks matching the language are kept with the directives stripped.
-
-### CSS Handling
-
-The `collect_css_content()` function in `pdf.py` separates CSS sources:
-
-- **File-based CSS**: Relative paths are read and embedded in `<style>` tags in the HTML head
-- **External CSS URLs**: URLs (http:// or https://) are added as `<link>` tags, allowing Chromium to fetch them (enables Google Fonts and other web fonts)
-
-### Translation Workflow
-
-**Single-language documents:**
-- Generate PDF: `docco input.md -o output/`
-- With translation: `docco input.md --po translations/de.po -o output/`
-
-**Multilingual documents** (with `multilingual: true` in frontmatter):
-- Simply run: `docco input.md -o output/`
-- Automatically extracts POT file to `<basename>/<basename>.pot`
-- Automatically updates all existing PO files in that directory with new/changed strings
-- Generates PDFs for base language + all translated languages
-- Reports translation completeness: `Updated de.po: 40 translated, 2 fuzzy, 3 untranslated`
-- Warns about incomplete translations: `WARNING - Translation incomplete for DE: 5 untranslated, 2 fuzzy`
-
-**Translation process:**
-1. Set `multilingual: true` and `base_language: en` in frontmatter
-2. Run `docco input.md -o output/` - generates POT file and base language PDF
-3. Translators create/update language-specific PO files (e.g., `de.po`, `fr.po`) in the `<basename>/` directory using CAT tools
-4. Run `docco input.md -o output/` again - automatically updates PO files and generates all language PDFs
-
-Notes:
-- POT/PO files contain HTML (not Markdown) - translators must preserve HTML tags
-- Extracts strings from final HTML, enabling translation of dynamic content
-- Translations are applied before PDF generation so TOC and page elements reflect translated content
-- Integrates with CAT tools supporting HTML
-
-### Frontmatter Validation
-
-Known frontmatter keys are validated during parsing (`KNOWN_FRONTMATTER_KEYS` in `core.py`):
-- `css` - CSS stylesheet paths or URLs (string or list)
-- `js` - JavaScript file paths or URLs injected into HTML `<head>` (string or list)
-- `dpi` - Maximum image resolution for PDF output (integer)
-- `multilingual` - Enable multilingual mode (boolean)
-- `base_language` - Base language code for multilingual documents (string)
-
-Unknown keys trigger a warning but don't prevent processing. This allows users to include custom metadata while being notified of potential typos.
+POT/PO extraction and merging in `translation.py`. PO files live in `<basename>/` alongside the source. Operates on final HTML (not Markdown).
 
 ## Development Commands
 
@@ -145,27 +90,12 @@ docco examples/Multilingual_Document_Example.md -o output/ --allow-python
 - Exit code 0 = pass, 1 = fail, 2 = error
 - No system dependencies required
 
-## Dependencies
-
-- **python-frontmatter**: YAML frontmatter parsing
-- **pyyaml**: YAML library (used by python-frontmatter)
-- **markdown-it-py**: Markdown to HTML conversion
-- **mdit-py-plugins**: Markdown-it plugins (attributes support)
-- **playwright**: Headless Chromium for HTML to PDF generation
-- **translate-toolkit**: HTML to POT/PO file conversion
-- **polib**: PO file manipulation
-- **colorlog**: Colored terminal output
-- **pymupdf**: PDF image DPI validation
-- **pytest**: Testing framework
-- **pytest-cov**: Coverage measurement
-- **ruff**: Code linting
-- **diffpdf**: PDF comparison for regression tests (dev dependency only)
-
 ## File Structure
 
 ```
 src/docco/
   cli.py              - CLI argument parsing and commands
+  config.py           - .docco config file discovery and loading
   parser.py           - Main pipeline orchestration (includes preprocess_document)
   inline.py           - Inline directive processing with file-type aware handlers (.md, .html, .py)
   core.py             - Frontmatter parsing, validation, markdown/HTML conversion

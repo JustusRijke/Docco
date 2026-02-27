@@ -101,6 +101,28 @@ This helps ensure your PDFs meet quality requirements before printing. For multi
 
 This setting applies to all raster images (PNG, JPEG, etc.) embedded in the document. It does not affect vector graphics (SVG). If images are already at or below the specified DPI, they remain unchanged.
 
+### Project Config File (`.docco`)
+
+A `.docco` file in your project root (TOML format) lets you set defaults so `docco` can be run without arguments. Docco searches upward from the current directory to find it.
+
+Minimal example:
+
+```toml
+[input]
+file = "examples/Feature_Showcase.md"
+```
+
+Multiple input files:
+
+```toml
+[input]
+file = ["docs/guide.md", "docs/reference.md"]
+```
+
+See `.docco-example` in the repository root for all currently supported settings with comments.
+
+CLI arguments always take precedence over config file values.
+
 ## Core Concepts
 
 ### Understanding Directives

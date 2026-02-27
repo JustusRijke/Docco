@@ -1,0 +1,15 @@
+[input]
+# One or more markdown or HTML files to convert (relative to this file)
+file = ["examples/Feature_Showcase.md"]
+# or: file = "examples/Feature_Showcase.md"
+
+# [python]
+# allow = true
+
+# [output]
+# path = "."
+# createdir = true
+# keep-intermediate = false
+
+# [multilingual]
+# filename = "{filename}_{langcode}"
