@@ -141,6 +141,52 @@ def test_cli_output_flag_overrides_config(tmp_path, monkeypatch):
         assert call_output_dir == cli_out
 
 
+def test_load_config_keep_intermediate(tmp_path):
+    """load_config parses [output] keep-intermediate key."""
+    config = tmp_path / ".docco"
+    config.write_text("[output]\nkeep-intermediate = true\n", encoding="utf-8")
+    result = load_config(config)
+    assert result["output"]["keep-intermediate"] is True
+
+
+def test_cli_keep_intermediate_from_config(tmp_path, monkeypatch):
+    """CLI reads keep_intermediate from [output] config section."""
+    md = tmp_path / "doc.md"
+    md.write_text("# Doc", encoding="utf-8")
+    config = tmp_path / ".docco"
+    config.write_text(
+        "[input]\nfile = 'doc.md'\n[output]\nkeep-intermediate = true\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr("sys.argv", ["docco"])
+    monkeypatch.chdir(tmp_path)
+
+    with patch("docco.cli.parse_markdown") as mock_parse:
+        mock_parse.return_value = [tmp_path / "doc.pdf"]
+        main()
+        call_kwargs = mock_parse.call_args[1]
+        assert call_kwargs["keep_intermediate"] is True
+
+
+def test_cli_keep_intermediate_flag_overrides_config(tmp_path, monkeypatch):
+    """--keep-intermediate CLI flag takes precedence over config false."""
+    md = tmp_path / "doc.md"
+    md.write_text("# Doc", encoding="utf-8")
+    config = tmp_path / ".docco"
+    config.write_text(
+        "[input]\nfile = 'doc.md'\n[output]\nkeep-intermediate = false\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr("sys.argv", ["docco", "--keep-intermediate"])
+    monkeypatch.chdir(tmp_path)
+
+    with patch("docco.cli.parse_markdown") as mock_parse:
+        mock_parse.return_value = [tmp_path / "doc.pdf"]
+        main()
+        call_kwargs = mock_parse.call_args[1]
+        assert call_kwargs["keep_intermediate"] is True
+
+
 def test_load_config_python_allow(tmp_path):
     """load_config parses [python] allow key."""
     config = tmp_path / ".docco"

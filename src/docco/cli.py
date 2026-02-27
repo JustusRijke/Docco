@@ -71,6 +71,9 @@ def main() -> None:
             )
 
         allow_python = args.allow_python or config.get("python", {}).get("allow", False)
+        keep_intermediate = args.keep_intermediate or config.get("output", {}).get(
+            "keep-intermediate", False
+        )
 
         if args.output != ".":
             # Explicit CLI flag
@@ -110,7 +113,7 @@ def main() -> None:
                 output_files = parse_markdown(
                     input_file,
                     output_dir,
-                    keep_intermediate=args.keep_intermediate,
+                    keep_intermediate=keep_intermediate,
                     allow_python=allow_python,
                     po_file=po_file,
                 )

@@ -72,6 +72,13 @@ def load_config(path: Path) -> dict:
             # Resolve output path relative to config file's directory
             output_result["path"] = path.parent / output_section["path"]
             logger.debug(f"Config output.path: {output_result['path']}")
+        if "keep-intermediate" in output_section:
+            output_result["keep-intermediate"] = bool(
+                output_section["keep-intermediate"]
+            )
+            logger.debug(
+                f"Config output.keep-intermediate: {output_result['keep-intermediate']}"
+            )
         result["output"] = output_result
 
     if "python" in raw:
