@@ -85,6 +85,59 @@ def test_load_config_empty_file(tmp_path):
     assert result == {}
 
 
+def test_load_config_python_allow(tmp_path):
+    """load_config parses [python] allow key."""
+    config = tmp_path / ".docco"
+    config.write_text("[python]\nallow = true\n", encoding="utf-8")
+    result = load_config(config)
+    assert result["python"]["allow"] is True
+
+
+def test_load_config_python_unknown_key(tmp_path, caplog):
+    """load_config warns on unknown keys in [python]."""
+    config = tmp_path / ".docco"
+    config.write_text("[python]\nallow = true\nunknown = 'x'\n", encoding="utf-8")
+    with caplog.at_level(logging.WARNING, logger="docco.config"):
+        load_config(config)
+    assert "Unknown config key in [python]" in caplog.text
+
+
+def test_cli_allow_python_from_config(tmp_path, monkeypatch):
+    """CLI reads allow_python from [python] config section."""
+    md = tmp_path / "doc.md"
+    md.write_text("# Doc", encoding="utf-8")
+    config = tmp_path / ".docco"
+    config.write_text(
+        "[input]\nfile = 'doc.md'\n[python]\nallow = true\n", encoding="utf-8"
+    )
+    monkeypatch.setattr("sys.argv", ["docco"])
+    monkeypatch.chdir(tmp_path)
+
+    with patch("docco.cli.parse_markdown") as mock_parse:
+        mock_parse.return_value = [tmp_path / "doc.pdf"]
+        main()
+        call_kwargs = mock_parse.call_args[1]
+        assert call_kwargs["allow_python"] is True
+
+
+def test_cli_allow_python_flag_overrides_config(tmp_path, monkeypatch):
+    """--allow-python CLI flag takes precedence; config false doesn't suppress it."""
+    md = tmp_path / "doc.md"
+    md.write_text("# Doc", encoding="utf-8")
+    config = tmp_path / ".docco"
+    config.write_text(
+        "[input]\nfile = 'doc.md'\n[python]\nallow = false\n", encoding="utf-8"
+    )
+    monkeypatch.setattr("sys.argv", ["docco", "--allow-python"])
+    monkeypatch.chdir(tmp_path)
+
+    with patch("docco.cli.parse_markdown") as mock_parse:
+        mock_parse.return_value = [tmp_path / "doc.pdf"]
+        main()
+        call_kwargs = mock_parse.call_args[1]
+        assert call_kwargs["allow_python"] is True
+
+
 # --- CLI integration tests ---
 
 

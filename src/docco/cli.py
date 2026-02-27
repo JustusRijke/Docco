@@ -70,6 +70,8 @@ def main() -> None:
                 "No input file specified (pass as argument or set [input] file in .docco)"
             )
 
+        allow_python = args.allow_python or config.get("python", {}).get("allow", False)
+
         output_dir = Path(args.output)
         po_file = Path(args.po) if args.po else None
 
@@ -103,7 +105,7 @@ def main() -> None:
                     input_file,
                     output_dir,
                     keep_intermediate=args.keep_intermediate,
-                    allow_python=args.allow_python,
+                    allow_python=allow_python,
                     po_file=po_file,
                 )
                 all_output_files.extend(output_files)

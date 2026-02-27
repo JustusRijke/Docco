@@ -3,7 +3,8 @@
 file = ["examples/Feature_Showcase.md"]
 # or: file = "examples/Feature_Showcase.md"
 
-# [python]
+[python]
+# Allow execution of Python code in inline directives (security risk)
 # allow = true
 
 # [output]

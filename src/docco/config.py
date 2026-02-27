@@ -12,8 +12,9 @@ else:
 logger = logging.getLogger(__name__)
 
 CONFIG_FILENAME = ".docco"
-KNOWN_SECTIONS = {"input"}
+KNOWN_SECTIONS = {"input", "python"}
 KNOWN_INPUT_KEYS = {"file"}
+KNOWN_PYTHON_KEYS = {"allow"}
 
 
 def find_config(start: Path) -> Path | None:
@@ -59,5 +60,14 @@ def load_config(path: Path) -> dict:
             result["input"] = {"file": [config_dir / f for f in files]}
             for f in result["input"]["file"]:
                 logger.debug(f"Config input file: {f}")
+
+    if "python" in raw:
+        python_section = raw["python"]
+        for key in python_section:
+            if key not in KNOWN_PYTHON_KEYS:
+                logger.warning(f"Unknown config key in [python]: {key}")
+        if "allow" in python_section:
+            result["python"] = {"allow": bool(python_section["allow"])}
+            logger.debug(f"Config python.allow: {result['python']['allow']}")
 
     return result
