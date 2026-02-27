@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Guidance for working with this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
 
@@ -33,12 +33,23 @@ Processing pipeline:
 
 Main entry point: `parse_markdown()` in `parser.py`. CLI orchestration in `cli.py`.
 
+### Language Filter Directives
+
+In multilingual mode, content can be conditionally included per language using HTML comment directives:
+
+```html
+<!-- filter:en -->English-only content<!-- /filter -->
+<!-- filter:de -->German-only content<!-- /filter -->
+```
+
+`process_filter_directives()` in `parser.py` removes blocks not matching the current language code. Blocks matching the language are kept with the directives stripped.
+
 ### CSS Handling
 
 The `collect_css_content()` function in `pdf.py` separates CSS sources:
 
 - **File-based CSS**: Relative paths are read and embedded in `<style>` tags in the HTML head
-- **External CSS URLs**: URLs (http:// or https://) are added as `<link>` tags, allowing WeasyPrint to fetch them (enables Google Fonts and other web fonts)
+- **External CSS URLs**: URLs (http:// or https://) are added as `<link>` tags, allowing Chromium to fetch them (enables Google Fonts and other web fonts)
 
 ### Translation Workflow
 
@@ -68,8 +79,9 @@ Notes:
 
 ### Frontmatter Validation
 
-Known frontmatter keys are validated during parsing:
+Known frontmatter keys are validated during parsing (`KNOWN_FRONTMATTER_KEYS` in `core.py`):
 - `css` - CSS stylesheet paths or URLs (string or list)
+- `js` - JavaScript file paths or URLs injected into HTML `<head>` (string or list)
 - `dpi` - Maximum image resolution for PDF output (integer)
 - `multilingual` - Enable multilingual mode (boolean)
 - `base_language` - Base language code for multilingual documents (string)
@@ -81,7 +93,7 @@ Unknown keys trigger a warning but don't prevent processing. This allows users t
 ### Setup
 
 ```bash
-pip install -e ".[dev]"
+uv sync
 ```
 
 ### Running
@@ -139,7 +151,7 @@ docco examples/Multilingual_Document_Example.md -o output/ --allow-python
 - **pyyaml**: YAML library (used by python-frontmatter)
 - **markdown-it-py**: Markdown to HTML conversion
 - **mdit-py-plugins**: Markdown-it plugins (attributes support)
-- **weasyprint**: HTML to PDF generation
+- **playwright**: Headless Chromium for HTML to PDF generation
 - **translate-toolkit**: HTML to POT/PO file conversion
 - **polib**: PO file manipulation
 - **colorlog**: Colored terminal output
@@ -173,25 +185,20 @@ examples/
   inline/                             - Reusable inline content
 ```
 
-## Coding Guidelines
+## After Feature Changes
 
-- Test-driven development: write tests before implementation
-- Minimize code: KISS & DRY principles
-- Sparse comments (complex logic only); minimal docstrings
-- Target 100% test coverage
-- Short, concise commit messages (1-2 lines), omit "Generated with" and "Co-Authored-By" Claude bloat.
-- No edge case tests unless critical
-- References:
-  - [markdown-it docs](https://markdown-it-py.readthedocs.io/)
-  - [weasyprint docs](https://doc.courtbouillon.org/weasyprint/stable/)
-  - [translate-toolkit docs](https://docs.translatehouse.org/projects/translate-toolkit/en/latest/)
-- **Important**: After any feature change, update `examples/Feature_Showcase.md` and rebuild regression test baselines:
-  ```bash
-  docco examples/Feature_Showcase.md -o tests/output/ --allow-python
-  docco examples/Multilingual_Document_Example.md -o tests/output/ --allow-python
-  cp tests/output/*.pdf tests/baselines/
-  ```
-- Prefer fail-fast: avoid over-defensive exception handling. Silently failing code is unacceptable.
-- When adding new dependencies (python libraries), make sure they are recently maintained
-- Keep git commit messages clean and concise, not more than 2 lines
-- When committing, always ask before reverting changes
+Update `examples/Feature_Showcase.md` to demonstrate new features, then rebuild regression test baselines:
+
+```bash
+docco examples/Feature_Showcase.md -o tests/output/ --allow-python
+docco examples/Multilingual_Document_Example.md -o tests/output/ --allow-python
+cp tests/output/*.pdf tests/baselines/
+```
+
+## References
+
+- [markdown-it docs](https://markdown-it-py.readthedocs.io/)
+- [Playwright Python docs](https://playwright.dev/python/docs/intro)
+- [paged.js docs](https://pagedjs.org/documentation/)
+- [CSS Paged Media (W3C)](https://www.w3.org/TR/css-page-3/)
+- [translate-toolkit docs](https://docs.translatehouse.org/projects/translate-toolkit/en/latest/)
