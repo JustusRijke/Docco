@@ -72,19 +72,31 @@ This is useful for custom paged.js handlers or other browser-based rendering log
 
 **`base_language`** - The language code of the source document (required when `multilingual: true`). Example: `base_language: en`. This will be used as the suffix for the base language PDF (e.g., `Document_EN.pdf`).
 
+### Project Config File (`.docco`)
+
+A `.docco` file in your project root (TOML format) lets you set defaults so `docco` can be run without arguments. Docco searches upward from the current directory to find it.
+
+Minimal example:
+
+```toml
+file = "examples/Feature_Showcase.md"
+```
+
+Multiple input files:
+
+```toml
+file = ["docs/guide.md", "docs/reference.md"]
+```
+
 **`dpi`** - Maximum image resolution in dots per inch (integer, optional). Controls image downsampling in the generated PDF:
 
 - Default (no `dpi` specified): Preserves original image resolution. High-quality images remain full resolution, which is excellent for print but may result in larger file sizes.
-- `dpi: 300`: Recommended for professional printing. Images are downsampled to a maximum of 300 DPI, which is the industry standard for high-quality print output while keeping file sizes reasonable.
-- `dpi: 150`: Suitable for screen viewing and digital distribution. Produces smaller files with adequate quality for on-screen reading.
+- `dpi = 300`: Recommended for professional printing. Images are downsampled to a maximum of 300 DPI, which is the industry standard for high-quality print output while keeping file sizes reasonable.
+- `dpi = 150`: Suitable for screen viewing and digital distribution. Produces smaller files with adequate quality for on-screen reading.
 
-Example:
-
-```yaml
----
-css: "style.css"
-dpi: 300
----
+```toml
+file = "examples/Feature_Showcase.md"
+dpi = 300
 ```
 
 **Note:** The DPI setting works most effectively when images have CSS constraints. For optimal file size reduction, include CSS rules like:
@@ -100,24 +112,6 @@ img {
 This helps ensure your PDFs meet quality requirements before printing. For multilingual documents, only the base language PDF is validated.
 
 This setting applies to all raster images (PNG, JPEG, etc.) embedded in the document. It does not affect vector graphics (SVG). If images are already at or below the specified DPI, they remain unchanged.
-
-### Project Config File (`.docco`)
-
-A `.docco` file in your project root (TOML format) lets you set defaults so `docco` can be run without arguments. Docco searches upward from the current directory to find it.
-
-Minimal example:
-
-```toml
-[input]
-file = "examples/Feature_Showcase.md"
-```
-
-Multiple input files:
-
-```toml
-[input]
-file = ["docs/guide.md", "docs/reference.md"]
-```
 
 See `.docco-example` in the repository root for all currently supported settings with comments.
 

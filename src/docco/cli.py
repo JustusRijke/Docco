@@ -53,6 +53,7 @@ def main(
     allow_python: bool = False,
     createdir: bool = False,
     filename_template: str | None = None,
+    dpi: int | None = None,
 ) -> None:
     """Convert Markdown (or HTML) to PDF."""
     counter = setup_logging(verbose=verbose)
@@ -111,6 +112,7 @@ def main(
                     allow_python=allow_python,
                     po_file=po_file,
                     filename_template=filename_template,
+                    dpi=dpi,
                 )
                 all_output_files.extend(output_files)
 

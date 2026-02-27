@@ -228,32 +228,24 @@ This should fail.
             parse_markdown(input_file, Path(tmpdir))
 
 
-def test_dpi_frontmatter_parameter(fixture_dir):
-    """Test that DPI frontmatter parameter is extracted and used."""
+def test_dpi_parameter(fixture_dir):
+    """Test that DPI parameter is passed through and used."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        # Create markdown with DPI setting
         input_file = Path(tmpdir) / "test_dpi.md"
         with Path(input_file).open("w", encoding="utf-8") as f:
-            f.write("""---
-dpi: 300
----
+            f.write("""# Test Document
 
-# Test Document
-
-This document has a DPI setting in frontmatter.
+This document has a DPI setting.
 """)
 
-        # Generate PDF
-        outputs = parse_markdown(input_file, Path(tmpdir))
+        outputs = parse_markdown(input_file, Path(tmpdir), dpi=300)
         assert len(outputs) == 1
         assert outputs[0].exists()
-
-        # Verify PDF was created
         assert outputs[0].name.endswith("test_dpi.pdf")
 
 
-def test_dpi_frontmatter_with_image():
-    """Test DPI frontmatter with actual image downsampling."""
+def test_dpi_with_image():
+    """Test DPI parameter with actual image downsampling."""
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create a high-resolution test image
         img = Image.new("RGB", (3000, 2000), color="red")
@@ -265,12 +257,11 @@ def test_dpi_frontmatter_with_image():
         with Path(css_path).open("w", encoding="utf-8") as f:
             f.write("img { max-width: 100%; height: auto; }")
 
-        # Create markdown with DPI and image
+        # Create markdown with image
         input_file = Path(tmpdir) / "test.md"
         with Path(input_file).open("w", encoding="utf-8") as f:
             f.write("""---
 css: style.css
-dpi: 300
 ---
 
 # Image Test
@@ -279,7 +270,7 @@ dpi: 300
 """)
 
         # Generate PDF with DPI=300
-        outputs_300 = parse_markdown(input_file, Path(tmpdir))
+        outputs_300 = parse_markdown(input_file, Path(tmpdir), dpi=300)
         assert len(outputs_300) == 1
 
         # Generate PDF without DPI
@@ -324,20 +315,16 @@ def test_dpi_validation_warns_on_low_dpi_images(caplog):
         img_path = str(Path(tmpdir) / "lowres.png")
         img.save(img_path)
 
-        # Create markdown with DPI setting
+        # Create markdown with image
         input_file = Path(tmpdir) / "test.md"
         with Path(input_file).open("w", encoding="utf-8") as f:
-            f.write("""---
-dpi: 300
----
-
-# Test
+            f.write("""# Test
 
 ![Low res](lowres.png)
 """)
 
         # Generate PDF
-        outputs = parse_markdown(input_file, Path(tmpdir))
+        outputs = parse_markdown(input_file, Path(tmpdir), dpi=300)
         assert len(outputs) == 1
 
         # Should have warned about low DPI
@@ -352,13 +339,12 @@ def test_dpi_validation_multilingual_base_only(caplog):
         img_path = str(Path(tmpdir) / "lowres.png")
         img.save(img_path)
 
-        # Create markdown with multilingual and DPI
+        # Create markdown with multilingual mode
         input_file = Path(tmpdir) / "test.md"
         with Path(input_file).open("w", encoding="utf-8") as f:
             f.write("""---
 multilingual: true
 base_language: en
-dpi: 300
 ---
 
 # Test Document
@@ -379,11 +365,10 @@ msgstr ""
 """)
 
         # Generate PDFs (EN and DE)
-        outputs = parse_markdown(input_file, Path(tmpdir))
+        outputs = parse_markdown(input_file, Path(tmpdir), dpi=300)
         assert len(outputs) == 2  # EN and DE
 
         # Should only warn once (for base language EN)
-        # Count occurrences of the warning
         warning_count = caplog.text.count("below 300 DPI")
         assert warning_count == 1  # Only base language validated
 
