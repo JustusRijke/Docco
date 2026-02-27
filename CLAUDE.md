@@ -23,7 +23,8 @@ Main entry point: `parse_markdown()` in `parser.py`. CLI orchestration in `cli.p
 
 ### `.docco` Config File
 
-`config.py` — `find_config(start)` walks up from CWD; `load_config(path)` parses TOML, normalizes `[input] file` to `list[Path]` relative to the config. Unknown sections/keys warn. CLI args take precedence.
+Flat TOML file; discovered by walking up from CWD (`_find_config_dir()` in `cli.py`). Parsed and merged with CLI args by cyclopts — CLI always takes precedence. Relative `file` paths resolve against the config file's directory.
+See `.docco-example` for all supported keys.
 
 ### Language Filter Directives
 
