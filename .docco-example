@@ -16,3 +16,6 @@ file = "examples/Feature_Showcase.md"
 
 # Output filename pattern for multilingual PDFs
 # filename-template = "{filename}_{langcode}"
+
+# Maximum image DPI for PDF output; images exceeding this are flagged with a warning
+# dpi = 300

@@ -125,6 +125,7 @@ def _generate_single_pdf(
     po_file: Path | None = None,
     validate_images: bool = True,
     filename_template: str | None = None,
+    dpi: int | None = None,
 ) -> Path:
     """
     Generate a single PDF from processed markdown body.
@@ -227,8 +228,6 @@ def _generate_single_pdf(
 
     # Convert to PDF
     pdf_path = output_dir / pdf_filename
-    dpi_raw = metadata.get("dpi")
-    dpi = int(dpi_raw) if isinstance(dpi_raw, int) else None
     html_to_pdf(html_path, pdf_path, dpi=dpi)
 
     # Validate PDF image quality if DPI was specified and validation enabled
@@ -254,6 +253,7 @@ def _generate_multilingual_pdfs(
     keep_intermediate: bool,
     allow_python: bool,
     filename_template: str | None = None,
+    dpi: int | None = None,
 ) -> list[Path]:
     """
     Generate PDFs for all languages in multilingual mode.
@@ -327,6 +327,7 @@ def _generate_multilingual_pdfs(
         lang_suffix=f"_{base_lang_code}",
         validate_images=True,
         filename_template=filename_template,
+        dpi=dpi,
     )
     pdf_paths.append(pdf_path)
 
@@ -365,6 +366,7 @@ def _generate_multilingual_pdfs(
             po_file=po_file,
             validate_images=False,
             filename_template=filename_template,
+            dpi=dpi,
         )
         pdf_paths.append(pdf_path)
 
@@ -378,6 +380,7 @@ def parse_markdown(
     allow_python: bool = False,
     po_file: Path | None = None,
     filename_template: str | None = None,
+    dpi: int | None = None,
 ) -> list[Path]:
     """
     Convert markdown file to PDF through full pipeline.
@@ -400,6 +403,7 @@ def parse_markdown(
         keep_intermediate: Keep intermediate HTML/MD files if True
         allow_python: Allow python code execution in directives
         po_file: Path to PO file for translations (optional, ignored in multilingual mode)
+        dpi: Maximum image resolution for PDF output (optional)
 
     Returns:
         list[Path]: Paths to generated PDF files
@@ -427,6 +431,7 @@ def parse_markdown(
             keep_intermediate,
             allow_python,
             filename_template=filename_template,
+            dpi=dpi,
         )
 
     # Step 4: Generate single PDF (with optional translation via po_file)
@@ -440,6 +445,7 @@ def parse_markdown(
         keep_intermediate,
         allow_python,
         po_file=po_file,
+        dpi=dpi,
     )
 
     return [pdf_path]

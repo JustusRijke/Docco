@@ -17,7 +17,7 @@ Processing pipeline:
 5. **Translation Application** (`translation.py`): Applies PO file translations to HTML
 6. **Page Layout** (`page_layout.py`): Applies pagebreak/landscape/portrait directives
 7. **PDF Generation** (`pdf.py`): Chromium via Playwright; `collect_css_content()` separates file vs URL CSS
-8. **PDF Validation** (`pdf_validation.py`): Validates image DPI when `dpi` frontmatter is set
+8. **PDF Validation** (`pdf_validation.py`): Validates image DPI when `dpi` is set in `.docco` config
 
 Main entry point: `parse_markdown()` in `parser.py`. CLI orchestration in `cli.py`.
 
