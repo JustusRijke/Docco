@@ -36,6 +36,7 @@ dependencies = [
     "cffi>=2.0.0",
     "pycparser>=2.21",
     "ply>=3.11",
+    "cyclopts>=4.6.0",
 ]
 
 [project.urls]
@@ -52,7 +53,7 @@ dev = [
 ]
 
 [project.scripts]
-docco = "docco.cli:main"
+docco = "docco.cli:entry_point"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/docco"]

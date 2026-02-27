@@ -104,6 +104,14 @@ def process_directives_iteratively(
     return content
 
 
+DEFAULT_MULTILINGUAL_FILENAME = "{filename}_{langcode}"
+
+
+def _apply_filename_template(template: str, filename: str, langcode: str) -> str:
+    """Substitute {filename} and {langcode} in a filename template."""
+    return template.format(filename=filename, langcode=langcode)
+
+
 def _generate_single_pdf(
     body: str,
     metadata: dict[str, object],
@@ -116,6 +124,7 @@ def _generate_single_pdf(
     lang_suffix: str | None = None,
     po_file: Path | None = None,
     validate_images: bool = True,
+    filename_template: str | None = None,
 ) -> Path:
     """
     Generate a single PDF from processed markdown body.
@@ -136,12 +145,18 @@ def _generate_single_pdf(
     Returns:
         Path: Path to generated PDF file
     """
-    suffix = lang_suffix or ""
+    # Generate output stem: use filename template for multilingual, plain basename otherwise
+    if lang_suffix:
+        lang_code = lang_suffix.lstrip("_")
+        template = filename_template or DEFAULT_MULTILINGUAL_FILENAME
+        output_stem = _apply_filename_template(template, input_basename, lang_code)
+    else:
+        output_stem = input_basename
 
-    # Generate filenames with optional language suffix
-    md_filename = f"{input_basename}{suffix}_intermediate.md"
-    html_filename = f"{input_basename}{suffix}.html"
-    pdf_filename = f"{input_basename}{suffix}.pdf"
+    # Generate filenames
+    md_filename = f"{output_stem}_intermediate.md"
+    html_filename = f"{output_stem}.html"
+    pdf_filename = f"{output_stem}.pdf"
 
     # Collect CSS and JS content from frontmatter
     css_result = collect_css_content(input_file, metadata)
@@ -238,6 +253,7 @@ def _generate_multilingual_pdfs(
     base_dir: Path,
     keep_intermediate: bool,
     allow_python: bool,
+    filename_template: str | None = None,
 ) -> list[Path]:
     """
     Generate PDFs for all languages in multilingual mode.
@@ -310,6 +326,7 @@ def _generate_multilingual_pdfs(
         allow_python=allow_python,
         lang_suffix=f"_{base_lang_code}",
         validate_images=True,
+        filename_template=filename_template,
     )
     pdf_paths.append(pdf_path)
 
@@ -347,6 +364,7 @@ def _generate_multilingual_pdfs(
             lang_suffix=f"_{lang_code}",
             po_file=po_file,
             validate_images=False,
+            filename_template=filename_template,
         )
         pdf_paths.append(pdf_path)
 
@@ -359,6 +377,7 @@ def parse_markdown(
     keep_intermediate: bool = False,
     allow_python: bool = False,
     po_file: Path | None = None,
+    filename_template: str | None = None,
 ) -> list[Path]:
     """
     Convert markdown file to PDF through full pipeline.
@@ -407,6 +426,7 @@ def parse_markdown(
             base_dir,
             keep_intermediate,
             allow_python,
+            filename_template=filename_template,
         )
 
     # Step 4: Generate single PDF (with optional translation via po_file)
