@@ -73,7 +73,7 @@ jobs:
 
       - name: Upload test output on failure
         if: failure()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: test-output-ubuntu-${{ matrix.dependencies }}
           path: tests/output/
@@ -245,7 +245,7 @@ jobs:
 
       - name: Upload test output on failure
         if: failure()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: test-output-windows-${{ matrix.dependencies }}
           path: tests/output/
