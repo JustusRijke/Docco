@@ -10,6 +10,7 @@ from PIL import Image
 
 from docco.parser import (
     MAX_ITERATIONS,
+    BuildConfig,
     parse_markdown,
     process_directives_iteratively,
     process_filter_directives,
@@ -80,7 +81,9 @@ def test_keep_intermediate_false(fixture_dir):
     """Test that intermediate files are removed by default."""
     input_file = Path(fixture_dir) / "simple.md"
     with tempfile.TemporaryDirectory() as tmpdir:
-        parse_markdown(input_file, Path(tmpdir), keep_intermediate=False)
+        parse_markdown(
+            input_file, Path(tmpdir), config=BuildConfig(keep_intermediate=False)
+        )
         # Should only have PDF files
         all_files = [f.name for f in Path(tmpdir).iterdir()]
         assert any(f.endswith(".pdf") for f in all_files)
@@ -92,7 +95,9 @@ def test_keep_intermediate_true(fixture_dir):
     """Test that intermediate files are kept when flag is True."""
     input_file = Path(fixture_dir) / "simple.md"
     with tempfile.TemporaryDirectory() as tmpdir:
-        parse_markdown(input_file, Path(tmpdir), keep_intermediate=True)
+        parse_markdown(
+            input_file, Path(tmpdir), config=BuildConfig(keep_intermediate=True)
+        )
         all_files = [f.name for f in Path(tmpdir).iterdir()]
         # Should have PDF, HTML, and intermediate MD files
         assert any(f.endswith(".pdf") for f in all_files)
@@ -238,7 +243,7 @@ def test_dpi_parameter(fixture_dir):
 This document has a DPI setting.
 """)
 
-        outputs = parse_markdown(input_file, Path(tmpdir), dpi=300)
+        outputs = parse_markdown(input_file, Path(tmpdir), config=BuildConfig(dpi=300))
         assert len(outputs) == 1
         assert outputs[0].exists()
         assert outputs[0].name.endswith("test_dpi.pdf")
@@ -270,7 +275,9 @@ css: style.css
 """)
 
         # Generate PDF with DPI=300
-        outputs_300 = parse_markdown(input_file, Path(tmpdir), dpi=300)
+        outputs_300 = parse_markdown(
+            input_file, Path(tmpdir), config=BuildConfig(dpi=300)
+        )
         assert len(outputs_300) == 1
 
         # Generate PDF without DPI
@@ -324,7 +331,7 @@ def test_dpi_validation_warns_on_low_dpi_images(caplog):
 """)
 
         # Generate PDF
-        outputs = parse_markdown(input_file, Path(tmpdir), dpi=300)
+        outputs = parse_markdown(input_file, Path(tmpdir), config=BuildConfig(dpi=300))
         assert len(outputs) == 1
 
         # Should have warned about low DPI
@@ -365,7 +372,7 @@ msgstr ""
 """)
 
         # Generate PDFs (EN and DE)
-        outputs = parse_markdown(input_file, Path(tmpdir), dpi=300)
+        outputs = parse_markdown(input_file, Path(tmpdir), config=BuildConfig(dpi=300))
         assert len(outputs) == 2  # EN and DE
 
         # Should only warn once (for base language EN)
@@ -440,7 +447,9 @@ Shared content.
             encoding="utf-8",
         )
 
-        outputs = parse_markdown(input_file, Path(tmpdir), keep_intermediate=True)
+        outputs = parse_markdown(
+            input_file, Path(tmpdir), config=BuildConfig(keep_intermediate=True)
+        )
         assert len(outputs) == 2  # EN and DE
 
         en_html = (Path(tmpdir) / "test_EN.html").read_text(encoding="utf-8")

@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 from diffpdf import diffpdf
 
-from docco.parser import parse_markdown
+from docco.parser import BuildConfig, parse_markdown
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,9 @@ def test_regression_example_pdfs():
     for md_file in md_files:
         # Parse and generate PDFs (keep intermediate HTML for debugging)
         output_files = parse_markdown(
-            md_file, output_dir, allow_python=True, keep_intermediate=True
+            md_file,
+            output_dir,
+            config=BuildConfig(allow_python=True, keep_intermediate=True),
         )
 
         # Check each generated PDF against baseline

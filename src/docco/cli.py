@@ -9,7 +9,7 @@ import cyclopts
 from cyclopts import Parameter
 
 from docco.logging_config import setup_logging
-from docco.parser import parse_markdown
+from docco.parser import BuildConfig, parse_markdown
 from docco.pdf import html_to_pdf
 
 logger = logging.getLogger(__name__)
@@ -108,11 +108,13 @@ def main(
                 output_files = parse_markdown(
                     ifile,
                     out_dir,
-                    keep_intermediate=keep_intermediate,
-                    allow_python=allow_python,
                     po_file=po_file,
-                    filename_template=filename_template,
-                    dpi=dpi,
+                    config=BuildConfig(
+                        keep_intermediate=keep_intermediate,
+                        allow_python=allow_python,
+                        filename_template=filename_template,
+                        dpi=dpi,
+                    ),
                 )
                 all_output_files.extend(output_files)
 

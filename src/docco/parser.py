@@ -2,6 +2,7 @@
 
 import logging
 import re
+from dataclasses import dataclass
 from pathlib import Path
 
 from docco.core import markdown_to_html, parse_frontmatter, wrap_html
@@ -19,6 +20,14 @@ from docco.translation import (
 
 logger = logging.getLogger(__name__)
 MAX_ITERATIONS = 10
+
+
+@dataclass
+class BuildConfig:
+    keep_intermediate: bool = False
+    allow_python: bool = False
+    filename_template: str | None = None
+    dpi: int | None = None
 
 
 def preprocess_document(
@@ -119,13 +128,10 @@ def _generate_single_pdf(
     input_basename: str,
     output_dir: Path,
     base_dir: Path,
-    keep_intermediate: bool,
-    allow_python: bool,
+    config: BuildConfig,
     lang_suffix: str | None = None,
     po_file: Path | None = None,
     validate_images: bool = True,
-    filename_template: str | None = None,
-    dpi: int | None = None,
 ) -> Path:
     """
     Generate a single PDF from processed markdown body.
@@ -137,8 +143,7 @@ def _generate_single_pdf(
         input_basename: Base filename without extension
         output_dir: Directory for output files
         base_dir: Base directory for resource resolution
-        keep_intermediate: Keep intermediate HTML/MD files if True
-        allow_python: Allow python code execution in directives
+        config: Build settings (keep_intermediate, allow_python, filename_template, dpi)
         lang_suffix: Optional language suffix for filenames (e.g., "_de")
         po_file: Optional PO file for translations (applied before layout)
         validate_images: Validate image DPI if DPI frontmatter is set (default: True)
@@ -149,7 +154,7 @@ def _generate_single_pdf(
     # Generate output stem: use filename template for multilingual, plain basename otherwise
     if lang_suffix:
         lang_code = lang_suffix.lstrip("_")
-        template = filename_template or DEFAULT_MULTILINGUAL_FILENAME
+        template = config.filename_template or DEFAULT_MULTILINGUAL_FILENAME
         output_stem = _apply_filename_template(template, input_basename, lang_code)
     else:
         output_stem = input_basename
@@ -228,14 +233,14 @@ def _generate_single_pdf(
 
     # Convert to PDF
     pdf_path = output_dir / pdf_filename
-    html_to_pdf(html_path, pdf_path, dpi=dpi)
+    html_to_pdf(html_path, pdf_path, dpi=config.dpi)
 
     # Validate PDF image quality if DPI was specified and validation enabled
-    if validate_images and dpi is not None:
-        validate_and_warn_pdf_images(pdf_path, threshold=dpi)
+    if validate_images and config.dpi is not None:
+        validate_and_warn_pdf_images(pdf_path, threshold=config.dpi)
 
     # Clean up intermediate files if not keeping them
-    if not keep_intermediate:
+    if not config.keep_intermediate:
         if md_path.exists():
             md_path.unlink()
         if html_path.exists():
@@ -250,10 +255,7 @@ def _generate_multilingual_pdfs(
     input_file: Path,
     output_dir: Path,
     base_dir: Path,
-    keep_intermediate: bool,
-    allow_python: bool,
-    filename_template: str | None = None,
-    dpi: int | None = None,
+    config: BuildConfig,
 ) -> list[Path]:
     """
     Generate PDFs for all languages in multilingual mode.
@@ -322,12 +324,9 @@ def _generate_multilingual_pdfs(
         input_basename,
         output_dir,
         base_dir,
-        keep_intermediate=keep_intermediate,
-        allow_python=allow_python,
+        config,
         lang_suffix=f"_{base_lang_code}",
         validate_images=True,
-        filename_template=filename_template,
-        dpi=dpi,
     )
     pdf_paths.append(pdf_path)
 
@@ -360,13 +359,10 @@ def _generate_multilingual_pdfs(
             input_basename,
             output_dir,
             base_dir,
-            keep_intermediate,
-            allow_python,
+            config,
             lang_suffix=f"_{lang_code}",
             po_file=po_file,
             validate_images=False,
-            filename_template=filename_template,
-            dpi=dpi,
         )
         pdf_paths.append(pdf_path)
 
@@ -376,11 +372,8 @@ def _generate_multilingual_pdfs(
 def parse_markdown(
     input_file: Path,
     output_dir: Path,
-    keep_intermediate: bool = False,
-    allow_python: bool = False,
     po_file: Path | None = None,
-    filename_template: str | None = None,
-    dpi: int | None = None,
+    config: BuildConfig | None = None,
 ) -> list[Path]:
     """
     Convert markdown file to PDF through full pipeline.
@@ -400,14 +393,13 @@ def parse_markdown(
     Args:
         input_file: Path to input markdown file
         output_dir: Directory for output files
-        keep_intermediate: Keep intermediate HTML/MD files if True
-        allow_python: Allow python code execution in directives
         po_file: Path to PO file for translations (optional, ignored in multilingual mode)
-        dpi: Maximum image resolution for PDF output (optional)
+        config: Build settings (keep_intermediate, allow_python, filename_template, dpi)
 
     Returns:
         list[Path]: Paths to generated PDF files
     """
+    config = config or BuildConfig()
     logger.info(f"Processing markdown: {input_file}")
 
     # Read file
@@ -415,7 +407,9 @@ def parse_markdown(
         content = f.read()
 
     # Step 1 & 2: Preprocess document (parse frontmatter and process directives)
-    metadata, body, base_dir = preprocess_document(content, input_file, allow_python)
+    metadata, body, base_dir = preprocess_document(
+        content, input_file, config.allow_python
+    )
     logger.debug(f"Parsed frontmatter: {metadata}")
     input_basename = input_file.stem
 
@@ -428,10 +422,7 @@ def parse_markdown(
             input_file,
             output_dir,
             base_dir,
-            keep_intermediate,
-            allow_python,
-            filename_template=filename_template,
-            dpi=dpi,
+            config,
         )
 
     # Step 4: Generate single PDF (with optional translation via po_file)
@@ -442,10 +433,8 @@ def parse_markdown(
         input_basename,
         output_dir,
         base_dir,
-        keep_intermediate,
-        allow_python,
+        config,
         po_file=po_file,
-        dpi=dpi,
     )
 
     return [pdf_path]

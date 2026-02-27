@@ -74,7 +74,7 @@ def test_cli_allow_python_from_config(tmp_path, monkeypatch):
     with patch("docco.cli.parse_markdown") as mock_parse:
         mock_parse.return_value = [tmp_path / "doc.pdf"]
         app([], exit_on_error=False)
-        assert mock_parse.call_args[1]["allow_python"] is True
+        assert mock_parse.call_args[1]["config"].allow_python is True
 
 
 def test_cli_allow_python_flag_overrides_config(tmp_path, monkeypatch):
@@ -89,7 +89,7 @@ def test_cli_allow_python_flag_overrides_config(tmp_path, monkeypatch):
     with patch("docco.cli.parse_markdown") as mock_parse:
         mock_parse.return_value = [tmp_path / "doc.pdf"]
         app(["--allow-python"], exit_on_error=False)
-        assert mock_parse.call_args[1]["allow_python"] is True
+        assert mock_parse.call_args[1]["config"].allow_python is True
 
 
 def test_cli_output_path_from_config(tmp_path, monkeypatch):
@@ -137,7 +137,7 @@ def test_cli_keep_intermediate_from_config(tmp_path, monkeypatch):
     with patch("docco.cli.parse_markdown") as mock_parse:
         mock_parse.return_value = [tmp_path / "doc.pdf"]
         app([], exit_on_error=False)
-        assert mock_parse.call_args[1]["keep_intermediate"] is True
+        assert mock_parse.call_args[1]["config"].keep_intermediate is True
 
 
 def test_cli_createdir_creates_subdir(tmp_path, monkeypatch):

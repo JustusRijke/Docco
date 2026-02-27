@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from docco.core import markdown_to_html
-from docco.parser import parse_markdown
+from docco.parser import BuildConfig, parse_markdown
 from docco.translation import extract_html_to_pot, get_po_stats
 
 
@@ -77,8 +77,7 @@ def test_translation_workflow_all_languages(translation_files, baselines_dir):
         output_files = parse_markdown(
             Path(translation_files["source"]),
             Path(tmpdir),
-            allow_python=True,
-            keep_intermediate=False,
+            config=BuildConfig(allow_python=True),
         )
 
         # Should generate 3 PDFs (en base language + de and nl from available .po files)
@@ -129,9 +128,7 @@ msgstr "Hola mundo"
         Path(output_dir).mkdir(parents=True)
 
         # Generate PDF with po_file parameter
-        output_files = parse_markdown(
-            md_path, Path(output_dir), po_file=po_path, allow_python=False
-        )
+        output_files = parse_markdown(md_path, Path(output_dir), po_file=po_path)
 
         # Should generate 1 PDF with no language suffix
         assert len(output_files) == 1
@@ -160,7 +157,7 @@ Hello world"""
 
         # Should raise ValueError because base_language is missing
         with pytest.raises(ValueError, match="base_language") as exc_info:
-            parse_markdown(Path(md_path), Path(output_dir), allow_python=False)
+            parse_markdown(Path(md_path), Path(output_dir))
 
         assert "base_language" in str(exc_info.value)
 
@@ -185,9 +182,7 @@ Hello world"""
         Path(output_dir).mkdir(parents=True)
 
         # Should generate PDF for base language even without translations
-        output_files = parse_markdown(
-            Path(md_path), Path(output_dir), allow_python=False
-        )
+        output_files = parse_markdown(Path(md_path), Path(output_dir))
 
         # Should have 1 PDF for base language
         assert len(output_files) == 1
@@ -215,9 +210,7 @@ Original content."""
         Path(output_dir).mkdir(parents=True)
 
         # First build: creates POT file
-        output_files = parse_markdown(
-            Path(md_path), Path(output_dir), allow_python=False
-        )
+        output_files = parse_markdown(Path(md_path), Path(output_dir))
         assert len(output_files) == 1  # Base language only
 
         # Verify POT file was created
@@ -256,9 +249,7 @@ New paragraph added."""
             f.write(updated_content)
 
         # Second build: should auto-update PO file with new strings
-        output_files = parse_markdown(
-            Path(md_path), Path(output_dir), allow_python=False
-        )
+        output_files = parse_markdown(Path(md_path), Path(output_dir))
         assert len(output_files) == 2  # Base + German
 
         # Verify PO file still exists and was updated
