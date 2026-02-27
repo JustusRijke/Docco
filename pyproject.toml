@@ -23,7 +23,6 @@ classifiers = [
 ]
 
 dependencies = [
-    "tomli>=2.0.0; python_version < '3.11'",
     "markdown-it-py>=4.0.0",
     "mdit-py-plugins>=0.5.0",
     "pyyaml>=6.0.3",
@@ -37,6 +36,7 @@ dependencies = [
     "cffi>=2.0.0",
     "pycparser>=2.21",
     "ply>=3.11",
+    "cyclopts>=4.6.0",
 ]
 
 [project.urls]
@@ -53,7 +53,7 @@ dev = [
 ]
 
 [project.scripts]
-docco = "docco.cli:main"
+docco = "docco.cli:entry_point"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/docco"]

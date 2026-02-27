@@ -1,18 +1,18 @@
-[input]
 # One or more markdown or HTML files to convert (relative to this file)
-file = ["examples/Feature_Showcase.md"]
-# or: file = "examples/Feature_Showcase.md"
+file = "examples/Feature_Showcase.md"
+# or: file = ["examples/Feature_Showcase.md", "examples/Other.md"]
 
-[python]
-# Allow execution of Python code in inline directives (security risk)
-# allow = true
-
-[output]
 # Output directory for generated PDFs (relative to this file)
-# path = "."
-# createdir = true  # output to {path}/{filename without extension}/
-# keep-intermediate = false  # keep intermediate .md and .html files
+# output = "."
 
-[multilingual]
-# Output filename pattern for multilingual PDFs ({filename} and {langcode} are substituted)
-# filename = "{filename}_{langcode}"
+# Output each file to its own subdirectory: {output}/{filename}/
+# createdir = false
+
+# Keep intermediate .md and .html files for debugging
+# keep-intermediate = false
+
+# Allow execution of Python code in inline directives (security risk)
+# allow-python = false
+
+# Output filename pattern for multilingual PDFs
+# filename-template = "{filename}_{langcode}"
