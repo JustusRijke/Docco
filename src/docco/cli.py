@@ -74,6 +74,7 @@ def main() -> None:
         keep_intermediate = args.keep_intermediate or config.get("output", {}).get(
             "keep-intermediate", False
         )
+        createdir = config.get("output", {}).get("createdir", False)
 
         if args.output != ".":
             # Explicit CLI flag
@@ -84,11 +85,17 @@ def main() -> None:
             output_dir = Path(args.output)
         po_file = Path(args.po) if args.po else None
 
-        if not output_dir.exists():
+        if not createdir and not output_dir.exists():
             output_dir.mkdir(parents=True)
 
         all_output_files: list[Path] = []
         for input_file in input_files:
+            effective_output_dir = (
+                output_dir / input_file.stem if createdir else output_dir
+            )
+            if not effective_output_dir.exists():
+                effective_output_dir.mkdir(parents=True)
+
             if not input_file.exists():
                 logger.error(f"Input file not found: {input_file}")
                 sys.exit(1)
@@ -105,14 +112,14 @@ def main() -> None:
             # Direct HTML to PDF conversion (bypass all processing)
             if input_file.suffix.lower() in [".html", ".htm"]:
                 logger.info(f"Processing HTML: {input_file}")
-                output_pdf = output_dir / f"{input_file.stem}.pdf"
+                output_pdf = effective_output_dir / f"{input_file.stem}.pdf"
                 html_to_pdf(input_file, output_pdf)
                 all_output_files.append(output_pdf)
             else:
                 # Convert markdown to PDF
                 output_files = parse_markdown(
                     input_file,
-                    output_dir,
+                    effective_output_dir,
                     keep_intermediate=keep_intermediate,
                     allow_python=allow_python,
                     po_file=po_file,

@@ -141,6 +141,35 @@ def test_cli_output_flag_overrides_config(tmp_path, monkeypatch):
         assert call_output_dir == cli_out
 
 
+def test_load_config_createdir(tmp_path):
+    """load_config parses [output] createdir key."""
+    config = tmp_path / ".docco"
+    config.write_text("[output]\ncreatedir = true\n", encoding="utf-8")
+    result = load_config(config)
+    assert result["output"]["createdir"] is True
+
+
+def test_cli_createdir_creates_subdir(tmp_path, monkeypatch):
+    """createdir = true routes output to {path}/{stem}/."""
+    md = tmp_path / "doc.md"
+    md.write_text("# Doc", encoding="utf-8")
+    out = tmp_path / "out"
+    config = tmp_path / ".docco"
+    config.write_text(
+        f"[input]\nfile = 'doc.md'\n[output]\npath = '{out}'\ncreatedir = true\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr("sys.argv", ["docco"])
+    monkeypatch.chdir(tmp_path)
+
+    with patch("docco.cli.parse_markdown") as mock_parse:
+        mock_parse.return_value = [out / "doc" / "doc.pdf"]
+        main()
+        call_output_dir = mock_parse.call_args[0][1]
+        assert call_output_dir == out / "doc"
+        assert call_output_dir.exists()
+
+
 def test_load_config_keep_intermediate(tmp_path):
     """load_config parses [output] keep-intermediate key."""
     config = tmp_path / ".docco"

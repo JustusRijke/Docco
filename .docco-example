@@ -10,7 +10,7 @@ file = ["examples/Feature_Showcase.md"]
 [output]
 # Output directory for generated PDFs (relative to this file)
 # path = "."
-# createdir = true # output to {path}/{filename without extension}/
+# createdir = true  # output to {path}/{filename without extension}/
 # keep-intermediate = false  # keep intermediate .md and .html files
 
 # [multilingual]

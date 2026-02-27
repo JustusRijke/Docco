@@ -72,6 +72,9 @@ def load_config(path: Path) -> dict:
             # Resolve output path relative to config file's directory
             output_result["path"] = path.parent / output_section["path"]
             logger.debug(f"Config output.path: {output_result['path']}")
+        if "createdir" in output_section:
+            output_result["createdir"] = bool(output_section["createdir"])
+            logger.debug(f"Config output.createdir: {output_result['createdir']}")
         if "keep-intermediate" in output_section:
             output_result["keep-intermediate"] = bool(
                 output_section["keep-intermediate"]
