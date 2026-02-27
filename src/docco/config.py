@@ -12,10 +12,11 @@ else:
 logger = logging.getLogger(__name__)
 
 CONFIG_FILENAME = ".docco"
-KNOWN_SECTIONS = {"input", "python", "output"}
+KNOWN_SECTIONS = {"input", "python", "output", "multilingual"}
 KNOWN_INPUT_KEYS = {"file"}
 KNOWN_PYTHON_KEYS = {"allow"}
 KNOWN_OUTPUT_KEYS = {"path", "createdir", "keep-intermediate"}
+KNOWN_MULTILINGUAL_KEYS = {"filename"}
 
 
 def find_config(start: Path) -> Path | None:
@@ -83,6 +84,17 @@ def load_config(path: Path) -> dict:
                 f"Config output.keep-intermediate: {output_result['keep-intermediate']}"
             )
         result["output"] = output_result
+
+    if "multilingual" in raw:
+        ml_section = raw["multilingual"]
+        for key in ml_section:
+            if key not in KNOWN_MULTILINGUAL_KEYS:
+                logger.warning(f"Unknown config key in [multilingual]: {key}")
+        if "filename" in ml_section:
+            result["multilingual"] = {"filename": str(ml_section["filename"])}
+            logger.debug(
+                f"Config multilingual.filename: {result['multilingual']['filename']}"
+            )
 
     if "python" in raw:
         python_section = raw["python"]

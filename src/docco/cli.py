@@ -75,6 +75,7 @@ def main() -> None:
             "keep-intermediate", False
         )
         createdir = config.get("output", {}).get("createdir", False)
+        filename_template = config.get("multilingual", {}).get("filename")
 
         if args.output != ".":
             # Explicit CLI flag
@@ -123,6 +124,7 @@ def main() -> None:
                     keep_intermediate=keep_intermediate,
                     allow_python=allow_python,
                     po_file=po_file,
+                    filename_template=filename_template,
                 )
                 all_output_files.extend(output_files)
 

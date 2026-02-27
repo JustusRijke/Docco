@@ -13,5 +13,6 @@ file = ["examples/Feature_Showcase.md"]
 # createdir = true  # output to {path}/{filename without extension}/
 # keep-intermediate = false  # keep intermediate .md and .html files
 
-# [multilingual]
+[multilingual]
+# Output filename pattern for multilingual PDFs ({filename} and {langcode} are substituted)
 # filename = "{filename}_{langcode}"

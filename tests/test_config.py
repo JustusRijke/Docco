@@ -8,6 +8,7 @@ import pytest
 
 from docco.cli import main
 from docco.config import find_config, load_config
+from docco.parser import _apply_filename_template
 
 
 @pytest.fixture
@@ -267,6 +268,37 @@ def test_cli_allow_python_flag_overrides_config(tmp_path, monkeypatch):
         main()
         call_kwargs = mock_parse.call_args[1]
         assert call_kwargs["allow_python"] is True
+
+
+def test_load_config_multilingual_filename(tmp_path):
+    """load_config parses [multilingual] filename key."""
+    config = tmp_path / ".docco"
+    config.write_text(
+        '[multilingual]\nfilename = "{filename}_{langcode}"\n', encoding="utf-8"
+    )
+    result = load_config(config)
+    assert result["multilingual"]["filename"] == "{filename}_{langcode}"
+
+
+def test_load_config_multilingual_unknown_key(tmp_path, caplog):
+    """load_config warns on unknown keys in [multilingual]."""
+    config = tmp_path / ".docco"
+    config.write_text("[multilingual]\nunknown = 'x'\n", encoding="utf-8")
+    with caplog.at_level(logging.WARNING, logger="docco.config"):
+        load_config(config)
+    assert "Unknown config key in [multilingual]" in caplog.text
+
+
+def test_apply_filename_template_default():
+    """Default template produces {filename}_{langcode}."""
+    assert _apply_filename_template("{filename}_{langcode}", "doc", "EN") == "doc_EN"
+
+
+def test_apply_filename_template_custom():
+    """Custom template is substituted correctly."""
+    assert (
+        _apply_filename_template("{langcode}-{filename}", "report", "DE") == "DE-report"
+    )
 
 
 # --- CLI integration tests ---
