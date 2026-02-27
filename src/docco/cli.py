@@ -72,7 +72,13 @@ def main() -> None:
 
         allow_python = args.allow_python or config.get("python", {}).get("allow", False)
 
-        output_dir = Path(args.output)
+        if args.output != ".":
+            # Explicit CLI flag
+            output_dir = Path(args.output)
+        elif "path" in config.get("output", {}):
+            output_dir = config["output"]["path"]
+        else:
+            output_dir = Path(args.output)
         po_file = Path(args.po) if args.po else None
 
         if not output_dir.exists():

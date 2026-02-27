@@ -7,9 +7,10 @@ file = ["examples/Feature_Showcase.md"]
 # Allow execution of Python code in inline directives (security risk)
 # allow = true
 
-# [output]
+[output]
+# Output directory for generated PDFs (relative to this file)
 # path = "."
-# createdir = true
+# createdir = true # output to {path}/{filename without extension}/
 # keep-intermediate = false
 
 # [multilingual]

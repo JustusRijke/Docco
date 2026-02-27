@@ -85,6 +85,62 @@ def test_load_config_empty_file(tmp_path):
     assert result == {}
 
 
+def test_load_config_output_path(tmp_path):
+    """load_config resolves output path relative to config file."""
+    config = tmp_path / ".docco"
+    config.write_text("[output]\npath = 'out'\n", encoding="utf-8")
+    result = load_config(config)
+    assert result["output"]["path"] == tmp_path / "out"
+
+
+def test_load_config_output_unknown_key(tmp_path, caplog):
+    """load_config warns on unknown keys in [output]."""
+    config = tmp_path / ".docco"
+    config.write_text("[output]\nunknown = 'x'\n", encoding="utf-8")
+    with caplog.at_level(logging.WARNING, logger="docco.config"):
+        load_config(config)
+    assert "Unknown config key in [output]" in caplog.text
+
+
+def test_cli_output_path_from_config(tmp_path, monkeypatch):
+    """CLI uses output path from [output] config when -o not given."""
+    md = tmp_path / "doc.md"
+    md.write_text("# Doc", encoding="utf-8")
+    out = tmp_path / "myout"
+    config = tmp_path / ".docco"
+    config.write_text(
+        f"[input]\nfile = 'doc.md'\n[output]\npath = '{out}'\n", encoding="utf-8"
+    )
+    monkeypatch.setattr("sys.argv", ["docco"])
+    monkeypatch.chdir(tmp_path)
+
+    with patch("docco.cli.parse_markdown") as mock_parse:
+        mock_parse.return_value = [out / "doc.pdf"]
+        main()
+        call_output_dir = mock_parse.call_args[0][1]
+        assert call_output_dir == out
+
+
+def test_cli_output_flag_overrides_config(tmp_path, monkeypatch):
+    """-o CLI flag takes precedence over config output path."""
+    md = tmp_path / "doc.md"
+    md.write_text("# Doc", encoding="utf-8")
+    cli_out = tmp_path / "cli_out"
+    cli_out.mkdir()
+    config = tmp_path / ".docco"
+    config.write_text(
+        "[input]\nfile = 'doc.md'\n[output]\npath = 'config_out'\n", encoding="utf-8"
+    )
+    monkeypatch.setattr("sys.argv", ["docco", "-o", str(cli_out)])
+    monkeypatch.chdir(tmp_path)
+
+    with patch("docco.cli.parse_markdown") as mock_parse:
+        mock_parse.return_value = [cli_out / "doc.pdf"]
+        main()
+        call_output_dir = mock_parse.call_args[0][1]
+        assert call_output_dir == cli_out
+
+
 def test_load_config_python_allow(tmp_path):
     """load_config parses [python] allow key."""
     config = tmp_path / ".docco"
