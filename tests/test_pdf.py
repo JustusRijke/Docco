@@ -7,7 +7,6 @@ import pytest
 from PIL import Image
 
 from docco.pdf import (
-    _absolutize_css_urls,
     collect_css_content,
     collect_js_content,
     html_to_pdf,
@@ -121,56 +120,8 @@ def test_collect_css_empty_metadata(tmp_md):
     assert result["external"] == []
 
 
-def test_absolutize_css_urls_converts_relative_font(tmp_path):
-    """Test relative font URLs are converted to absolute file:// URLs."""
-    css = "@font-face { src: url('./fonts/font.ttf'); }"
-    css_path = str(tmp_path / "css" / "style.css")
-    result = _absolutize_css_urls(css, css_path)
-    # Check that result contains file:// URL and fonts/font.ttf
-    assert 'url("file://' in result
-    assert "fonts/font.ttf" in result
-
-
-def test_absolutize_css_urls_handles_various_quote_styles(tmp_path):
-    """Test CSS url() with different quote styles."""
-    css = """
-        .a { background: url('./img1.png'); }
-        .b { background: url("./img2.png"); }
-        .c { background: url(./img3.png); }
-    """
-    css_path = str(tmp_path / "css" / "style.css")
-    result = _absolutize_css_urls(css, css_path)
-    # Check that all three images are converted to file:// URLs
-    assert 'url("file://' in result
-    assert "img1.png" in result
-    assert "img2.png" in result
-    assert "img3.png" in result
-
-
-def test_absolutize_css_urls_preserves_absolute_urls():
-    """Test absolute URLs (http, https, file) are preserved."""
-    css = """
-        @font-face { src: url("https://fonts.com/font.woff2"); }
-        .a { background: url("http://example.com/bg.png"); }
-        .b { background: url("file:///etc/image.png"); }
-    """
-    css_path = "/path/to/css/style.css"
-    result = _absolutize_css_urls(css, css_path)
-    assert 'url("https://fonts.com/font.woff2")' in result
-    assert 'url("http://example.com/bg.png")' in result
-    assert 'url("file:///etc/image.png")' in result
-
-
-def test_absolutize_css_urls_preserves_data_urls():
-    """Test data URLs are preserved."""
-    css = ".icon { background: url('data:image/svg+xml;base64,abc123'); }"
-    css_path = "/path/to/css/style.css"
-    result = _absolutize_css_urls(css, css_path)
-    assert "url('data:image/svg+xml;base64,abc123')" in result
-
-
 def test_collect_css_absolutizes_font_urls(tmp_path):
-    """Test CSS collection converts font URLs to absolute paths."""
+    """Test CSS collection absolutizes url() refs relative to the CSS file location."""
     md_file = tmp_path / "document.md"
     md_file.write_text("# Test")
 
@@ -182,7 +133,6 @@ def test_collect_css_absolutizes_font_urls(tmp_path):
     metadata = {"css": "css/fonts.css"}
     result = collect_css_content(md_file, metadata)
 
-    # URL should be converted to absolute path
     assert "url(" in result["inline"]
     assert "file://" in result["inline"]
     assert "fonts/test.ttf" in result["inline"]

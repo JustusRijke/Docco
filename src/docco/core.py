@@ -1,8 +1,10 @@
 """Core utilities: logging, frontmatter parsing, HTML wrapping."""
 
 import logging
+import re
 from pathlib import Path
 from typing import cast
+from urllib.parse import urljoin
 
 import yaml
 from markdown_it import MarkdownIt
@@ -82,6 +84,55 @@ def markdown_to_html(markdown_content: str) -> str:
     html = cast(str, md.render(markdown_content))
     logger.debug("Converted markdown to HTML")
     return html
+
+
+def absolutize_css_urls(css_content: str, css_file_path: Path) -> str:
+    """
+    Convert relative URLs in CSS to absolute file:// URLs.
+
+    Preserves absolute URLs (http://, https://, file://) and data URLs.
+    """
+    css_dir = css_file_path.resolve().parent
+    base_url = css_dir.as_uri()
+
+    def replace_url(match: re.Match) -> str:
+        url = match.group(1).strip("'\" ")
+        if (
+            url.startswith("http://")
+            or url.startswith("https://")
+            or url.startswith("file://")
+            or url.startswith("data:")
+        ):
+            return match.group(0)
+        return f'url("{urljoin(base_url + "/", url)}")'
+
+    return re.sub(r'url\(["\']?([^)]+?)["\']?\)', replace_url, css_content)
+
+
+def _fix_style_block_urls(html_content: str, base_dir: Path) -> str:
+    """
+    Absolutize url() references inside all <style> blocks and validate file existence.
+
+    Raises:
+        FileNotFoundError: If a referenced local file does not exist
+    """
+    # Sentinel path so absolutize_css_urls resolves relative to base_dir
+    sentinel = base_dir / "_"
+
+    def replace_style(match: re.Match) -> str:
+        absolutized = absolutize_css_urls(match.group(1), sentinel)
+        # Validate all file:// URLs
+        for url_match in re.finditer(r'url\("(file://[^"]+)"\)', absolutized):
+            from urllib.request import url2pathname
+
+            file_path = Path(url2pathname(url_match.group(1)[7:]))  # strip "file://"
+            if not file_path.exists():
+                raise FileNotFoundError(
+                    f"Asset not found (referenced in CSS): {file_path}"
+                )
+        return f"<style>{absolutized}</style>"
+
+    return re.sub(r"<style>(.*?)</style>", replace_style, html_content, flags=re.DOTALL)
 
 
 def _absolutize_html_urls(html_content: str, base_dir: Path) -> str:
@@ -179,5 +230,8 @@ def wrap_html(
     wrapped = template.replace("{HEAD_CONTENT}", head_content).replace(
         "{BODY_CONTENT}", html_content
     )
+
+    if base_dir:
+        wrapped = _fix_style_block_urls(wrapped, base_dir)
 
     return wrapped

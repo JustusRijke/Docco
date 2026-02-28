@@ -6,6 +6,8 @@ from typing import TypedDict
 
 from playwright.sync_api import ConsoleMessage, sync_playwright
 
+from docco.core import absolutize_css_urls
+
 logger = logging.getLogger(__name__)
 
 # Signal set by paged.js template when rendering is complete
@@ -45,50 +47,6 @@ def _check_file_writable(file_path: Path) -> None:  # pragma: no cover
         )
     except Exception as e:
         raise RuntimeError(f"Error accessing PDF file {file_path}: {e}")
-
-
-def _absolutize_css_urls(css_content: str, css_file_path: str) -> str:
-    """
-    Convert relative URLs in CSS to absolute file:// URLs.
-
-    Converts url() references while preserving:
-    - Absolute URLs (http://, https://, file://)
-    - Data URLs (data:)
-
-    Args:
-        css_content: CSS content string
-        css_file_path: Path to CSS file for resolving relative paths
-
-    Returns:
-        str: CSS with absolutized URLs
-    """
-    import re
-    from urllib.parse import urljoin
-
-    # Ensure absolute path for cross-platform compatibility
-    abs_css_path = Path(css_file_path).resolve()
-    css_dir = abs_css_path.parent
-    base_url = css_dir.as_uri()
-
-    def replace_url(match: re.Match) -> str:
-        url = match.group(1).strip("'\" ")
-
-        # Preserve absolute URLs and data URLs
-        if (
-            url.startswith("http://")
-            or url.startswith("https://")
-            or url.startswith("file://")
-            or url.startswith("data:")
-        ):
-            return match.group(0)
-
-        # Convert relative URL to absolute file:// URL
-        abs_url = urljoin(base_url + "/", url)
-        return f'url("{abs_url}")'
-
-    # Match url(...) with various quote styles
-    pattern = r'url\(["\']?([^)]+?)["\']?\)'
-    return re.sub(pattern, replace_url, css_content)
 
 
 def collect_css_content(markdown_file: Path, metadata: dict[str, object]) -> CSSContent:
@@ -136,9 +94,7 @@ def collect_css_content(markdown_file: Path, metadata: dict[str, object]) -> CSS
             if abs_path.exists():
                 with abs_path.open("r", encoding="utf-8") as f:
                     raw_css = f.read()
-                # Convert relative URLs in CSS to absolute paths
-                absolutized_css = _absolutize_css_urls(raw_css, str(abs_path))
-                css_content.append(absolutized_css)
+                css_content.append(absolutize_css_urls(raw_css, abs_path))
                 logger.debug(f"Using CSS from frontmatter: {css_path}")
             else:
                 logger.warning(f"CSS file not found: {abs_path}")

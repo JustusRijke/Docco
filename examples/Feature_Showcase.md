@@ -56,7 +56,7 @@ base_language: en
   ```
 
 File paths are relative to the markdown file and are embedded in the generated HTML document within `<style>` tags.
-External CSS URLs (starting with `http://` or `https://`) are included as `<link>` tags in the HTML, allowing WeasyPrint to fetch them during PDF generation.
+External CSS URLs (starting with `http://` or `https://`) are included as `<link>` tags in the HTML, allowing Chromium to fetch them during PDF generation.
 This enables use of web fonts like Google Fonts directly in your PDF documents.
 
 **`js`** - JavaScript file(s) or URLs to inject into the HTML `<head>` as `<script>` tags. Same format as `css`:
