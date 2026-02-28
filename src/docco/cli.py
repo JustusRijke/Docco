@@ -50,13 +50,14 @@ def main(
     po: Path | None = None,
     keep_intermediate: bool = False,
     verbose: Annotated[bool, Parameter(name=["--verbose", "-v"])] = False,
+    log_file: Path | None = None,
     allow_python: bool = False,
     createdir: bool = False,
     filename_template: str | None = None,
     dpi: int | None = None,
 ) -> None:
     """Convert Markdown (or HTML) to PDF."""
-    counter = setup_logging(verbose=verbose)
+    counter = setup_logging(verbose=verbose, log_file=log_file)
 
     try:
         if input_file is None:

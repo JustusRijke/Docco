@@ -19,3 +19,6 @@ file = "examples/Feature_Showcase.md"
 
 # Maximum image DPI for PDF output; images exceeding this are flagged with a warning
 # dpi = 300
+
+# Write log output to a file
+# log-file = "docco.log"

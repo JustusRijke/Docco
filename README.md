@@ -45,6 +45,9 @@ docco input.md -o output/
 # With verbose output
 docco input.md -o output/ -v
 
+# Log output to file
+docco input.md -o output/ --log-file docco.log
+
 # Keep intermediate files for debugging
 docco input.md -o output/ --keep-intermediate
 
@@ -105,7 +108,6 @@ Supported frontmatter keys:
 
 - `css`: CSS stylesheet paths or URLs (string or list)
 - `js`: JavaScript file paths or URLs (string or list) — injected as `<script>` tags in `<head>`
-- `dpi`: Maximum image resolution for PDF output (integer)
 - `multilingual`: Enable multilingual mode (boolean)
 - `base_language`: Base language code for multilingual documents (string)
 
@@ -144,8 +146,7 @@ pytest --cov=src/docco --cov-report=term-missing
 ruff check .
 
 # Build example PDF
-cd examples
-docco Feature_Showcase.md --allow-python
+docco examples/Feature_Showcase.md --allow-python
 ```
 
 ### Testing
@@ -157,9 +158,8 @@ The test suite includes regression tests that verify generated PDFs match baseli
 When adding features or fixing bugs, update baselines by running:
 
 ```bash
-cd examples
-docco Feature_Showcase.md -o ../tests/baselines/ --allow-python
-docco Multilingual_Document_Example.md -o ../tests/baselines/ --allow-python
+docco examples/Feature_Showcase.md -o tests/baselines/ --allow-python
+docco examples/Multilingual_Document_Example.md -o tests/baselines/
 ```
 
 ## Documentation

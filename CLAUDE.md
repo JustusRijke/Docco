@@ -126,6 +126,8 @@ docco examples/Multilingual_Document_Example.md -o tests/output/ --allow-python
 cp tests/output/*.pdf tests/baselines/
 ```
 
+Update .docco-example on command line arguments / configuration changes.
+
 ## References
 
 - [markdown-it docs](https://markdown-it-py.readthedocs.io/)
