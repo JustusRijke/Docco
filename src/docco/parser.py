@@ -322,10 +322,8 @@ def parse_markdown(
         base_language: str = base_language_raw
         base_lang_code = base_language.upper()
 
-        # POT lives next to the source file in {stem}/ subdir
-        pot_dir = base_dir / input_basename
-        pot_dir.mkdir(exist_ok=True, parents=True)
-        pot_path = pot_dir / f"{input_basename}.pot"
+        # POT lives next to the source file
+        pot_path = base_dir / f"{input_basename}.pot"
 
         # Extract POT from rendered HTML
         css_result = collect_css_content(input_file, metadata)
