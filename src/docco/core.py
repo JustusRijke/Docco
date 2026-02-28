@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 from typing import cast
 from urllib.parse import urljoin
+from urllib.request import url2pathname
 
 import yaml
 from markdown_it import MarkdownIt
@@ -123,8 +124,6 @@ def _fix_style_block_urls(html_content: str, base_dir: Path) -> str:
         absolutized = absolutize_css_urls(match.group(1), sentinel)
         # Validate all file:// URLs
         for url_match in re.finditer(r'url\("(file://[^"]+)"\)', absolutized):
-            from urllib.request import url2pathname
-
             file_path = Path(url2pathname(url_match.group(1)[7:]))  # strip "file://"
             if not file_path.exists():
                 raise FileNotFoundError(
