@@ -6,8 +6,12 @@ css:
   - "css/fancy.css"
 base_language: en
 translations:
-  de: Multilingual_Document_Example/de.po
-  nl: Multilingual_Document_Example/nl.po
+  de:
+    - Multilingual_Document_Example/de.po
+    - shared/copyright_de.po
+  nl:
+    - Multilingual_Document_Example/nl.po
+    - shared/copyright_nl.po
 ---
 
 <!-- inline:"header.html" title="Docco Multilingual Document Example" author="Docco Team" -->

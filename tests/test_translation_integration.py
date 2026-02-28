@@ -168,8 +168,8 @@ Original content."""
         output_files = parse_markdown(md_path, output_dir)
         assert len(output_files) == 2  # Base EN + DE
 
-        # Verify POT file was created
-        pot_path = Path(tmpdir) / "test" / "test.pot"
+        # Verify POT file was created (next to the source md file)
+        pot_path = Path(tmpdir) / "test.pot"
         assert pot_path.exists()
 
         # Update markdown with new content
@@ -246,3 +246,59 @@ Document only."""
         # verify PDFs were created at minimum)
         for pdf in output_files:
             assert pdf.exists()
+
+
+def test_multiple_po_files_per_language():
+    """Test that multiple PO files per language are supported in translations frontmatter.
+
+    First listed PO has highest priority; supplemental POs fill in untranslated strings.
+    """
+    md_content = """---
+base_language: en
+translations:
+  de:
+    - de_primary.po
+    - de_shared.po
+---
+# Hello
+
+Primary string.
+
+Shared string."""
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        md_path = Path(tmpdir) / "test.md"
+        with md_path.open("w", encoding="utf-8") as f:
+            f.write(md_content)
+
+        # Primary PO: overrides "Hello" and "Primary string."
+        primary_po = Path(tmpdir) / "de_primary.po"
+        primary_po.write_text(
+            'msgid "Hello"\nmsgstr "Primaer Hallo"\n\n'
+            'msgid "Primary string."\nmsgstr "Primaere Zeichenkette."\n',
+            encoding="utf-8",
+        )
+
+        # Supplemental PO: provides "Hello" (overridden) and "Shared string."
+        shared_po = Path(tmpdir) / "de_shared.po"
+        shared_po.write_text(
+            'msgid "Hello"\nmsgstr "Geteilt Hallo"\n\n'
+            'msgid "Shared string."\nmsgstr "Geteilte Zeichenkette."\n',
+            encoding="utf-8",
+        )
+
+        output_dir = Path(tmpdir) / "output"
+        output_dir.mkdir()
+
+        output_files = parse_markdown(
+            md_path, output_dir, config=BuildConfig(keep_intermediate=True)
+        )
+
+        assert len(output_files) == 2  # EN + DE
+
+        de_html = (output_dir / "test_DE.html").read_text(encoding="utf-8")
+        # Primary PO wins over supplemental for "Hello"
+        assert "Primaer Hallo" in de_html
+        assert "Geteilt Hallo" not in de_html
+        # Supplemental PO fills in "Shared string."
+        assert "Geteilte Zeichenkette" in de_html

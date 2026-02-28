@@ -69,6 +69,16 @@ css: style.css
 ---
 ```
 
+Each language can reference a single PO file (string) or multiple PO files (list). When multiple files are listed, the first has the highest priority — later files fill in any untranslated strings:
+
+```yaml
+translations:
+  de:
+    - locales/de.po
+    - shared/de_boilerplate.po
+  nl: locales/nl.po
+```
+
 Then run:
 
 ```bash

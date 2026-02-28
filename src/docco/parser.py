@@ -131,7 +131,7 @@ def _generate_single_pdf(
     base_dir: Path,
     config: BuildConfig,
     lang_suffix: str | None = None,
-    po_file: Path | None = None,
+    po_files: list[Path] | None = None,
     library_po_files: list[Path] | None = None,
     validate_images: bool = True,
 ) -> Path:
@@ -147,8 +147,8 @@ def _generate_single_pdf(
         base_dir: Base directory for resource resolution
         config: Build settings (keep_intermediate, allow_python, filename_template, dpi)
         lang_suffix: Optional language suffix for filenames (e.g., "_de")
-        po_file: Optional PO file for translations (applied before layout)
-        library_po_files: Optional shared library PO files (lowest priority)
+        po_files: PO files for this language, highest-priority first
+        library_po_files: Shared library PO files (lowest priority)
         validate_images: Validate image DPI if DPI frontmatter is set (default: True)
 
     Returns:
@@ -186,18 +186,17 @@ def _generate_single_pdf(
         body_html = process_filter_directives(body_html, lang_code)
 
     # Apply translation if needed (before layout)
-    effective_po: Path | None = po_file
+    # Merge order (lowest to highest priority): library POs, then po_files reversed
+    # so that the first listed PO (index 0) wins.
+    all_po_inputs = [*(library_po_files or []), *reversed(po_files or [])]
     merged_po_temp: Path | None = None
-    if library_po_files and po_file:
-        # Merge library POs (lowest priority) + document PO (highest priority)
+    effective_po: Path | None = None
+    if len(all_po_inputs) > 1:
         merged_po_temp = output_dir / f"{output_stem}_merged.po"
-        merge_po_files([*library_po_files, po_file], merged_po_temp)
+        merge_po_files(all_po_inputs, merged_po_temp)
         effective_po = merged_po_temp
-    elif library_po_files and not po_file:
-        # Library POs only — merge them
-        merged_po_temp = output_dir / f"{output_stem}_merged.po"
-        merge_po_files(library_po_files, merged_po_temp)
-        effective_po = merged_po_temp
+    elif len(all_po_inputs) == 1:
+        effective_po = all_po_inputs[0]
 
     if effective_po:
         temp_body_path = output_dir / f"{html_filename}.body_temp"
@@ -341,14 +340,20 @@ def parse_markdown(
         pot_html_path.unlink()
         logger.debug(f"Extracted POT: {pot_path}")
 
-        # Resolve PO file paths relative to source file's directory
-        lang_po_map: dict[str, Path] = {
-            str(lang): (base_dir / str(po_rel)).resolve()
-            for lang, po_rel in translations.items()
+        # Resolve PO file paths relative to source file's directory.
+        # Each value may be a string or a list of strings (multiple PO files per lang).
+        # First entry in the list has highest priority.
+        def _resolve_po_list(val: object) -> list[Path]:
+            paths = [val] if isinstance(val, str) else list(val)  # type: ignore[arg-type]
+            return [(base_dir / str(p)).resolve() for p in paths]
+
+        lang_po_map: dict[str, list[Path]] = {
+            str(lang): _resolve_po_list(po_val) for lang, po_val in translations.items()
         }
 
-        # Update listed PO files with new POT content
-        update_po_files(pot_path, list(lang_po_map.values()))
+        # Update only the primary (first) PO per language with new POT content
+        primary_po_files = [paths[0] for paths in lang_po_map.values()]
+        update_po_files(pot_path, primary_po_files)
 
         pdf_paths: list[Path] = []
         logger.info(f"Processing base language: {base_lang_code}")
@@ -370,17 +375,18 @@ def parse_markdown(
         )
 
         # Generate one PDF per listed translation
-        for lang, po_file_path in sorted(lang_po_map.items()):
+        for lang, lang_po_files in sorted(lang_po_map.items()):
             lang_code = lang.upper()
             logger.info(f"Processing language: {lang_code}")
 
-            if not check_po_sync(pot_path, po_file_path):
+            primary_po = lang_po_files[0]
+            if not check_po_sync(pot_path, primary_po):
                 logger.warning(
                     f"PO file out of sync for {lang_code}: "
                     f"document has changed. PO files are automatically updated on each build."
                 )
 
-            stats = get_po_stats(po_file_path)
+            stats = get_po_stats(primary_po)
             if stats["untranslated"] > 0 or stats["fuzzy"] > 0:
                 logger.warning(
                     f"Translation incomplete for {lang_code}: "
@@ -397,7 +403,7 @@ def parse_markdown(
                     base_dir,
                     config,
                     lang_suffix=f"_{lang_code}",
-                    po_file=po_file_path,
+                    po_files=lang_po_files,
                     library_po_files=library_po_files,
                     validate_images=False,
                 )
