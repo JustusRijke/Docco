@@ -51,36 +51,51 @@ docco input.md -o output/ --log-file docco.log
 # Keep intermediate files for debugging
 docco input.md -o output/ --keep-intermediate
 
-# Single-language mode with translation
-docco input.md --po translations/de.po -o output/
-
 # Allow Python code execution (security-sensitive)
 docco input.md --allow-python -o output/
 ```
 
 ### Multilingual Mode
 
-Set `multilingual: true` in frontmatter to automatically:
-
-- Extract POT file from HTML content
-- Update all PO files with new/changed strings
-- Generate PDFs for base language + all translations
+Declare `translations` in frontmatter to generate PDFs for multiple languages:
 
 ```yaml
 ---
-multilingual: true
 base_language: en
+translations:
+  de: locales/de.po
+  nl: locales/nl.po
 css: style.css
 ---
 ```
 
-Then simply run:
+Then run:
 
 ```bash
 docco input.md -o output/
 ```
 
-Docco will generate `input_EN.pdf`, `input_DE.pdf`, etc., based on available PO files in the `input/` directory.
+Docco will:
+- Extract a POT file from the rendered HTML
+- Update all listed PO files with new/changed strings
+- Generate `input_EN.pdf`, `input_DE.pdf`, `input_NL.pdf`
+
+PO file paths resolve relative to the markdown file's directory.
+
+### Library PO Files
+
+Share common translations (e.g. company boilerplate) across documents with `library-po` in `.docco` or `--library-po` on the command line:
+
+```toml
+# .docco
+library-po = ["shared/copyright.po", "shared/address.po"]
+```
+
+```bash
+docco input.md -o output/ --library-po shared/copyright.po
+```
+
+Document-level translations take precedence over library translations when the same string appears in both.
 
 ### Language Filter Directive
 
@@ -108,7 +123,7 @@ Supported frontmatter keys:
 
 - `css`: CSS stylesheet paths or URLs (string or list)
 - `js`: JavaScript file paths or URLs (string or list) — injected as `<script>` tags in `<head>`
-- `multilingual`: Enable multilingual mode (boolean)
+- `translations`: Language-to-PO-file mapping for multilingual mode (`{de: locales/de.po, nl: locales/nl.po}`)
 - `base_language`: Base language code for multilingual documents (string)
 
 Unknown keys trigger a warning but don't prevent processing.

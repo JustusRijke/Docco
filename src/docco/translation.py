@@ -146,24 +146,47 @@ def check_po_sync(pot_path: Path, po_path: Path) -> bool:
     return pot_msgids == po_msgids
 
 
-def update_po_files(pot_path: Path, translations_dir: Path) -> None:
+def merge_po_files(po_paths: list[Path], output_path: Path) -> None:
+    """
+    Merge multiple PO files into one, with later files winning on conflict.
+
+    Loads each PO file in order; entries from later files overwrite earlier ones
+    (document-level PO wins over library PO).
+
+    Args:
+        po_paths: PO files to merge, in priority order (lowest first)
+        output_path: Path to write the merged PO file
+    """
+    merged = polib.POFile()
+    merged.metadata = {"Content-Type": "text/plain; charset=UTF-8"}
+
+    entries: dict[str, polib.POEntry] = {}
+    for path in po_paths:
+        pf = polib.pofile(str(path))
+        for entry in pf.translated_entries():
+            entries[entry.msgid] = entry
+
+    for entry in entries.values():
+        merged.append(entry)
+
+    merged.save(str(output_path))
+
+
+def update_po_files(pot_path: Path, po_files: list[Path]) -> None:
     """
     Update existing PO files with new/changed strings from POT file.
 
     Uses pot2po to merge updates while preserving existing translations.
-    Only processes .po files in the translations_dir.
 
     Args:
         pot_path: Path to POT template file
-        translations_dir: Directory containing .po files to update
+        po_files: PO files to update
     """
-    po_files = sorted(translations_dir.glob("*.po"))
-
     if not po_files:
         logger.debug("No existing PO files to update")
         return
 
-    for po_file in po_files:
+    for po_file in sorted(po_files):
         lang = po_file.name
         logger.debug(f"Updating {lang} with new POT...")
 

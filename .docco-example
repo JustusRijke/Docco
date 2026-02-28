@@ -22,3 +22,6 @@ file = "examples/Feature_Showcase.md"
 
 # Write log output to a file
 # log-file = "docco.log"
+
+# Shared library PO files applied as fallback translations (document PO takes precedence)
+# library-po = ["shared/copyright.po", "shared/address.po"]

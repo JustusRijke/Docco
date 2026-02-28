@@ -47,7 +47,6 @@ def main(
     input_file: Annotated[Path | None, Parameter(name=["input-file", "file"])] = None,
     *,
     output: Annotated[Path, Parameter(name=["--output", "-o"])] = Path(),
-    po: Path | None = None,
     keep_intermediate: bool = False,
     verbose: Annotated[bool, Parameter(name=["--verbose", "-v"])] = False,
     log_file: Path | None = None,
@@ -55,6 +54,7 @@ def main(
     createdir: bool = False,
     filename_template: str | None = None,
     dpi: int | None = None,
+    library_po: list[Path] | None = None,
 ) -> None:
     """Convert Markdown (or HTML) to PDF."""
     counter = setup_logging(verbose=verbose, log_file=log_file)
@@ -76,7 +76,10 @@ def main(
             input_files = [
                 config_dir / f if not f.is_absolute() else f for f in input_files
             ]
-        po_file = po
+            if library_po:
+                library_po = [
+                    config_dir / p if not p.is_absolute() else p for p in library_po
+                ]
 
         effective_output = output
         if not createdir and not effective_output.exists():
@@ -109,13 +112,13 @@ def main(
                 output_files = parse_markdown(
                     ifile,
                     out_dir,
-                    po_file=po_file,
                     config=BuildConfig(
                         keep_intermediate=keep_intermediate,
                         allow_python=allow_python,
                         filename_template=filename_template,
                         dpi=dpi,
                     ),
+                    library_po_files=library_po,
                 )
                 all_output_files.extend(output_files)
 

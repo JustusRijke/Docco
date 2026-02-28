@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 KNOWN_FRONTMATTER_KEYS = {
     "css",
     "js",
-    "multilingual",
+    "translations",
     "base_language",
 }
 

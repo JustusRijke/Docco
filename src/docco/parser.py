@@ -15,6 +15,7 @@ from docco.translation import (
     check_po_sync,
     extract_html_to_pot,
     get_po_stats,
+    merge_po_files,
     update_po_files,
 )
 
@@ -131,6 +132,7 @@ def _generate_single_pdf(
     config: BuildConfig,
     lang_suffix: str | None = None,
     po_file: Path | None = None,
+    library_po_files: list[Path] | None = None,
     validate_images: bool = True,
 ) -> Path:
     """
@@ -146,6 +148,7 @@ def _generate_single_pdf(
         config: Build settings (keep_intermediate, allow_python, filename_template, dpi)
         lang_suffix: Optional language suffix for filenames (e.g., "_de")
         po_file: Optional PO file for translations (applied before layout)
+        library_po_files: Optional shared library PO files (lowest priority)
         validate_images: Validate image DPI if DPI frontmatter is set (default: True)
 
     Returns:
@@ -183,7 +186,20 @@ def _generate_single_pdf(
         body_html = process_filter_directives(body_html, lang_code)
 
     # Apply translation if needed (before layout)
-    if po_file:
+    effective_po: Path | None = po_file
+    merged_po_temp: Path | None = None
+    if library_po_files and po_file:
+        # Merge library POs (lowest priority) + document PO (highest priority)
+        merged_po_temp = output_dir / f"{output_stem}_merged.po"
+        merge_po_files([*library_po_files, po_file], merged_po_temp)
+        effective_po = merged_po_temp
+    elif library_po_files and not po_file:
+        # Library POs only — merge them
+        merged_po_temp = output_dir / f"{output_stem}_merged.po"
+        merge_po_files(library_po_files, merged_po_temp)
+        effective_po = merged_po_temp
+
+    if effective_po:
         temp_body_path = output_dir / f"{html_filename}.body_temp"
         temp_translated_path = output_dir / f"{html_filename}.translated_temp"
 
@@ -195,14 +211,12 @@ def _generate_single_pdf(
             f.write(temp_wrapped)
 
         # Apply translation
-        apply_po_to_html(temp_body_path, po_file, temp_translated_path)
+        apply_po_to_html(temp_body_path, effective_po, temp_translated_path)
 
         # Extract translated body from wrapped HTML
         with temp_translated_path.open("r", encoding="utf-8") as f:
             translated_html = f.read()
         # Extract body content (between <body> and </body>)
-        import re
-
         body_match = re.search(r"<body>\s*(.*?)\s*</body>", translated_html, re.DOTALL)
         if body_match:
             body_html = body_match.group(1)
@@ -210,6 +224,8 @@ def _generate_single_pdf(
         # Clean up temp files
         temp_body_path.unlink()
         temp_translated_path.unlink()
+        if merged_po_temp and merged_po_temp.exists():
+            merged_po_temp.unlink()
         logger.debug("Applied translations")
 
     # Process layout (on potentially translated body HTML)
@@ -249,131 +265,11 @@ def _generate_single_pdf(
     return pdf_path
 
 
-def _generate_multilingual_pdfs(
-    body: str,
-    metadata: dict[str, object],
-    input_file: Path,
-    output_dir: Path,
-    base_dir: Path,
-    config: BuildConfig,
-) -> list[Path]:
-    """
-    Generate PDFs for all languages in multilingual mode.
-
-    Args:
-        body: Processed markdown body (after directives)
-        metadata: Frontmatter metadata (must include base_language)
-        input_file: Path to input markdown file
-        output_dir: Directory for output files
-        base_dir: Base directory for resource resolution
-        keep_intermediate: Keep intermediate HTML/MD files if True
-        allow_python: Allow python code execution in directives
-
-    Returns:
-        list[Path]: Paths to generated PDF files
-
-    Raises:
-        ValueError: If base_language not specified in frontmatter
-    """
-    # Check for required base_language in multilingual mode
-    base_language_raw = metadata.get("base_language")
-    if not base_language_raw or not isinstance(base_language_raw, str):
-        raise ValueError("Multilingual mode requires 'base_language' in frontmatter")
-
-    base_language: str = base_language_raw
-
-    input_basename = input_file.stem
-    translations_dir = base_dir / input_basename
-    translations_dir.mkdir(exist_ok=True, parents=True)
-
-    pdf_paths = []
-    base_lang_code = base_language.upper()
-    logger.info(f"Processing base language: {base_lang_code}")
-
-    # Step 1: Generate HTML without layout for POT extraction
-    css_result = collect_css_content(input_file, metadata)
-    body_html = markdown_to_html(body)
-    html_for_pot = wrap_html(
-        body_html,
-        css_content=css_result["inline"],
-        external_css=css_result["external"],
-        base_dir=base_dir,
-    )
-
-    # Write HTML for POT extraction (without layout)
-    pot_html_path = output_dir / f"{input_basename}_for_pot.html"
-    with pot_html_path.open("w", encoding="utf-8") as f:
-        f.write(html_for_pot)
-
-    # Step 2: Extract POT file from HTML to translations subfolder
-    pot_path = translations_dir / f"{input_basename}.pot"
-    extract_html_to_pot(pot_html_path, pot_path)
-    logger.debug(f"Extracted POT for multilingual: {pot_path}")
-
-    # Clean up POT HTML
-    pot_html_path.unlink()
-
-    # Step 3: Update existing PO files with new POT content
-    update_po_files(pot_path, translations_dir)
-
-    # Step 4: Generate PDF for base language (with layout)
-    pdf_path = _generate_single_pdf(
-        body,
-        metadata,
-        input_file,
-        input_basename,
-        output_dir,
-        base_dir,
-        config,
-        lang_suffix=f"_{base_lang_code}",
-        validate_images=True,
-    )
-    pdf_paths.append(pdf_path)
-
-    # Step 5: Find and process .po files in translations subfolder
-    po_files = sorted(translations_dir.glob("*.po"))
-    for po_file in po_files:
-        lang_code = po_file.stem.upper()
-        logger.info(f"Processing language: {lang_code}")
-
-        # Check if PO file is in sync with current POT
-        if not check_po_sync(pot_path, po_file):
-            logger.warning(
-                f"PO file out of sync for {lang_code}: "
-                f"document has changed. PO files are automatically updated on each build."
-            )
-
-        # Check translation status
-        stats = get_po_stats(po_file)
-        if stats["untranslated"] > 0 or stats["fuzzy"] > 0:
-            logger.warning(
-                f"Translation incomplete for {lang_code}: "
-                f"{stats['untranslated']} untranslated, {stats['fuzzy']} fuzzy"
-            )
-
-        # Generate PDF with translation (skip image validation for non-base languages)
-        pdf_path = _generate_single_pdf(
-            body,
-            metadata,
-            input_file,
-            input_basename,
-            output_dir,
-            base_dir,
-            config,
-            lang_suffix=f"_{lang_code}",
-            po_file=po_file,
-            validate_images=False,
-        )
-        pdf_paths.append(pdf_path)
-
-    return pdf_paths
-
-
 def parse_markdown(
     input_file: Path,
     output_dir: Path,
-    po_file: Path | None = None,
     config: BuildConfig | None = None,
+    library_po_files: list[Path] | None = None,
 ) -> list[Path]:
     """
     Convert markdown file to PDF through full pipeline.
@@ -388,13 +284,14 @@ def parse_markdown(
     7. Convert HTML to PDF (TOC generated via JavaScript during PDF rendering)
     8. Clean up intermediate files (unless keep_intermediate=True)
 
-    For multilingual mode: extract POT from HTML and generate PDFs for each language.
+    If `translations` is in frontmatter: extract POT, update PO files, generate
+    base language PDF + one PDF per listed language.
 
     Args:
         input_file: Path to input markdown file
         output_dir: Directory for output files
-        po_file: Path to PO file for translations (optional, ignored in multilingual mode)
         config: Build settings (keep_intermediate, allow_python, filename_template, dpi)
+        library_po_files: Shared library PO files (lowest priority, optional)
 
     Returns:
         list[Path]: Paths to generated PDF files
@@ -413,19 +310,104 @@ def parse_markdown(
     logger.debug(f"Parsed frontmatter: {metadata}")
     input_basename = input_file.stem
 
-    # Step 3: Route to appropriate workflow based on multilingual flag
-    if metadata.get("multilingual", False):
-        # Multilingual mode: ignore po_file parameter
-        return _generate_multilingual_pdfs(
-            body,
-            metadata,
-            input_file,
-            output_dir,
-            base_dir,
-            config,
+    translations = metadata.get("translations")
+
+    # Multilingual mode: translations dict in frontmatter
+    if isinstance(translations, dict) and translations:
+        base_language_raw = metadata.get("base_language")
+        if not base_language_raw or not isinstance(base_language_raw, str):
+            raise ValueError(
+                "Multilingual mode requires 'base_language' in frontmatter"
+            )
+        base_language: str = base_language_raw
+        base_lang_code = base_language.upper()
+
+        # POT lives next to the source file in {stem}/ subdir
+        pot_dir = base_dir / input_basename
+        pot_dir.mkdir(exist_ok=True, parents=True)
+        pot_path = pot_dir / f"{input_basename}.pot"
+
+        # Extract POT from rendered HTML
+        css_result = collect_css_content(input_file, metadata)
+        body_html = markdown_to_html(body)
+        html_for_pot = wrap_html(
+            body_html,
+            css_content=css_result["inline"],
+            external_css=css_result["external"],
+            base_dir=base_dir,
+        )
+        pot_html_path = output_dir / f"{input_basename}_for_pot.html"
+        with pot_html_path.open("w", encoding="utf-8") as f:
+            f.write(html_for_pot)
+        extract_html_to_pot(pot_html_path, pot_path)
+        pot_html_path.unlink()
+        logger.debug(f"Extracted POT: {pot_path}")
+
+        # Resolve PO file paths relative to source file's directory
+        lang_po_map: dict[str, Path] = {
+            str(lang): (base_dir / str(po_rel)).resolve()
+            for lang, po_rel in translations.items()
+        }
+
+        # Update listed PO files with new POT content
+        update_po_files(pot_path, list(lang_po_map.values()))
+
+        pdf_paths: list[Path] = []
+        logger.info(f"Processing base language: {base_lang_code}")
+
+        # Generate base language PDF
+        pdf_paths.append(
+            _generate_single_pdf(
+                body,
+                metadata,
+                input_file,
+                input_basename,
+                output_dir,
+                base_dir,
+                config,
+                lang_suffix=f"_{base_lang_code}",
+                library_po_files=library_po_files,
+                validate_images=True,
+            )
         )
 
-    # Step 4: Generate single PDF (with optional translation via po_file)
+        # Generate one PDF per listed translation
+        for lang, po_file_path in sorted(lang_po_map.items()):
+            lang_code = lang.upper()
+            logger.info(f"Processing language: {lang_code}")
+
+            if not check_po_sync(pot_path, po_file_path):
+                logger.warning(
+                    f"PO file out of sync for {lang_code}: "
+                    f"document has changed. PO files are automatically updated on each build."
+                )
+
+            stats = get_po_stats(po_file_path)
+            if stats["untranslated"] > 0 or stats["fuzzy"] > 0:
+                logger.warning(
+                    f"Translation incomplete for {lang_code}: "
+                    f"{stats['untranslated']} untranslated, {stats['fuzzy']} fuzzy"
+                )
+
+            pdf_paths.append(
+                _generate_single_pdf(
+                    body,
+                    metadata,
+                    input_file,
+                    input_basename,
+                    output_dir,
+                    base_dir,
+                    config,
+                    lang_suffix=f"_{lang_code}",
+                    po_file=po_file_path,
+                    library_po_files=library_po_files,
+                    validate_images=False,
+                )
+            )
+
+        return pdf_paths
+
+    # Single PDF (with optional library PO fallback)
     pdf_path = _generate_single_pdf(
         body,
         metadata,
@@ -434,7 +416,7 @@ def parse_markdown(
         output_dir,
         base_dir,
         config,
-        po_file=po_file,
+        library_po_files=library_po_files,
     )
 
     return [pdf_path]

@@ -6,6 +6,9 @@ msgstr "Content-Type: text/plain; charset=UTF-8\n"
 msgid "Alleen in het Nederlands"
 msgstr ""
 
+msgid "Copyright 2025 Docco Team. All rights reserved."
+msgstr ""
+
 msgid "Date 2025-10-31"
 msgstr ""
 

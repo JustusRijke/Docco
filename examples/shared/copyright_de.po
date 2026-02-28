@@ -1,0 +1,9 @@
+# Shared German copyright notice (library PO example)
+# Demonstrates library-po: translations shared across multiple documents.
+# Run with: docco Multilingual_Document_Example.md --library-po shared/copyright_de.po
+msgid ""
+msgstr "Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "Copyright 2025 Docco Team. All rights reserved."
+msgstr "Urheberrecht 2025 Docco Team. Alle Rechte vorbehalten."
+

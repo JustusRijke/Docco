@@ -52,7 +52,7 @@ def test_markdown_input_uses_full_pipeline(tmp_path):
 
 
 def test_html_input_ignores_markdown_specific_flags(tmp_path):
-    """HTML input accepts --allow-python and --po flags without error."""
+    """HTML input accepts --allow-python and --library-po flags without error."""
     html_file = tmp_path / "test.html"
     html_file.write_text("<html><body>Test</body></html>", encoding="utf-8")
     output_dir = tmp_path / "output"
@@ -65,7 +65,7 @@ def test_html_input_ignores_markdown_specific_flags(tmp_path):
                 "-o",
                 str(output_dir),
                 "--allow-python",
-                "--po",
+                "--library-po",
                 "dummy.po",
             ],
             exit_on_error=False,

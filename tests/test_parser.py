@@ -125,12 +125,16 @@ def test_max_iterations_exceeded_self_referencing():
 def test_multilingual_build_logs_translation_warnings(caplog):
     """Test that incomplete translations trigger warnings in multilingual mode."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        # Create markdown file with multilingual frontmatter
+        translations_dir = Path(tmpdir) / "test"
+        translations_dir.mkdir(exist_ok=True, parents=True)
+        de_po = translations_dir / "de.po"
+
         input_file = Path(tmpdir) / "test.md"
-        with Path(input_file).open("w", encoding="utf-8") as f:
+        with input_file.open("w", encoding="utf-8") as f:
             f.write("""---
-multilingual: true
 base_language: en
+translations:
+  de: test/de.po
 ---
 
 # Hello
@@ -138,16 +142,11 @@ base_language: en
 This is a test document.
 """)
 
-        # Create translations directory and incomplete PO file
-        translations_dir = str(Path(tmpdir) / "test")
-        Path(translations_dir).mkdir(exist_ok=True, parents=True)
-
         # Create PO file with incomplete translation (fuzzy)
         # Note: When multilingual mode runs, it auto-updates the PO file,
         # so we need to create a PO file that will result in fuzzy/untranslated
         # entries after being merged with the actual POT content
-        de_po = str(Path(translations_dir) / "de.po")
-        with Path(de_po).open("w", encoding="utf-8") as f:
+        with de_po.open("w", encoding="utf-8") as f:
             f.write("""# German translations
 msgid ""
 msgstr ""
@@ -172,12 +171,16 @@ msgstr "<h1>Hallo</h1>"
 def test_multilingual_po_sync_warning(caplog):
     """Test that out-of-sync PO files trigger sync warnings in multilingual mode."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        # Create markdown file
+        translations_dir = Path(tmpdir) / "test"
+        translations_dir.mkdir(exist_ok=True, parents=True)
+        de_po = translations_dir / "de.po"
+
         input_file = Path(tmpdir) / "test.md"
-        with Path(input_file).open("w", encoding="utf-8") as f:
+        with input_file.open("w", encoding="utf-8") as f:
             f.write("""---
-multilingual: true
 base_language: en
+translations:
+  de: test/de.po
 ---
 
 # New Content
@@ -185,13 +188,8 @@ base_language: en
 This has changed.
 """)
 
-        # Create translations directory with old PO file
-        translations_dir = str(Path(tmpdir) / "test")
-        Path(translations_dir).mkdir(exist_ok=True, parents=True)
-
         # Create a PO file with old content that won't match new POT
-        de_po = str(Path(translations_dir) / "de.po")
-        with Path(de_po).open("w", encoding="utf-8") as f:
+        with de_po.open("w", encoding="utf-8") as f:
             f.write("""# German translations
 msgid ""
 msgstr ""
@@ -214,11 +212,14 @@ msgstr "<h1>Alter Inhalt</h1>"
 def test_multilingual_missing_base_language():
     """Test that multilingual mode requires base_language in frontmatter."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        # Create markdown file without base_language
+        de_po = Path(tmpdir) / "de.po"
+        de_po.write_text('msgid ""\nmsgstr ""\n', encoding="utf-8")
+
         input_file = Path(tmpdir) / "test.md"
-        with Path(input_file).open("w", encoding="utf-8") as f:
+        with input_file.open("w", encoding="utf-8") as f:
             f.write("""---
-multilingual: true
+translations:
+  de: de.po
 ---
 
 # Test Document
@@ -343,32 +344,28 @@ def test_dpi_validation_multilingual_base_only(caplog):
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create a small low-resolution image
         img = Image.new("RGB", (100, 100), color="green")
-        img_path = str(Path(tmpdir) / "lowres.png")
-        img.save(img_path)
+        img.save(str(Path(tmpdir) / "lowres.png"))
 
-        # Create markdown with multilingual mode
+        translations_dir = Path(tmpdir) / "test"
+        translations_dir.mkdir(exist_ok=True, parents=True)
+        de_po = translations_dir / "de.po"
+        de_po.write_text(
+            'msgid ""\nmsgstr ""\n"Content-Type: text/plain; charset=UTF-8\\n"\n',
+            encoding="utf-8",
+        )
+
+        # Create markdown with translations dict
         input_file = Path(tmpdir) / "test.md"
-        with Path(input_file).open("w", encoding="utf-8") as f:
+        with input_file.open("w", encoding="utf-8") as f:
             f.write("""---
-multilingual: true
 base_language: en
+translations:
+  de: test/de.po
 ---
 
 # Test Document
 
 ![Low res](lowres.png)
-""")
-
-        # Create translations directory with a DE translation
-        translations_dir = str(Path(tmpdir) / "test")
-        Path(translations_dir).mkdir(exist_ok=True, parents=True)
-
-        de_po = str(Path(translations_dir) / "de.po")
-        with Path(de_po).open("w", encoding="utf-8") as f:
-            f.write("""# German translations
-msgid ""
-msgstr ""
-"Content-Type: text/plain; charset=UTF-8\\n"
 """)
 
         # Generate PDFs (EN and DE)
@@ -420,11 +417,19 @@ def test_filter_directives_multiple_blocks():
 def test_filter_applied_in_multilingual_pdf():
     """Filter directives are applied per language when generating multilingual PDFs."""
     with tempfile.TemporaryDirectory() as tmpdir:
+        translations_dir = Path(tmpdir) / "test"
+        translations_dir.mkdir()
+        (translations_dir / "de.po").write_text(
+            'msgid ""\nmsgstr ""\n"Content-Type: text/plain; charset=UTF-8\\n"\n',
+            encoding="utf-8",
+        )
+
         input_file = Path(tmpdir) / "test.md"
         input_file.write_text(
             """---
-multilingual: true
 base_language: en
+translations:
+  de: test/de.po
 ---
 
 <!-- filter: en -->
@@ -437,13 +442,6 @@ German only content.
 
 Shared content.
 """,
-            encoding="utf-8",
-        )
-
-        translations_dir = Path(tmpdir) / "test"
-        translations_dir.mkdir()
-        (translations_dir / "de.po").write_text(
-            'msgid ""\nmsgstr ""\n"Content-Type: text/plain; charset=UTF-8\\n"\n',
             encoding="utf-8",
         )
 

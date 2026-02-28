@@ -11,6 +11,7 @@ from docco.translation import (
     check_po_sync,
     extract_html_to_pot,
     get_po_stats,
+    merge_po_files,
     update_po_files,
 )
 
@@ -293,8 +294,8 @@ msgstr ""
 """
             )
 
-        # Call update_po_files with empty directory - should not raise an error
-        update_po_files(pot_path, Path(tmpdir))
+        # Call update_po_files with empty list - should not raise an error
+        update_po_files(pot_path, [])
 
 
 def test_update_po_files_preserves_translations():
@@ -327,7 +328,7 @@ msgstr "Welt"
         assert orig_stats["translated"] == 2
 
         # Update with same POT (should preserve translations)
-        update_po_files(pot_path, Path(tmpdir))
+        update_po_files(pot_path, [po_path])
 
         # Stats should be unchanged
         updated_stats = get_po_stats(po_path)
@@ -369,7 +370,7 @@ msgstr "Welt"
         assert orig_stats["untranslated"] == 0
 
         # Update with new POT containing extra string
-        update_po_files(pot_path, Path(tmpdir))
+        update_po_files(pot_path, [po_path])
 
         # Stats should reflect new untranslated string
         updated_stats = get_po_stats(po_path)
@@ -512,3 +513,59 @@ msgstr "Prüfung"
 
         # Should be out of sync (different strings)
         assert check_po_sync(pot_path, po_path) is False
+
+
+def test_merge_po_files_document_wins():
+    """Test that later (document) PO entries override earlier (library) ones."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        lib_po = Path(tmpdir) / "lib.po"
+        doc_po = Path(tmpdir) / "doc.po"
+        out_po = Path(tmpdir) / "merged.po"
+
+        with lib_po.open("w", encoding="utf-8") as f:
+            f.write(
+                'msgid "Hello"\nmsgstr "Library"\n\nmsgid "Copyright"\nmsgstr "Lib Copyright"\n'
+            )
+
+        with doc_po.open("w", encoding="utf-8") as f:
+            f.write('msgid "Hello"\nmsgstr "Document"\n')
+
+        merge_po_files([lib_po, doc_po], out_po)
+
+        import polib
+
+        merged = polib.pofile(str(out_po))
+        entries = {e.msgid: e.msgstr for e in merged}
+        # Document value wins
+        assert entries["Hello"] == "Document"
+        # Library-only entry included
+        assert entries["Copyright"] == "Lib Copyright"
+
+
+def test_merge_po_files_library_only():
+    """Test merging a single library PO produces correct output."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        lib_po = Path(tmpdir) / "lib.po"
+        out_po = Path(tmpdir) / "merged.po"
+
+        with lib_po.open("w", encoding="utf-8") as f:
+            f.write('msgid "Address"\nmsgstr "Main Street 1"\n')
+
+        merge_po_files([lib_po], out_po)
+
+        import polib
+
+        merged = polib.pofile(str(out_po))
+        assert merged.find("Address").msgstr == "Main Street 1"
+
+
+def test_merge_po_files_empty_list():
+    """Test merging an empty list produces an empty PO file."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        out_po = Path(tmpdir) / "merged.po"
+        merge_po_files([], out_po)
+        assert out_po.exists()
+        import polib
+
+        merged = polib.pofile(str(out_po))
+        assert len(merged) == 0
