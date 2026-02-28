@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from docco.inline import process_inlines
+from docco.inline import process_inlines, rebase_inline_paths
 
 
 @pytest.fixture
@@ -58,8 +58,9 @@ def test_nested_inline_two_levels(fixture_dir):
     # Should contain first level of inlining
     assert "# Document" in result
     assert "# Document with Nested Inline" in result
-    # Second level directive is still present (needs another iteration)
-    assert '<!-- inline:"tests/fixtures/nested_inline_2.md" -->' in result
+    # Second level directive is rewritten to absolute path for the next iteration
+    fixtures_abs = str(Path("tests/fixtures/nested_inline_2.md").resolve())
+    assert f'<!-- inline:"{fixtures_abs}" -->' in result
     # Full nested content requires iterative processing in parser.py
 
 
@@ -301,3 +302,51 @@ def test_inline_all_args_used_no_warning(fixture_dir, caplog):
     # No warnings should be logged
     assert "Unused arguments" not in caplog.text
     assert "Unfulfilled placeholders" not in caplog.text
+
+
+def test_rebase_inline_paths_rewrites_relative():
+    """Relative inline paths are rewritten to absolute based on file_dir."""
+    file_dir = Path("/some/subdir")
+    content = '<!-- inline:"sibling.md" -->'
+    result = rebase_inline_paths(content, file_dir)
+    assert result == f'<!-- inline:"{(file_dir / "sibling.md").resolve()}" -->'
+
+
+def test_rebase_inline_paths_preserves_absolute():
+    """Absolute inline paths are left unchanged."""
+    content = '<!-- inline:"/absolute/path/file.md" -->'
+    result = rebase_inline_paths(content, Path("/some/dir"))
+    assert result == content
+
+
+def test_rebase_inline_paths_skips_code_blocks():
+    """Inline directives inside fenced code blocks are not rewritten."""
+    file_dir = Path("/some/dir")
+    content = '```\n<!-- inline:"relative.md" -->\n```'
+    result = rebase_inline_paths(content, file_dir)
+    assert '<!-- inline:"relative.md" -->' in result
+
+
+def test_nested_inline_cross_directory(tmp_path):
+    """Integration: main.md -> subdir/child.md -> subdir/sibling.md resolves correctly."""
+    subdir = tmp_path / "subdir"
+    subdir.mkdir()
+
+    sibling = subdir / "sibling.md"
+    sibling.write_text("# Sibling Content\n", encoding="utf-8")
+
+    child = subdir / "child.md"
+    child.write_text('# Child\n\n<!-- inline:"sibling.md" -->\n', encoding="utf-8")
+
+    main = tmp_path / "main.md"
+    main.write_text('# Main\n\n<!-- inline:"subdir/child.md" -->\n', encoding="utf-8")
+
+    # First pass: resolves subdir/child.md, rewrites its sibling.md -> absolute
+    result1 = process_inlines(main.read_text(encoding="utf-8"), tmp_path)
+    assert "# Child" in result1
+    sibling_abs = str(sibling.resolve())
+    assert f'<!-- inline:"{sibling_abs}" -->' in result1
+
+    # Second pass: resolves the absolute path to sibling.md
+    result2 = process_inlines(result1, tmp_path)
+    assert "# Sibling Content" in result2

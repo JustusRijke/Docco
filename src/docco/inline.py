@@ -95,6 +95,20 @@ def restore_code_blocks(content: str, code_blocks: dict[str, str]) -> str:
     return result
 
 
+def rebase_inline_paths(content: str, file_dir: Path) -> str:
+    """Rewrite relative inline directive paths to absolute, based on file_dir."""
+    pattern = r'(<!--\s*inline\s*:\s*")([^"]+)(")'
+
+    def rewrite(match: re.Match[str]) -> str:
+        prefix, path, suffix = match.group(1), match.group(2), match.group(3)
+        if path.startswith("/"):
+            return match.group(0)
+        return f"{prefix}{(file_dir / path).resolve()}{suffix}"
+
+    protected, code_blocks = extract_code_blocks(content)
+    return restore_code_blocks(re.sub(pattern, rewrite, protected), code_blocks)
+
+
 def process_inlines(content: str, base_dir: Path, allow_python: bool = False) -> str:
     """
     Process inline directives with file-type aware post-processing.
@@ -151,6 +165,8 @@ def process_inlines(content: str, base_dir: Path, allow_python: bool = False) ->
             # For other files: read content
             with full_path.open("r", encoding="utf-8") as f:
                 file_content = f.read()
+
+            file_content = rebase_inline_paths(file_content, full_path.parent)
 
             # Find all placeholders in the file
             placeholders = find_placeholders(file_content)
