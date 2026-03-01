@@ -70,12 +70,8 @@ def main(
 
         input_files = [input_file] if not isinstance(input_file, list) else input_file
 
-        # Resolve relative paths against the config file's directory, not CWD
         config_dir = _find_config_dir()
         if config_dir is not None:
-            input_files = [
-                config_dir / f if not f.is_absolute() else f for f in input_files
-            ]
             if library_po:
                 library_po = [
                     config_dir / p if not p.is_absolute() else p for p in library_po
