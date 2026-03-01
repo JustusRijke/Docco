@@ -521,12 +521,12 @@ content
 
 
 def test_builtin_path_variable():
-    """Built-in $$PATH$$ variable resolves to the absolute path of the input file."""
+    """Built-in $$PATH$$ variable resolves to the directory of the input file."""
     with tempfile.TemporaryDirectory() as tmpdir:
         input_file = Path(tmpdir) / "test.md"
         input_file.write_text("The file is at $$PATH$$\n", encoding="utf-8")
         _, body, _ = preprocess_document(input_file.read_text(), input_file)
-        assert str(input_file.resolve()) in body
+        assert str(input_file.resolve().parent) in body
         assert "$$PATH$$" not in body
 
 
@@ -546,9 +546,9 @@ $$PATH$$
         )
         _, body, _ = preprocess_document(input_file.read_text(), input_file)
         assert "reserved" in caplog.text
-        # PATH should still be the real path, not /fake/path
+        # PATH should still be the real dir, not /fake/path
         assert "/fake/path" not in body
-        assert str(input_file.resolve()) in body
+        assert str(input_file.resolve().parent) in body
 
 
 def test_vars_substituted_in_inline_path():

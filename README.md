@@ -151,7 +151,7 @@ Variables are substituted before any inline directives are processed, so they al
 
 | Variable | Value |
 |----------|-------|
-| `$$PATH$$` | Absolute path to the source `.md` file |
+| `$$PATH$$` | Absolute path to the directory containing the source `.md` file |
 
 ## Frontmatter Configuration
 

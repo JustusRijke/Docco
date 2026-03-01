@@ -57,7 +57,7 @@ def preprocess_document(
     base_dir = input_file.resolve().parent
 
     # Build variable map: built-ins first, then user-declared (cannot override built-ins)
-    variables: dict[str, str] = {"PATH": str(input_file.resolve())}
+    variables: dict[str, str] = {"PATH": str(input_file.resolve().parent)}
     user_vars = metadata.get("var") or {}
     if isinstance(user_vars, dict):
         for name, value in user_vars.items():
