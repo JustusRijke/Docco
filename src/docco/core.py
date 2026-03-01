@@ -21,6 +21,7 @@ KNOWN_FRONTMATTER_KEYS = {
     "js",
     "translations",
     "base_language",
+    "var",
 }
 
 

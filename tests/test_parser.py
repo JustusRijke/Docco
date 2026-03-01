@@ -11,7 +11,9 @@ from PIL import Image
 from docco.parser import (
     MAX_ITERATIONS,
     BuildConfig,
+    apply_variables,
     parse_markdown,
+    preprocess_document,
     process_directives_iteratively,
     process_filter_directives,
 )
@@ -459,3 +461,135 @@ Shared content.
         assert "English only content" not in de_html
         assert "Shared content" in en_html
         assert "Shared content" in de_html
+
+
+def test_apply_variables_basic():
+    """Variable placeholders are replaced in content."""
+    result = apply_variables("Hello $$name$$!", {"name": "world"})
+    assert result == "Hello world!"
+
+
+def test_apply_variables_no_match():
+    """Content without placeholders is returned unchanged."""
+    result = apply_variables("No placeholders here.", {"name": "world"})
+    assert result == "No placeholders here."
+
+
+def test_apply_variables_multiple():
+    """Multiple variables are replaced."""
+    result = apply_variables("$$a$$ and $$b$$", {"a": "foo", "b": "bar"})
+    assert result == "foo and bar"
+
+
+def test_frontmatter_vars_substituted_in_body():
+    """Variables declared in frontmatter are substituted in the document body."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        input_file = Path(tmpdir) / "test.md"
+        input_file.write_text(
+            """---
+var:
+  greeting: hello
+---
+
+$$greeting$$ world
+""",
+            encoding="utf-8",
+        )
+        metadata, body, _ = preprocess_document(input_file.read_text(), input_file)
+        assert "hello world" in body
+        assert "$$greeting$$" not in body
+
+
+def test_frontmatter_vars_not_in_frontmatter():
+    """Variable substitution does not affect the frontmatter section itself."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        input_file = Path(tmpdir) / "test.md"
+        input_file.write_text(
+            """---
+var:
+  myvar: replaced
+css: $$myvar$$.css
+---
+
+content
+""",
+            encoding="utf-8",
+        )
+        metadata, body, _ = preprocess_document(input_file.read_text(), input_file)
+        # css key should be literal (frontmatter not substituted)
+        assert metadata.get("css") == "$$myvar$$.css"
+
+
+def test_builtin_path_variable():
+    """Built-in $$PATH$$ variable resolves to the absolute path of the input file."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        input_file = Path(tmpdir) / "test.md"
+        input_file.write_text("The file is at $$PATH$$\n", encoding="utf-8")
+        _, body, _ = preprocess_document(input_file.read_text(), input_file)
+        assert str(input_file.resolve()) in body
+        assert "$$PATH$$" not in body
+
+
+def test_reserved_var_cannot_be_redeclared(caplog):
+    """Declaring PATH in frontmatter var triggers a warning and is ignored."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        input_file = Path(tmpdir) / "test.md"
+        input_file.write_text(
+            """---
+var:
+  PATH: /fake/path
+---
+
+$$PATH$$
+""",
+            encoding="utf-8",
+        )
+        _, body, _ = preprocess_document(input_file.read_text(), input_file)
+        assert "reserved" in caplog.text
+        # PATH should still be the real path, not /fake/path
+        assert "/fake/path" not in body
+        assert str(input_file.resolve()) in body
+
+
+def test_vars_substituted_in_inline_path():
+    """Variables in inline directive paths are resolved before the file is opened."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Create a file named "hello_world.md"
+        target = Path(tmpdir) / "hello_world.md"
+        target.write_text("inlined content\n", encoding="utf-8")
+
+        input_file = Path(tmpdir) / "test.md"
+        input_file.write_text(
+            """---
+var:
+  suffix: world
+---
+
+<!-- inline:"hello_$$suffix$$.md" -->
+""",
+            encoding="utf-8",
+        )
+        _, body, _ = preprocess_document(input_file.read_text(), input_file)
+        assert "inlined content" in body
+
+
+def test_vars_substituted_in_inlined_file_content():
+    """Variables are substituted inside inlined file content."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        target = Path(tmpdir) / "snippet.md"
+        target.write_text("Value: $$myval$$\n", encoding="utf-8")
+
+        input_file = Path(tmpdir) / "test.md"
+        input_file.write_text(
+            """---
+var:
+  myval: 42
+---
+
+<!-- inline:"snippet.md" -->
+""",
+            encoding="utf-8",
+        )
+        _, body, _ = preprocess_document(input_file.read_text(), input_file)
+        assert "Value: 42" in body
+        assert "$$myval$$" not in body

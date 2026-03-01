@@ -127,6 +127,32 @@ Dieser Abschnitt erscheint nur in der deutschen Version.
 
 The language code is case-insensitive. Filter blocks work in both Markdown and inlined HTML files.
 
+## Global Variables
+
+Define reusable values in frontmatter under `var` and reference them anywhere in the document body (or inlined files) with `$$varname$$`:
+
+```yaml
+---
+var:
+  company: Acme Corp
+  version: 2.1
+---
+
+# $$company$$ User Guide v$$version$$
+```
+
+Variables are substituted before any inline directives are processed, so they also work in inline paths:
+
+```markdown
+<!-- inline:"snippets/$$lang$$.md" -->
+```
+
+**Built-in variables** (cannot be overridden):
+
+| Variable | Value |
+|----------|-------|
+| `$$PATH$$` | Absolute path to the source `.md` file |
+
 ## Frontmatter Configuration
 
 Supported frontmatter keys:
@@ -135,6 +161,7 @@ Supported frontmatter keys:
 - `js`: JavaScript file paths or URLs (string or list) — injected as `<script>` tags in `<head>`
 - `translations`: Language-to-PO-file mapping for multilingual mode (`{de: locales/de.po, nl: locales/nl.po}`)
 - `base_language`: Base language code for multilingual documents (string)
+- `var`: Dictionary of global variables for `$$varname$$` substitution
 
 Unknown keys trigger a warning but don't prevent processing.
 

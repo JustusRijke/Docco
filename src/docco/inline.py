@@ -109,7 +109,12 @@ def rebase_inline_paths(content: str, file_dir: Path) -> str:
     return restore_code_blocks(re.sub(pattern, rewrite, protected), code_blocks)
 
 
-def process_inlines(content: str, base_dir: Path, allow_python: bool = False) -> str:
+def process_inlines(
+    content: str,
+    base_dir: Path,
+    allow_python: bool = False,
+    variables: dict[str, str] | None = None,
+) -> str:
     """
     Process inline directives with file-type aware post-processing.
 
@@ -125,6 +130,7 @@ def process_inlines(content: str, base_dir: Path, allow_python: bool = False) ->
         content: Markdown content to process
         base_dir: Base directory for resolving relative paths
         allow_python: Allow python file execution
+        variables: Variable map for $$var$$ substitution in inlined files
 
     Returns:
         str: Content with inlines processed
@@ -167,6 +173,11 @@ def process_inlines(content: str, base_dir: Path, allow_python: bool = False) ->
                 file_content = f.read()
 
             file_content = rebase_inline_paths(file_content, full_path.parent)
+
+            # Apply global variable substitution
+            if variables:
+                for var_name, var_value in variables.items():
+                    file_content = file_content.replace(f"$${var_name}$$", var_value)
 
             # Find all placeholders in the file
             placeholders = find_placeholders(file_content)

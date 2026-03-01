@@ -30,6 +30,8 @@ css:
   - "css/toc.css"
 multilingual: true
 base_language: en
+var:
+  version: 1.0
 ---
 ```
 
@@ -116,6 +118,38 @@ This setting applies to all raster images (PNG, JPEG, etc.) embedded in the docu
 See `.docco-example` in the repository root for all currently supported settings with comments.
 
 CLI arguments always take precedence over config file values.
+
+### Global Variables
+
+Declare reusable values in frontmatter under `var` and reference them anywhere in the document (or in inlined files) using `$$varname$$`:
+
+```yaml
+---
+var:
+  company: Acme Corp
+  version: 2.1
+---
+```
+
+Then in the document body:
+
+```markdown
+# $$company$$ User Guide v$$version$$
+```
+
+Variables are substituted **before** inline directives are resolved, so they work in file paths too:
+
+```markdown
+<!-- inline:"snippets/$$lang$$.md" -->
+```
+
+**Built-in variables** (cannot be redeclared):
+
+| Variable | Value |
+|----------|-------|
+| `$$PATH$$` | Absolute path to the source `.md` file |
+
+Attempting to declare a reserved variable in `var` will log a warning and the built-in value is preserved.
 
 ## Core Concepts
 

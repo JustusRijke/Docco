@@ -21,6 +21,14 @@ from docco.translation import (
 
 logger = logging.getLogger(__name__)
 MAX_ITERATIONS = 10
+RESERVED_VARS = {"PATH"}
+
+
+def apply_variables(content: str, variables: dict[str, str]) -> str:
+    """Replace $$varname$$ placeholders in content with their values."""
+    for name, value in variables.items():
+        content = content.replace(f"$${name}$$", value)
+    return content
 
 
 @dataclass
@@ -47,7 +55,31 @@ def preprocess_document(
     """
     metadata = parse_frontmatter(content)
     base_dir = input_file.resolve().parent
-    processed_content = process_directives_iteratively(content, base_dir, allow_python)
+
+    # Build variable map: built-ins first, then user-declared (cannot override built-ins)
+    variables: dict[str, str] = {"PATH": str(input_file.resolve())}
+    user_vars = metadata.get("var") or {}
+    if isinstance(user_vars, dict):
+        for name, value in user_vars.items():
+            if not isinstance(name, str):
+                continue
+            if name in RESERVED_VARS:
+                logger.warning(
+                    f"Variable '{name}' is reserved and cannot be redeclared"
+                )
+            else:
+                variables[name] = str(value)
+
+    # Strip frontmatter before variable substitution (variables must not affect frontmatter)
+    frontmatter_end = re.search(
+        r"^---\s*\n.*?^---\s*\n", content, re.DOTALL | re.MULTILINE
+    )
+    body = content[frontmatter_end.end() :] if frontmatter_end else content
+
+    body = apply_variables(body, variables)
+    processed_content = process_directives_iteratively(
+        body, base_dir, allow_python, variables
+    )
     return metadata, processed_content, base_dir
 
 
@@ -78,7 +110,10 @@ def process_filter_directives(html: str, language: str) -> str:
 
 
 def process_directives_iteratively(
-    content: str, base_dir: Path, allow_python: bool
+    content: str,
+    base_dir: Path,
+    allow_python: bool,
+    variables: dict[str, str] | None = None,
 ) -> str:
     """
     Iteratively process inline directives until none remain.
@@ -90,6 +125,7 @@ def process_directives_iteratively(
         content: Markdown content
         base_dir: Base directory for inline resolution
         allow_python: Allow python file execution via inline directive
+        variables: Variable map for $$var$$ substitution in inlined files
 
     Returns:
         str: Processed content with no inline directives
@@ -103,7 +139,7 @@ def process_directives_iteratively(
         logger.debug(f"Directive processing iteration {iteration}")
 
         # Inline expansion (which also handles Python)
-        content = process_inlines(content, base_dir, allow_python)
+        content = process_inlines(content, base_dir, allow_python, variables)
 
     if iteration >= MAX_ITERATIONS and has_directives(content):
         raise ValueError(
