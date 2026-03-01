@@ -1,8 +1,10 @@
 """POT/PO translation support for Docco using translate-toolkit."""
 
 import logging
+import re
 import shutil
 import subprocess
+from io import BytesIO
 from pathlib import Path
 
 import polib
@@ -35,27 +37,32 @@ def clean_po_file(po_path: Path) -> None:
     po_file.save(po_path)
 
 
-def extract_html_to_pot(html_path: Path, output_path: Path) -> Path:
+def extract_html_to_pot(
+    html_content: bytes, output_path: Path, source_name: str = "document"
+) -> Path:
     """
-    Extract translatable strings from HTML file to POT file.
+    Extract translatable strings from HTML content to POT file.
 
     Args:
-        html_path: Path to HTML file to extract from
+        html_content: HTML bytes to extract from
         output_path: Path to write POT file to
+        source_name: Neutral name used as msgctxt source (no path info)
 
     Returns:
         Path: Path to generated POT file
     """
-    logger.debug(f"Extracting translatable strings from {html_path} to {output_path}")
+    logger.debug(f"Extracting translatable strings to {output_path}")
 
-    # Convert HTML to POT using file objects
-    with (
-        html_path.open("rb") as html_file,
-        output_path.open("wb") as pot_file,
-    ):
-        html2po.converthtml(html_file, pot_file, None, pot=True, duplicatestyle="merge")
+    # Strip id attributes so element IDs (used for TOC anchors) don't become
+    # msgctxt values, which would prevent duplicate strings from being merged.
+    stripped = re.sub(rb'\s+id="[^"]*"', b"", html_content)
 
-    # Clean bloat from POT file for VCS
+    html_buf = BytesIO(stripped)
+    html_buf.name = source_name
+
+    with output_path.open("wb") as pot_file:
+        html2po.converthtml(html_buf, pot_file, None, pot=True, duplicatestyle="merge")
+
     clean_po_file(output_path)
 
     logger.debug(f"Extracted to POT: {output_path}")

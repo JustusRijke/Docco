@@ -22,12 +22,8 @@ def test_extract_html_to_pot_creates_file():
     html_content = markdown_to_html(md_content)
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        html_path = Path(tmpdir) / "test.html"
-        with html_path.open("w", encoding="utf-8") as f:
-            f.write(html_content)
-
         pot_path = Path(tmpdir) / "test.pot"
-        result = extract_html_to_pot(html_path, pot_path)
+        result = extract_html_to_pot(html_content.encode("utf-8"), pot_path)
 
         assert pot_path.exists()
         assert result == pot_path
@@ -44,12 +40,8 @@ def test_extract_html_to_pot_contains_strings():
     html_content = markdown_to_html(md_content)
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        html_path = Path(tmpdir) / "test.html"
-        with html_path.open("w", encoding="utf-8") as f:
-            f.write(html_content)
-
         pot_path = Path(tmpdir) / "test.pot"
-        extract_html_to_pot(html_path, pot_path)
+        extract_html_to_pot(html_content.encode("utf-8"), pot_path)
 
         with pot_path.open("r", encoding="utf-8") as f:
             pot_content = f.read()
@@ -65,12 +57,8 @@ def test_extract_html_to_pot_with_formatting():
     html_content = markdown_to_html(md_content)
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        html_path = Path(tmpdir) / "test.html"
-        with html_path.open("w", encoding="utf-8") as f:
-            f.write(html_content)
-
         pot_path = Path(tmpdir) / "test.pot"
-        extract_html_to_pot(html_path, pot_path)
+        extract_html_to_pot(html_content.encode("utf-8"), pot_path)
 
         with pot_path.open("r", encoding="utf-8") as f:
             pot_content = f.read()
@@ -79,6 +67,23 @@ def test_extract_html_to_pot_with_formatting():
         assert "msgid" in pot_content
         # Should have extracted content
         assert len(pot_content) > 0
+
+
+def test_extract_html_to_pot_no_path_in_msgctxt():
+    """Test that extracted POT does not contain intermediate file paths in msgctxt."""
+    md_content = "# Title\n\nParagraph."
+    html_content = markdown_to_html(md_content)
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        pot_path = Path(tmpdir) / "test.pot"
+        extract_html_to_pot(html_content.encode("utf-8"), pot_path, source_name="mydoc")
+
+        with pot_path.open("r", encoding="utf-8") as f:
+            pot_content = f.read()
+
+        # Path separators should not appear in msgctxt
+        assert "_for_pot" not in pot_content
+        assert tmpdir not in pot_content
 
 
 def test_apply_po_to_html_with_translations():
@@ -139,19 +144,15 @@ def test_extract_roundtrip():
     html_content = markdown_to_html(original_md)
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        html_path = Path(tmpdir) / "test.html"
-        with html_path.open("w", encoding="utf-8") as f:
-            f.write(html_content)
-
         pot_path = Path(tmpdir) / "test.pot"
 
         # Extract
-        extract_html_to_pot(html_path, pot_path)
+        extract_html_to_pot(html_content.encode("utf-8"), pot_path)
 
         # Verify POT was created
-        assert Path(pot_path).exists()
+        assert pot_path.exists()
 
-        with Path(pot_path).open("r", encoding="utf-8") as f:
+        with pot_path.open("r", encoding="utf-8") as f:
             pot_content = f.read()
 
         # POT should be valid

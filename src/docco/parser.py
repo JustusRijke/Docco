@@ -369,11 +369,9 @@ def parse_markdown(
             external_css=css_result["external"],
             base_dir=base_dir,
         )
-        pot_html_path = output_dir / f"{input_basename}_for_pot.html"
-        with pot_html_path.open("w", encoding="utf-8") as f:
-            f.write(html_for_pot)
-        extract_html_to_pot(pot_html_path, pot_path)
-        pot_html_path.unlink()
+        extract_html_to_pot(
+            html_for_pot.encode("utf-8"), pot_path, source_name=input_basename
+        )
         logger.debug(f"Extracted POT: {pot_path}")
 
         # Resolve PO file paths relative to source file's directory.

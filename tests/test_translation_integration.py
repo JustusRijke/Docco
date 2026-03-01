@@ -37,23 +37,18 @@ def test_extract_pot_file_from_html(translation_files):
 
     html_content = markdown_to_html(content)
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        html_path = Path(tmpdir) / "test.html"
-        with html_path.open("w", encoding="utf-8") as f:
-            f.write(html_content)
+    pot_path = Path(translation_files["pot"])
+    result = extract_html_to_pot(html_content.encode("utf-8"), pot_path)
 
-        pot_path = Path(translation_files["pot"])
-        result = extract_html_to_pot(html_path, pot_path)
+    assert result.exists()
+    assert result == pot_path
 
-        assert result.exists()
-        assert result == pot_path
+    with pot_path.open("r", encoding="utf-8") as f:
+        pot_content = f.read()
 
-        with pot_path.open("r", encoding="utf-8") as f:
-            pot_content = f.read()
-
-        assert "msgid" in pot_content
-        assert "Hello World" in pot_content
-        assert len(pot_content) > 0
+    assert "msgid" in pot_content
+    assert "Hello World" in pot_content
+    assert len(pot_content) > 0
 
 
 def test_translation_workflow_all_languages(translation_files, baselines_dir):
