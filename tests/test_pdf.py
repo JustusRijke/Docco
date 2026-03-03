@@ -192,6 +192,26 @@ def test_collect_js_empty_metadata(tmp_path):
     assert result["external"] == []
 
 
+def test_collect_css_invalid_type(tmp_path):
+    """Non-string, non-list CSS value yields empty result."""
+    md_file = tmp_path / "document.md"
+    md_file.write_text("# Test")
+
+    result = collect_css_content(md_file, {"css": 42})
+    assert result["inline"] == ""
+    assert result["external"] == []
+
+
+def test_collect_js_invalid_type(tmp_path):
+    """Non-string, non-list JS value yields empty result."""
+    md_file = tmp_path / "document.md"
+    md_file.write_text("# Test")
+
+    result = collect_js_content(md_file, {"js": 42})
+    assert result["inline"] == ""
+    assert result["external"] == []
+
+
 def test_html_to_pdf_creates_file(tmp_path):
     """Test that PDF file is created."""
     html_content = "<!DOCTYPE html><html><body><p>Test</p></body></html>"

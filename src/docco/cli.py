@@ -135,8 +135,7 @@ def main(
                     else:
                         shutil.move(tmp_pdf, output_pdf)
                 except Exception:
-                    if tmp_pdf.exists():
-                        tmp_pdf.unlink()
+                    tmp_pdf.unlink(missing_ok=True)
                     raise
                 all_output_files.append(output_pdf)
             else:
@@ -180,9 +179,9 @@ def main(
         raise SystemExit(1)
 
 
-def entry_point() -> None:
+def entry_point() -> None:  # pragma: no cover
     app()
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     entry_point()

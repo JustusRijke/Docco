@@ -732,3 +732,45 @@ var:
         _, body, _ = preprocess_document(input_file.read_text(), input_file)
         assert "Value: 42" in body
         assert "$$myval$$" not in body
+
+
+def test_preprocess_non_string_var_key_is_skipped(tmp_path):
+    """Non-string variable keys in frontmatter var dict are silently skipped."""
+    # YAML always produces string keys so we inject a non-string key via mock
+    input_file = tmp_path / "test.md"
+    input_file.write_text("# Hello $$name$$", encoding="utf-8")
+
+    with patch("docco.parser.parse_frontmatter") as mock_fm:
+        mock_fm.return_value = {"var": {1: "numeric_key", "name": "world"}}
+        _, body, _ = preprocess_document(input_file.read_text(), input_file)
+    # numeric key is skipped; string key still applied
+    assert "world" in body
+
+
+def test_preprocess_non_dict_var_is_ignored(tmp_path):
+    """Non-dict var value in frontmatter is silently ignored."""
+    input_file = tmp_path / "test.md"
+    input_file.write_text("# Hello $$name$$", encoding="utf-8")
+
+    with patch("docco.parser.parse_frontmatter") as mock_fm:
+        mock_fm.return_value = {"var": "not_a_dict"}
+        _, body, _ = preprocess_document(input_file.read_text(), input_file)
+    # No substitution happened, variable stays unexpanded
+    assert "$$name$$" in body
+
+
+def test_html_to_pdf_exception_cleans_up_temp(tmp_path):
+    """Exception during PDF generation removes temp PDF and re-raises."""
+    input_file = tmp_path / "test.md"
+    input_file.write_text("# Test", encoding="utf-8")
+
+    def _raise_after_creating(html_path, output_path, **kwargs):
+        output_path.write_bytes(b"partial")
+        raise RuntimeError("pdf failed")
+
+    with patch("docco.parser.html_to_pdf", side_effect=_raise_after_creating):
+        with pytest.raises(RuntimeError, match="pdf failed"):
+            parse_markdown(input_file, tmp_path)
+
+    # No temp .pdf-docco files left behind
+    assert not list(tmp_path.glob("*.pdf-docco"))

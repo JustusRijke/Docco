@@ -157,6 +157,26 @@ def test_cli_createdir_creates_subdir(tmp_path, monkeypatch):
         assert (out / "doc").exists()
 
 
+def test_cli_library_po_resolved_relative_to_config(tmp_path, monkeypatch):
+    """library_po relative paths are resolved relative to the .docco config dir."""
+    md = tmp_path / "doc.md"
+    md.write_text("# Doc", encoding="utf-8")
+    out = tmp_path / "out"
+    out.mkdir()
+    po = tmp_path / "lib.po"
+    po.write_text('msgid ""\nmsgstr ""\n', encoding="utf-8")
+    (tmp_path / ".docco").write_text(
+        f"file = 'doc.md'\noutput = '{out}'\n", encoding="utf-8"
+    )
+    monkeypatch.chdir(tmp_path)
+
+    with patch("docco.cli.parse_markdown") as mock_parse:
+        mock_parse.return_value = ([out / "doc.pdf"], 0)
+        app(["--library-po", "lib.po"], exit_on_error=False)
+        library_po_arg = mock_parse.call_args[1]["library_po_files"]
+        assert library_po_arg == [tmp_path / "lib.po"]
+
+
 # --- filename template tests ---
 
 

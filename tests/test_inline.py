@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from docco.inline import process_inlines, rebase_inline_paths
+from docco.inline import extract_code_blocks, process_inlines, rebase_inline_paths
 
 
 @pytest.fixture
@@ -350,3 +350,24 @@ def test_nested_inline_cross_directory(tmp_path):
     # Second pass: resolves the absolute path to sibling.md
     result2 = process_inlines(result1, tmp_path)
     assert "# Sibling Content" in result2
+
+
+def test_extract_code_blocks_fenced_with_leading_and_trailing_newlines():
+    """Fenced code block with surrounding newlines preserves them in placeholder."""
+    content = "before\n```\ncode\n```\nafter"
+    result, code_blocks = extract_code_blocks(content)
+    # The placeholder should appear with surrounding newlines preserved
+    assert "before\n" in result
+    assert "\nafter" in result
+    # Exactly one code block extracted
+    assert len(code_blocks) == 1
+
+
+def test_extract_code_blocks_inline_backticks():
+    """Inline backtick code is extracted and replaced with placeholder."""
+    content = "Text with `inline code` here."
+    result, code_blocks = extract_code_blocks(content)
+    assert "`inline code`" not in result
+    assert len(code_blocks) == 1
+    placeholder = next(iter(code_blocks))
+    assert code_blocks[placeholder] == "`inline code`"

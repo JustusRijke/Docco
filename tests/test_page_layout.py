@@ -84,3 +84,38 @@ def test_whitespace_handling():
     result = process_page_layout(html)
     assert '<div class="pagebreak"></div>' in result
     assert "<!--  pagebreak  -->" not in result
+
+
+def test_directive_at_start_no_preceding_content():
+    """Orientation directive at the very start produces no empty section before it."""
+    html = "<!-- landscape -->\n<p>Content</p>"
+    result = process_page_layout(html)
+    assert result.count("section-wrapper") == 1
+    assert 'class="section-wrapper landscape"' in result
+
+
+def test_content_ends_at_directive_no_trailing_content():
+    """No trailing content after last directive produces no extra section."""
+    html = "<p>Before</p>\n<!-- landscape -->"
+    result = process_page_layout(html)
+    # Only portrait section (before directive) — landscape has no content
+    assert 'class="section-wrapper portrait"' in result
+    assert 'class="section-wrapper landscape"' not in result
+
+
+def test_trailing_whitespace_only_after_directive():
+    """Whitespace-only trailing content after directive is not wrapped."""
+    html = "<p>Before</p>\n<!-- landscape -->\n   \n"
+    result = process_page_layout(html)
+    # landscape section stripped to empty, should not appear
+    assert 'class="section-wrapper landscape"' not in result
+
+
+def test_whitespace_only_between_directives():
+    """Whitespace-only content between consecutive directives is not wrapped."""
+    # Two orientation directives with only whitespace between them
+    html = "<!-- landscape -->\n   \n<!-- portrait -->\n<p>After</p>"
+    result = process_page_layout(html)
+    # No landscape section (whitespace-only between the two directives)
+    assert 'class="section-wrapper landscape"' not in result
+    assert 'class="section-wrapper portrait"' in result

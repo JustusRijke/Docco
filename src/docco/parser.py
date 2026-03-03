@@ -268,13 +268,12 @@ def _generate_single_pdf(
             translated_html = f.read()
         # Extract body content (between <body> and </body>)
         body_match = re.search(r"<body>\s*(.*?)\s*</body>", translated_html, re.DOTALL)
-        if body_match:
-            body_html = body_match.group(1)
+        body_html = body_match.group(1)  # type: ignore[union-attr]
 
         # Clean up temp files
         temp_body_path.unlink()
         temp_translated_path.unlink()
-        if merged_po_temp and merged_po_temp.exists():
+        if merged_po_temp:
             merged_po_temp.unlink()
         logger.debug("Applied translations")
 
@@ -323,8 +322,7 @@ def _generate_single_pdf(
         else:
             shutil.move(tmp_pdf, pdf_path)
     except Exception:
-        if tmp_pdf.exists():
-            tmp_pdf.unlink()
+        tmp_pdf.unlink(missing_ok=True)
         raise
 
     # Validate PDF image quality if DPI was specified and validation enabled
@@ -333,10 +331,8 @@ def _generate_single_pdf(
 
     # Clean up intermediate files if not keeping them
     if not config.keep_intermediate:
-        if md_path.exists():
-            md_path.unlink()
-        if html_path.exists():
-            html_path.unlink()
+        md_path.unlink()
+        html_path.unlink()
 
     return pdf_path, skipped
 
