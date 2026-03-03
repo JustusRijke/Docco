@@ -21,7 +21,7 @@ def test_cli_uses_config_file(fixture_dir, monkeypatch):
     """CLI picks up 'file' from .docco when no argument given."""
     monkeypatch.chdir(fixture_dir)
     with patch("docco.cli.parse_markdown") as mock_parse:
-        mock_parse.return_value = [fixture_dir / "simple.pdf"]
+        mock_parse.return_value = ([fixture_dir / "simple.pdf"], 0)
         app([], exit_on_error=False)
         call_input = mock_parse.call_args[0][0]
         assert call_input.name == "simple.md"
@@ -37,7 +37,7 @@ def test_cli_arg_overrides_config(fixture_dir, tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
 
     with patch("docco.cli.parse_markdown") as mock_parse:
-        mock_parse.return_value = [tmp_path / "other.pdf"]
+        mock_parse.return_value = ([tmp_path / "other.pdf"], 0)
         app([str(other)], exit_on_error=False)
         assert mock_parse.call_args[0][0].name == "other.md"
 
@@ -57,7 +57,7 @@ def test_cli_config_in_parent_directory(fixture_dir, monkeypatch):
     monkeypatch.chdir(subdir)
 
     with patch("docco.cli.parse_markdown") as mock_parse:
-        mock_parse.return_value = [fixture_dir / "simple.pdf"]
+        mock_parse.return_value = ([fixture_dir / "simple.pdf"], 0)
         app([], exit_on_error=False)
         assert mock_parse.call_args[0][0].name == "simple.md"
 
@@ -72,7 +72,7 @@ def test_cli_allow_python_from_config(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
 
     with patch("docco.cli.parse_markdown") as mock_parse:
-        mock_parse.return_value = [tmp_path / "doc.pdf"]
+        mock_parse.return_value = ([tmp_path / "doc.pdf"], 0)
         app([], exit_on_error=False)
         assert mock_parse.call_args[1]["config"].allow_python is True
 
@@ -87,7 +87,7 @@ def test_cli_allow_python_flag_overrides_config(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
 
     with patch("docco.cli.parse_markdown") as mock_parse:
-        mock_parse.return_value = [tmp_path / "doc.pdf"]
+        mock_parse.return_value = ([tmp_path / "doc.pdf"], 0)
         app(["--allow-python"], exit_on_error=False)
         assert mock_parse.call_args[1]["config"].allow_python is True
 
@@ -103,7 +103,7 @@ def test_cli_output_path_from_config(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
 
     with patch("docco.cli.parse_markdown") as mock_parse:
-        mock_parse.return_value = [out / "doc.pdf"]
+        mock_parse.return_value = ([out / "doc.pdf"], 0)
         app([], exit_on_error=False)
         assert mock_parse.call_args[0][1] == out
 
@@ -120,7 +120,7 @@ def test_cli_output_flag_overrides_config(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
 
     with patch("docco.cli.parse_markdown") as mock_parse:
-        mock_parse.return_value = [cli_out / "doc.pdf"]
+        mock_parse.return_value = ([cli_out / "doc.pdf"], 0)
         app(["-o", str(cli_out)], exit_on_error=False)
         assert mock_parse.call_args[0][1] == cli_out
 
@@ -135,7 +135,7 @@ def test_cli_keep_intermediate_from_config(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
 
     with patch("docco.cli.parse_markdown") as mock_parse:
-        mock_parse.return_value = [tmp_path / "doc.pdf"]
+        mock_parse.return_value = ([tmp_path / "doc.pdf"], 0)
         app([], exit_on_error=False)
         assert mock_parse.call_args[1]["config"].keep_intermediate is True
 
@@ -151,7 +151,7 @@ def test_cli_createdir_creates_subdir(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
 
     with patch("docco.cli.parse_markdown") as mock_parse:
-        mock_parse.return_value = [out / "doc" / "doc.pdf"]
+        mock_parse.return_value = ([out / "doc" / "doc.pdf"], 0)
         app([], exit_on_error=False)
         assert mock_parse.call_args[0][1] == out / "doc"
         assert (out / "doc").exists()

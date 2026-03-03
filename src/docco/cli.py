@@ -78,6 +78,9 @@ def main(
 
         config_dir = _find_config_dir()
         if config_dir is not None:
+            input_files = [
+                config_dir / p if not p.is_absolute() else p for p in input_files
+            ]
             if library_po:
                 library_po = [
                     config_dir / p if not p.is_absolute() else p for p in library_po
