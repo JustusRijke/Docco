@@ -53,6 +53,9 @@ docco input.md -o output/ --keep-intermediate
 
 # Allow Python code execution (security-sensitive)
 docco input.md --allow-python -o output/
+
+# Skip overwriting PDF when content is visually unchanged (useful for build systems)
+docco input.md -o output/ --skip-identical
 ```
 
 ### Multilingual Mode

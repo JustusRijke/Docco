@@ -7,6 +7,11 @@ import pytest
 from docco.cli import app
 
 
+def _mock_html_to_pdf(src, dst, **kwargs):
+    """Simulate html_to_pdf by creating the destination file."""
+    dst.write_bytes(b"%PDF-1.4 mock")
+
+
 def test_html_input_bypasses_markdown_processing(tmp_path):
     """HTML input files are converted directly to PDF without preprocessing."""
     html_file = tmp_path / "test.html"
@@ -18,12 +23,14 @@ def test_html_input_bypasses_markdown_processing(tmp_path):
     output_dir = tmp_path / "output"
     output_dir.mkdir()
 
-    with patch("docco.cli.html_to_pdf") as mock_html_to_pdf:
+    with patch(
+        "docco.cli.html_to_pdf", side_effect=_mock_html_to_pdf
+    ) as mock_html_to_pdf:
         app([str(html_file), "-o", str(output_dir)], exit_on_error=False)
         mock_html_to_pdf.assert_called_once()
         args = mock_html_to_pdf.call_args[0]
         assert args[0] == html_file
-        assert args[1] == output_dir / "test.pdf"
+        assert args[1] == output_dir / "test.pdf-docco"
 
 
 def test_html_input_with_htm_extension(tmp_path):
@@ -33,7 +40,9 @@ def test_html_input_with_htm_extension(tmp_path):
     output_dir = tmp_path / "output"
     output_dir.mkdir()
 
-    with patch("docco.cli.html_to_pdf") as mock_html_to_pdf:
+    with patch(
+        "docco.cli.html_to_pdf", side_effect=_mock_html_to_pdf
+    ) as mock_html_to_pdf:
         app([str(html_file), "-o", str(output_dir)], exit_on_error=False)
         mock_html_to_pdf.assert_called_once()
 
@@ -46,7 +55,7 @@ def test_markdown_input_uses_full_pipeline(tmp_path):
     output_dir.mkdir()
 
     with patch("docco.cli.parse_markdown") as mock_parse_markdown:
-        mock_parse_markdown.return_value = [output_dir / "test.pdf"]
+        mock_parse_markdown.return_value = ([output_dir / "test.pdf"], 0)
         app([str(md_file), "-o", str(output_dir)], exit_on_error=False)
         mock_parse_markdown.assert_called_once()
 
@@ -58,7 +67,9 @@ def test_html_input_ignores_markdown_specific_flags(tmp_path):
     output_dir = tmp_path / "output"
     output_dir.mkdir()
 
-    with patch("docco.cli.html_to_pdf") as mock_html_to_pdf:
+    with patch(
+        "docco.cli.html_to_pdf", side_effect=_mock_html_to_pdf
+    ) as mock_html_to_pdf:
         app(
             [
                 str(html_file),
@@ -98,6 +109,6 @@ def test_valid_extensions_accepted(tmp_path):
             test_file.write_text("<html><body>Test</body></html>", encoding="utf-8")
 
         with patch("docco.cli.parse_markdown") as mock_parse:
-            with patch("docco.cli.html_to_pdf"):
-                mock_parse.return_value = [output_dir / "test.pdf"]
+            with patch("docco.cli.html_to_pdf", side_effect=_mock_html_to_pdf):
+                mock_parse.return_value = ([output_dir / "test.pdf"], 0)
                 app([str(test_file), "-o", str(output_dir)], exit_on_error=False)

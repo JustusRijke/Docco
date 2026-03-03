@@ -254,7 +254,7 @@ wheels = [
 
 [[package]]
 name = "diffpdf"
-version = "1.1.2"
+version = "1.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
@@ -262,9 +262,9 @@ dependencies = [
     { name = "pixelmatch-fast" },
     { name = "pymupdf" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d9/e6/b83d0f97d3dd8b7ca5d947c0cde6bfac4f1ac602b7e3332909a901cee5b6/diffpdf-1.1.2.tar.gz", hash = "sha256:b1a1a772323c3d83aa5b5e28aa7b2f67907e27b24fd7b4ea44eca4c91aae7117", size = 134774, upload-time = "2026-02-13T12:44:35.723Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/65/e4/67cdaf00491765b92e40073e6d4e9b1e53e22ca2496de2fbbca537c605ff/diffpdf-1.2.0.tar.gz", hash = "sha256:e446f5e63104cd29965450808c27fd479331ed8f2262ad969f6fdaa6894aa0c7", size = 135018, upload-time = "2026-03-01T20:32:11.812Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/dd/47/1d8c478bdc4a0cc42dac05fee80c99437eec187fa3a9ba42725de3719ef0/diffpdf-1.1.2-py3-none-any.whl", hash = "sha256:7e7cb1b1b7d004897ae56a6b11a555c45cbfe97ce7256232481ecd046325d1e5", size = 8166, upload-time = "2026-02-13T12:44:34.218Z" },
+    { url = "https://files.pythonhosted.org/packages/51/3c/d159f593230acd458ea39bfd4ef73d7f2992f3b7c33c363c8c1b50a35f82/diffpdf-1.2.0-py3-none-any.whl", hash = "sha256:3fe8bf4cff145826721fc061de6c43c8b234f04758bcc0aa5b81199a73ac9e5f", size = 8337, upload-time = "2026-03-01T20:32:10.506Z" },
 ]
 
 [[package]]
@@ -274,6 +274,7 @@ dependencies = [
     { name = "cffi" },
     { name = "colorlog" },
     { name = "cyclopts" },
+    { name = "diffpdf" },
     { name = "markdown-it-py" },
     { name = "mdit-py-plugins" },
     { name = "pillow" },
@@ -288,7 +289,6 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "diffpdf" },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "ruff" },
@@ -300,6 +300,7 @@ requires-dist = [
     { name = "cffi", specifier = ">=2.0.0" },
     { name = "colorlog", specifier = ">=6.10.1" },
     { name = "cyclopts", specifier = ">=4.6.0" },
+    { name = "diffpdf", specifier = ">=1.2.0" },
     { name = "markdown-it-py", specifier = ">=4.0.0" },
     { name = "mdit-py-plugins", specifier = ">=0.5.0" },
     { name = "pillow", specifier = ">=12.0.0" },
@@ -314,7 +315,6 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "diffpdf", specifier = ">=1.1.2" },
     { name = "pytest", specifier = ">=9" },
     { name = "pytest-cov", specifier = ">=6" },
     { name = "ruff", specifier = ">=0.10" },

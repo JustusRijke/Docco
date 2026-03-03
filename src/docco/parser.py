@@ -2,11 +2,15 @@
 
 import logging
 import re
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
+from diffpdf import diffpdf
+
 from docco.core import markdown_to_html, parse_frontmatter, wrap_html
 from docco.inline import extract_code_blocks, process_inlines
+from docco.logging_config import redirect_to_debug
 from docco.page_layout import process_page_layout
 from docco.pdf import collect_css_content, collect_js_content, html_to_pdf
 from docco.pdf_validation import validate_and_warn_pdf_images
@@ -37,6 +41,10 @@ class BuildConfig:
     allow_python: bool = False
     filename_template: str | None = None
     dpi: int | None = None
+    skip_identical: bool = False
+    diffpdf_threshold: float = 0.1
+    diffpdf_dpi: int = 96
+    skip_compare_text: bool = False
 
 
 def preprocess_document(
@@ -170,7 +178,7 @@ def _generate_single_pdf(
     po_files: list[Path] | None = None,
     library_po_files: list[Path] | None = None,
     validate_images: bool = True,
-) -> Path:
+) -> tuple[Path, bool]:
     """
     Generate a single PDF from processed markdown body.
 
@@ -188,7 +196,7 @@ def _generate_single_pdf(
         validate_images: Validate image DPI if DPI frontmatter is set (default: True)
 
     Returns:
-        Path: Path to generated PDF file
+        tuple: (path to PDF file, True if skipped as identical)
     """
     # Generate output stem: use filename template for multilingual, plain basename otherwise
     if lang_suffix:
@@ -284,10 +292,36 @@ def _generate_single_pdf(
 
     # Convert to PDF
     pdf_path = output_dir / pdf_filename
-    html_to_pdf(html_path, pdf_path, dpi=config.dpi)
+    tmp_pdf = output_dir / f"{output_stem}.pdf-docco"
+    try:
+        html_to_pdf(html_path, tmp_pdf, dpi=config.dpi)
+        skipped = False
+        if config.skip_identical and pdf_path.exists():
+            logger.info(f"Comparing PDF to existing: {pdf_filename}")
+            with redirect_to_debug():
+                identical = diffpdf(
+                    pdf_path,
+                    tmp_pdf,
+                    threshold=config.diffpdf_threshold,
+                    dpi=config.diffpdf_dpi,
+                    skip_compare_text=config.skip_compare_text,
+                )
+            if identical:
+                logger.info(f"PDF unchanged, skipping: {pdf_filename}")
+                tmp_pdf.unlink()
+                skipped = True
+            else:
+                logger.info(f"PDF changed, overwriting: {pdf_filename}")
+                shutil.move(tmp_pdf, pdf_path)
+        else:
+            shutil.move(tmp_pdf, pdf_path)
+    except Exception:
+        if tmp_pdf.exists():
+            tmp_pdf.unlink()
+        raise
 
     # Validate PDF image quality if DPI was specified and validation enabled
-    if validate_images and config.dpi is not None:
+    if not skipped and validate_images and config.dpi is not None:
         validate_and_warn_pdf_images(pdf_path, threshold=config.dpi)
 
     # Clean up intermediate files if not keeping them
@@ -297,7 +331,7 @@ def _generate_single_pdf(
         if html_path.exists():
             html_path.unlink()
 
-    return pdf_path
+    return pdf_path, skipped
 
 
 def parse_markdown(
@@ -305,7 +339,7 @@ def parse_markdown(
     output_dir: Path,
     config: BuildConfig | None = None,
     library_po_files: list[Path] | None = None,
-) -> list[Path]:
+) -> tuple[list[Path], int]:
     """
     Convert markdown file to PDF through full pipeline.
 
@@ -329,7 +363,7 @@ def parse_markdown(
         library_po_files: Shared library PO files (lowest priority, optional)
 
     Returns:
-        list[Path]: Paths to generated PDF files
+        tuple: (list of PDF paths, count of skipped-as-identical PDFs)
     """
     config = config or BuildConfig()
     logger.info(f"Processing markdown: {input_file}")
@@ -390,23 +424,24 @@ def parse_markdown(
         update_po_files(pot_path, primary_po_files)
 
         pdf_paths: list[Path] = []
+        skipped_count = 0
         logger.info(f"Processing base language: {base_lang_code}")
 
         # Generate base language PDF
-        pdf_paths.append(
-            _generate_single_pdf(
-                body,
-                metadata,
-                input_file,
-                input_basename,
-                output_dir,
-                base_dir,
-                config,
-                lang_suffix=f"_{base_lang_code}",
-                library_po_files=library_po_files,
-                validate_images=True,
-            )
+        pdf_path, skipped = _generate_single_pdf(
+            body,
+            metadata,
+            input_file,
+            input_basename,
+            output_dir,
+            base_dir,
+            config,
+            lang_suffix=f"_{base_lang_code}",
+            library_po_files=library_po_files,
+            validate_images=True,
         )
+        pdf_paths.append(pdf_path)
+        skipped_count += skipped
 
         # Generate one PDF per listed translation
         for lang, lang_po_files in sorted(lang_po_map.items()):
@@ -427,26 +462,26 @@ def parse_markdown(
                     f"{stats['untranslated']} untranslated, {stats['fuzzy']} fuzzy"
                 )
 
-            pdf_paths.append(
-                _generate_single_pdf(
-                    body,
-                    metadata,
-                    input_file,
-                    input_basename,
-                    output_dir,
-                    base_dir,
-                    config,
-                    lang_suffix=f"_{lang_code}",
-                    po_files=lang_po_files,
-                    library_po_files=library_po_files,
-                    validate_images=False,
-                )
+            pdf_path, skipped = _generate_single_pdf(
+                body,
+                metadata,
+                input_file,
+                input_basename,
+                output_dir,
+                base_dir,
+                config,
+                lang_suffix=f"_{lang_code}",
+                po_files=lang_po_files,
+                library_po_files=library_po_files,
+                validate_images=False,
             )
+            pdf_paths.append(pdf_path)
+            skipped_count += skipped
 
-        return pdf_paths
+        return pdf_paths, skipped_count
 
     # Single PDF (with optional library PO fallback)
-    pdf_path = _generate_single_pdf(
+    pdf_path, skipped = _generate_single_pdf(
         body,
         metadata,
         input_file,
@@ -457,4 +492,4 @@ def parse_markdown(
         library_po_files=library_po_files,
     )
 
-    return [pdf_path]
+    return [pdf_path], int(skipped)

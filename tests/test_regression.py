@@ -38,7 +38,7 @@ def test_regression_example_pdfs():
 
     for md_file in md_files:
         # Parse and generate PDFs (keep intermediate HTML for debugging)
-        output_files = parse_markdown(
+        output_files, _ = parse_markdown(
             md_file,
             output_dir,
             config=BuildConfig(allow_python=True, keep_intermediate=True),

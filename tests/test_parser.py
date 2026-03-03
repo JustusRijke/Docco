@@ -1,5 +1,6 @@
 """Integration tests for the parser module."""
 
+import logging
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
@@ -8,6 +9,7 @@ import fitz  # PyMuPDF
 import pytest
 from PIL import Image
 
+from docco.logging_config import redirect_to_debug
 from docco.parser import (
     MAX_ITERATIONS,
     BuildConfig,
@@ -29,7 +31,7 @@ def test_end_to_end_simple(fixture_dir):
     """Test simple markdown parsing and PDF output."""
     input_file = Path(fixture_dir) / "simple.md"
     with tempfile.TemporaryDirectory() as tmpdir:
-        outputs = parse_markdown(input_file, Path(tmpdir))
+        outputs, _ = parse_markdown(input_file, Path(tmpdir))
         assert len(outputs) == 1
         assert outputs[0].name.endswith(".pdf")
         assert outputs[0].exists()
@@ -39,7 +41,7 @@ def test_end_to_end_with_frontmatter(fixture_dir):
     """Test parsing with frontmatter."""
     input_file = Path(fixture_dir) / "with_frontmatter.md"
     with tempfile.TemporaryDirectory() as tmpdir:
-        outputs = parse_markdown(input_file, Path(tmpdir))
+        outputs, _ = parse_markdown(input_file, Path(tmpdir))
         assert len(outputs) == 1
         assert outputs[0].name.endswith(".pdf")
         assert outputs[0].exists()
@@ -64,7 +66,7 @@ Before
 
 After""")
 
-        outputs = parse_markdown(input_file, Path(tmpdir))
+        outputs, _ = parse_markdown(input_file, Path(tmpdir))
         assert len(outputs) == 1
         assert outputs[0].name.endswith(".pdf")
         assert outputs[0].exists()
@@ -74,7 +76,7 @@ def test_output_file_naming_simple(fixture_dir):
     """Test that output files are named correctly for simple docs."""
     input_file = Path(fixture_dir) / "simple.md"
     with tempfile.TemporaryDirectory() as tmpdir:
-        outputs = parse_markdown(input_file, Path(tmpdir))
+        outputs, _ = parse_markdown(input_file, Path(tmpdir))
         basename = outputs[0].name
         assert basename == "simple.pdf"
 
@@ -105,6 +107,125 @@ def test_keep_intermediate_true(fixture_dir):
         assert any(f.endswith(".pdf") for f in all_files)
         assert any(f.endswith("_intermediate.md") for f in all_files)
         assert any(f.endswith(".html") for f in all_files)
+
+
+def test_skip_identical_skips_when_unchanged(fixture_dir):
+    """skip_identical=True keeps existing PDF when content is visually identical."""
+    input_file = Path(fixture_dir) / "simple.md"
+    with tempfile.TemporaryDirectory() as tmpdir:
+        out = Path(tmpdir)
+        # First build
+        outputs, _ = parse_markdown(input_file, out, config=BuildConfig())
+        pdf_path = outputs[0]
+        mtime_before = pdf_path.stat().st_mtime
+
+        # Second build with skip_identical — diffpdf returns True (identical)
+        with patch("docco.parser.diffpdf", return_value=True) as mock_diff:
+            outputs2, skipped = parse_markdown(
+                input_file, out, config=BuildConfig(skip_identical=True)
+            )
+            mock_diff.assert_called_once()
+
+        assert outputs2[0] == pdf_path
+        assert pdf_path.stat().st_mtime == mtime_before
+        assert skipped == 1
+
+
+def test_skip_identical_overwrites_when_changed(fixture_dir):
+    """skip_identical=True replaces PDF when content differs."""
+    input_file = Path(fixture_dir) / "simple.md"
+    with tempfile.TemporaryDirectory() as tmpdir:
+        out = Path(tmpdir)
+        # First build
+        outputs, _ = parse_markdown(input_file, out, config=BuildConfig())
+        pdf_path = outputs[0]
+        mtime_before = pdf_path.stat().st_mtime
+
+        # Second build with skip_identical — diffpdf returns False (changed)
+        with patch("docco.parser.diffpdf", return_value=False):
+            outputs2, skipped = parse_markdown(
+                input_file, out, config=BuildConfig(skip_identical=True)
+            )
+
+        assert outputs2[0] == pdf_path
+        assert pdf_path.exists()
+        assert pdf_path.stat().st_mtime > mtime_before
+        assert skipped == 0
+
+
+def test_skip_identical_false_always_overwrites(fixture_dir):
+    """skip_identical=False (default) always overwrites the PDF."""
+    input_file = Path(fixture_dir) / "simple.md"
+    with tempfile.TemporaryDirectory() as tmpdir:
+        out = Path(tmpdir)
+        parse_markdown(input_file, out, config=BuildConfig())
+        pdf_path = out / "simple.pdf"
+        mtime_before = pdf_path.stat().st_mtime
+
+        with patch("docco.parser.diffpdf") as mock_diff:
+            parse_markdown(input_file, out, config=BuildConfig(skip_identical=False))
+            mock_diff.assert_not_called()
+
+        assert pdf_path.stat().st_mtime > mtime_before
+
+
+def test_skip_identical_no_existing_pdf(fixture_dir):
+    """skip_identical=True generates PDF normally when no existing PDF."""
+    input_file = Path(fixture_dir) / "simple.md"
+    with tempfile.TemporaryDirectory() as tmpdir:
+        out = Path(tmpdir)
+        with patch("docco.parser.diffpdf") as mock_diff:
+            outputs, _ = parse_markdown(
+                input_file, out, config=BuildConfig(skip_identical=True)
+            )
+            mock_diff.assert_not_called()
+
+        assert outputs[0].exists()
+
+
+def test_redirect_to_debug_restores_root_logger():
+    """redirect_to_debug restores root logger level and handlers after exit."""
+    root = logging.getLogger()
+    dummy = logging.NullHandler()
+    root.addHandler(dummy)
+    saved_level = root.level
+    saved_handler_count = len(root.handlers)
+
+    def _corrupt_root():
+        # Simulate what diffpdf.logger.setup_logging does
+        root.setLevel(logging.WARNING)
+        root.addHandler(logging.NullHandler())
+
+    with redirect_to_debug():
+        _corrupt_root()
+
+    assert root.level == saved_level
+    assert len(root.handlers) == saved_handler_count
+
+    root.removeHandler(dummy)
+
+
+def test_redirect_to_debug_demotes_error_to_debug():
+    """redirect_to_debug prevents ERROR records from reaching handlers at ERROR level."""
+    emitted: list[tuple[int, str]] = []
+
+    class _Capture(logging.Handler):
+        def emit(self, record: logging.LogRecord) -> None:
+            emitted.append((record.levelno, record.getMessage()))
+
+    root = logging.getLogger()
+    capture = _Capture()
+    root.addHandler(capture)
+    root.setLevel(logging.DEBUG)
+
+    with redirect_to_debug():
+        logging.getLogger().error("diffpdf error output")
+
+    root.removeHandler(capture)
+
+    assert len(emitted) == 1
+    assert emitted[0][0] == logging.DEBUG
+    assert "diffpdf error output" in emitted[0][1]
 
 
 def test_max_iterations_exceeded_self_referencing():
@@ -160,7 +281,7 @@ msgstr "<h1>Hallo</h1>"
 """)
 
         # Build multilingual PDF
-        outputs = parse_markdown(input_file, Path(tmpdir))
+        outputs, _ = parse_markdown(input_file, Path(tmpdir))
 
         # Should generate PDFs for EN and DE
         assert len(outputs) == 2
@@ -246,7 +367,9 @@ def test_dpi_parameter(fixture_dir):
 This document has a DPI setting.
 """)
 
-        outputs = parse_markdown(input_file, Path(tmpdir), config=BuildConfig(dpi=300))
+        outputs, _ = parse_markdown(
+            input_file, Path(tmpdir), config=BuildConfig(dpi=300)
+        )
         assert len(outputs) == 1
         assert outputs[0].exists()
         assert outputs[0].name.endswith("test_dpi.pdf")
@@ -278,7 +401,7 @@ css: style.css
 """)
 
         # Generate PDF with DPI=300
-        outputs_300 = parse_markdown(
+        outputs_300, _ = parse_markdown(
             input_file, Path(tmpdir), config=BuildConfig(dpi=300)
         )
         assert len(outputs_300) == 1
@@ -295,7 +418,7 @@ css: style.css
 ![Test Image](test_image.png)
 """)
 
-        outputs_no_dpi = parse_markdown(input_file_no_dpi, Path(tmpdir))
+        outputs_no_dpi, _ = parse_markdown(input_file_no_dpi, Path(tmpdir))
         assert len(outputs_no_dpi) == 1
 
         # Extract and compare image dimensions using PyMuPDF
@@ -334,7 +457,9 @@ def test_dpi_validation_warns_on_low_dpi_images(caplog):
 """)
 
         # Generate PDF
-        outputs = parse_markdown(input_file, Path(tmpdir), config=BuildConfig(dpi=300))
+        outputs, _ = parse_markdown(
+            input_file, Path(tmpdir), config=BuildConfig(dpi=300)
+        )
         assert len(outputs) == 1
 
         # Should have warned about low DPI
@@ -371,7 +496,9 @@ translations:
 """)
 
         # Generate PDFs (EN and DE)
-        outputs = parse_markdown(input_file, Path(tmpdir), config=BuildConfig(dpi=300))
+        outputs, _ = parse_markdown(
+            input_file, Path(tmpdir), config=BuildConfig(dpi=300)
+        )
         assert len(outputs) == 2  # EN and DE
 
         # Should only warn once (for base language EN)
@@ -447,7 +574,7 @@ Shared content.
             encoding="utf-8",
         )
 
-        outputs = parse_markdown(
+        outputs, _ = parse_markdown(
             input_file, Path(tmpdir), config=BuildConfig(keep_intermediate=True)
         )
         assert len(outputs) == 2  # EN and DE

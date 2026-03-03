@@ -61,7 +61,7 @@ def test_translation_workflow_all_languages(translation_files, baselines_dir):
     - Automatic PDF generation for base language (en) + all listed translations (de, nl)
     """
     with tempfile.TemporaryDirectory() as tmpdir:
-        output_files = parse_markdown(
+        output_files, _ = parse_markdown(
             Path(translation_files["source"]),
             Path(tmpdir),
             config=BuildConfig(allow_python=True),
@@ -123,7 +123,7 @@ Hello world"""
         output_dir = Path(tmpdir) / "output"
         output_dir.mkdir(parents=True)
 
-        output_files = parse_markdown(md_path, output_dir)
+        output_files, _ = parse_markdown(md_path, output_dir)
 
         assert len(output_files) == 1
         assert output_files[0].exists()
@@ -160,7 +160,7 @@ Original content."""
         output_dir.mkdir(parents=True)
 
         # First build: creates POT file
-        output_files = parse_markdown(md_path, output_dir)
+        output_files, _ = parse_markdown(md_path, output_dir)
         assert len(output_files) == 2  # Base EN + DE
 
         # Verify POT file was created (next to the source md file)
@@ -183,7 +183,7 @@ New paragraph added."""
             f.write(updated_content)
 
         # Second build: should auto-update PO file with new strings
-        output_files = parse_markdown(md_path, output_dir)
+        output_files, _ = parse_markdown(md_path, output_dir)
         assert len(output_files) == 2
 
         assert po_path.exists()
@@ -234,7 +234,7 @@ Document only."""
         output_dir = Path(tmpdir) / "output"
         output_dir.mkdir()
 
-        output_files = parse_markdown(md_path, output_dir, library_po_files=[lib_po])
+        output_files, _ = parse_markdown(md_path, output_dir, library_po_files=[lib_po])
 
         assert len(output_files) == 2
         # Read intermediate HTML (keep_intermediate would be needed for full check;
@@ -285,7 +285,7 @@ Shared string."""
         output_dir = Path(tmpdir) / "output"
         output_dir.mkdir()
 
-        output_files = parse_markdown(
+        output_files, _ = parse_markdown(
             md_path, output_dir, config=BuildConfig(keep_intermediate=True)
         )
 

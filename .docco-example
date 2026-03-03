@@ -25,3 +25,16 @@ file = "examples/Feature_Showcase.md"
 
 # Shared library PO files applied as fallback translations (document PO takes precedence)
 # library-po = ["shared/copyright.po", "shared/address.po"]
+
+# Skip overwriting PDF if visually identical to existing output
+# skip-identical = false
+
+# DiffPDF visual comparison threshold (0.0-1.0, lower = stricter)
+# diffpdf-threshold = 0.1
+
+# DiffPDF rendering DPI for comparison
+# diffpdf-dpi = 96
+
+# Skip text content comparison in diffpdf (visual-only; useful when font subsets
+# or metadata cause text extraction differences without visible changes)
+# diffpdf-skip-text = false

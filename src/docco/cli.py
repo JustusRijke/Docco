@@ -1,14 +1,16 @@
 """CLI interface for Docco."""
 
 import logging
+import shutil
 import sys
 from pathlib import Path
 from typing import Annotated
 
 import cyclopts
 from cyclopts import Parameter
+from diffpdf import diffpdf
 
-from docco.logging_config import setup_logging
+from docco.logging_config import redirect_to_debug, setup_logging
 from docco.parser import BuildConfig, parse_markdown
 from docco.pdf import html_to_pdf
 
@@ -55,6 +57,10 @@ def main(
     filename_template: str | None = None,
     dpi: int | None = None,
     library_po: list[Path] | None = None,
+    skip_identical: bool = False,
+    diffpdf_threshold: float = 0.1,
+    diffpdf_dpi: int = 96,
+    diffpdf_skip_text: bool = False,
 ) -> None:
     """Convert Markdown (or HTML) to PDF."""
     counter = setup_logging(verbose=verbose, log_file=log_file)
@@ -82,6 +88,7 @@ def main(
             effective_output.mkdir(parents=True)
 
         all_output_files: list[Path] = []
+        total_skipped = 0
         for ifile in input_files:
             if not ifile.exists():
                 logger.error(f"Input file not found: {ifile}")
@@ -102,10 +109,35 @@ def main(
             if ifile.suffix.lower() in {".html", ".htm"}:
                 logger.info(f"Processing HTML: {ifile}")
                 output_pdf = out_dir / f"{ifile.stem}.pdf"
-                html_to_pdf(ifile, output_pdf)
+                tmp_pdf = out_dir / f"{ifile.stem}.pdf-docco"
+                try:
+                    html_to_pdf(ifile, tmp_pdf)
+                    if skip_identical and output_pdf.exists():
+                        logger.info(f"Comparing PDF to existing: {output_pdf.name}")
+                        with redirect_to_debug():
+                            identical = diffpdf(
+                                output_pdf,
+                                tmp_pdf,
+                                threshold=diffpdf_threshold,
+                                dpi=diffpdf_dpi,
+                                skip_compare_text=diffpdf_skip_text,
+                            )
+                        if identical:
+                            logger.info(f"PDF unchanged, skipping: {output_pdf.name}")
+                            tmp_pdf.unlink()
+                            total_skipped += 1
+                        else:
+                            logger.info(f"PDF changed, overwriting: {output_pdf.name}")
+                            shutil.move(tmp_pdf, output_pdf)
+                    else:
+                        shutil.move(tmp_pdf, output_pdf)
+                except Exception:
+                    if tmp_pdf.exists():
+                        tmp_pdf.unlink()
+                    raise
                 all_output_files.append(output_pdf)
             else:
-                output_files = parse_markdown(
+                output_files, skipped = parse_markdown(
                     ifile,
                     out_dir,
                     config=BuildConfig(
@@ -113,22 +145,31 @@ def main(
                         allow_python=allow_python,
                         filename_template=filename_template,
                         dpi=dpi,
+                        skip_identical=skip_identical,
+                        diffpdf_threshold=diffpdf_threshold,
+                        diffpdf_dpi=diffpdf_dpi,
+                        skip_compare_text=diffpdf_skip_text,
                     ),
                     library_po_files=library_po,
                 )
                 all_output_files.extend(output_files)
+                total_skipped += skipped
 
+        generated = len(all_output_files) - total_skipped
+        summary = (
+            f"Generated {generated}, skipped {total_skipped} unchanged"
+            if total_skipped
+            else f"Successfully generated {generated} output file(s)"
+        )
         if counter.error_count > 0 or counter.warning_count > 0:
             parts = []
             if counter.error_count > 0:
                 parts.append(f"{counter.error_count} error(s)")
             if counter.warning_count > 0:
                 parts.append(f"{counter.warning_count} warning(s)")
-            logger.warning(f"Completed with {', '.join(parts)}")
+            logger.warning(f"{summary} — completed with {', '.join(parts)}")
         else:
-            logger.info(
-                f"Successfully generated {len(all_output_files)} output file(s)"
-            )
+            logger.info(summary)
     except SystemExit:
         raise
     except Exception as e:
