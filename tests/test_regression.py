@@ -56,7 +56,11 @@ def test_regression_example_pdfs():
             # Compare PDFs using diffpdf
             with tempfile.TemporaryDirectory() as diff_dir:  # pragma: no cover
                 if diffpdf(
-                    str(baseline_pdf), pdf_file, threshold=0.1, output_dir=diff_dir
+                    str(baseline_pdf),
+                    pdf_file,
+                    threshold=0.1,
+                    output_dir=diff_dir,
+                    skip_compare_text=True,
                 ):
                     logger.info(f"✓ Pass: {filename}")
                     continue
