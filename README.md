@@ -156,6 +156,8 @@ Variables are substituted before any inline directives are processed, so they al
 |----------|-------|
 | `$$PATH$$` | Absolute path to the directory containing the source `.md` file |
 
+To write a literal `$$varname$$` in output without substitution, double the dollar signs: `$$$$varname$$$$` → `$$varname$$`.
+
 ## Frontmatter Configuration
 
 Supported frontmatter keys:

@@ -28,11 +28,18 @@ MAX_ITERATIONS = 10
 RESERVED_VARS = {"PATH"}
 
 
+_SENTINEL = "\x00DOLLAR\x00"
+
+
 def apply_variables(content: str, variables: dict[str, str]) -> str:
-    """Replace $$varname$$ placeholders in content with their values."""
+    """Replace $$varname$$ placeholders in content.
+
+    Escape with doubling: $$$$varname$$$$ is left as $$varname$$ (not substituted).
+    """
+    content = content.replace("$$$$", _SENTINEL)
     for name, value in variables.items():
         content = content.replace(f"$${name}$$", value)
-    return content
+    return content.replace(_SENTINEL, "$$")
 
 
 @dataclass

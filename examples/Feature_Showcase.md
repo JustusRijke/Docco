@@ -147,9 +147,11 @@ Variables are substituted **before** inline directives are resolved, so they wor
 
 | Variable | Value |
 |----------|-------|
-| `$$PATH$$` | Absolute path to the directory containing the source `.md` file |
+| `$$$$PATH$$$$` | Absolute path to the directory containing the source `.md` file |
 
 Attempting to declare a reserved variable in `var` will log a warning and the built-in value is preserved.
+
+**Escaping:** To write a literal `$$varname$$` in the output without substitution, double the dollar signs: `$$$$varname$$$$` → `$$varname$$`.
 
 ## Core Concepts
 

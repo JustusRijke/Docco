@@ -608,6 +608,18 @@ def test_apply_variables_multiple():
     assert result == "foo and bar"
 
 
+def test_apply_variables_escaped():
+    """$$$$varname$$$$ is left as $$varname$$ without substitution."""
+    result = apply_variables("$$$$name$$$$", {"name": "world"})
+    assert result == "$$name$$"
+
+
+def test_apply_variables_escaped_mixed():
+    """Escaped and unescaped placeholders work in the same string."""
+    result = apply_variables("$$$$name$$$$ vs $$name$$", {"name": "world"})
+    assert result == "$$name$$ vs world"
+
+
 def test_frontmatter_vars_substituted_in_body():
     """Variables declared in frontmatter are substituted in the document body."""
     with tempfile.TemporaryDirectory() as tmpdir:
