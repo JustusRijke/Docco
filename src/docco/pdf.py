@@ -97,7 +97,7 @@ def collect_css_content(markdown_file: Path, metadata: dict[str, object]) -> CSS
                 css_content.append(absolutize_css_urls(raw_css, abs_path))
                 logger.debug(f"Using CSS from frontmatter: {css_path}")
             else:
-                logger.warning(f"CSS file not found: {abs_path}")
+                logger.error(f"CSS file not found: {abs_path}")
 
     return {"inline": "\n".join(css_content), "external": external_urls}
 
@@ -144,7 +144,7 @@ def collect_js_content(markdown_file: Path, metadata: dict[str, object]) -> JSCo
                     js_content.append(f.read())
                 logger.debug(f"Using JS from frontmatter: {js_path}")
             else:
-                logger.warning(f"JS file not found: {abs_path}")
+                logger.error(f"JS file not found: {abs_path}")
 
     return {"inline": "\n".join(js_content), "external": external_urls}
 
