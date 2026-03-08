@@ -246,7 +246,8 @@ This example includes only h2, h3, and h4 headings in the TOC.
 To exclude a heading and all its sub-sections from the TOC, add `class="toc-ignore"`:
 
 ```markdown
-## Normal Heading {.toc-ignore}
+{.toc-ignore}
+## Normal Heading
 ### This subsection is also excluded
 ## This heading is included
 ```
