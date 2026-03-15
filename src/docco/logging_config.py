@@ -1,102 +1,102 @@
-"""Logging configuration for Docco."""
-
 import logging
+from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Generator
 
 import colorlog
 
+PLAIN_FORMAT = "%(levelname)-8s [%(shortname)s] %(message)s"
+COLOR_FORMAT = "%(log_color)s%(levelname)-8s%(reset)s [%(shortname)s] %(message)s"
+LOG_COLORS = {
+    "DEBUG": "cyan",
+    "INFO": "green",
+    "WARNING": "yellow",
+    "ERROR": "red",
+    "CRITICAL": "bold_red",
+}
+
+
+class _ShortNameFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        record.shortname = record.name.removeprefix("docco.")
+        return True
+
 
 class LogCounter(logging.Handler):
-    """Handler that counts warnings and errors."""
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.warning_count = 0
-        self.error_count = 0
+    warning_count: int = 0
+    error_count: int = 0
 
     def emit(self, record: logging.LogRecord) -> None:
-        if record.levelno >= logging.ERROR:
-            self.error_count += 1
-        elif record.levelno >= logging.WARNING:
+        if record.levelno == logging.WARNING:
             self.warning_count += 1
+        elif record.levelno >= logging.ERROR:
+            self.error_count += 1
 
 
 class _RedirectToDebug(logging.Handler):
-    """Forward all records to a fixed set of handlers, demoted to DEBUG level."""
-
-    def __init__(self, handlers: list[logging.Handler]) -> None:
+    def __init__(self, target_logger: logging.Logger) -> None:
         super().__init__()
-        self._handlers = handlers
+        self._target = target_logger
 
     def emit(self, record: logging.LogRecord) -> None:
         record = logging.makeLogRecord(record.__dict__)
         record.levelno = logging.DEBUG
         record.levelname = "DEBUG"
-        for h in self._handlers:
-            h.handle(record)
+        self._target.handle(record)
 
 
 @contextmanager
-def redirect_to_debug() -> Generator[None, None, None]:
-    """Context manager: demote all root-logger output to DEBUG while active.
+def redirect_to_debug(logger_name: str) -> Generator[None]:
+    target = logging.getLogger("docco")
+    handler = _RedirectToDebug(target)
+    redirected = logging.getLogger(logger_name)
+    original_handlers = redirected.handlers[:]
+    original_propagate = redirected.propagate
 
-    Replaces the root logger's handlers with a single redirect handler that
-    re-emits every record at DEBUG level through the saved handlers. This
-    prevents third-party code (e.g. diffpdf) from logging at ERROR/WARNING
-    while still surfacing its output in verbose mode. Saves and restores the
-    root logger's level and handler list on exit.
-    """
-    root = logging.getLogger()
-    saved_level = root.level
-    saved_handlers = root.handlers[:]
-    root.handlers[:] = [_RedirectToDebug(saved_handlers)]
-    root.setLevel(logging.DEBUG)
+    redirected.handlers = [handler]
+    redirected.propagate = False
     try:
         yield
     finally:
-        root.handlers[:] = saved_handlers
-        root.setLevel(saved_level)
+        redirected.handlers = original_handlers
+        redirected.propagate = original_propagate
 
 
-def setup_logging(verbose: bool = False, log_file: Path | None = None) -> LogCounter:
-    """
-    Configure logging with colorized output and warning/error counting.
+def setup_logging(
+    *,
+    verbose: bool = False,
+    log_file: Path | None = None,
+    level: str | None = None,
+) -> LogCounter:
+    effective_level = (
+        logging.getLevelNamesMapping()[level.upper()]
+        if level
+        else (logging.DEBUG if verbose else logging.INFO)
+    )
 
-    Args:
-        verbose: Enable DEBUG level logging
-        log_file: Optional file path to write plain-text log output to
-
-    Returns:
-        LogCounter: Counter instance for tracking warnings/errors
-    """
-    log_level = logging.DEBUG if verbose else logging.INFO
-    handler = colorlog.StreamHandler()
-    handler.setFormatter(
-        colorlog.ColoredFormatter(
-            "%(log_color)s%(levelname)-8s%(reset)s %(message)s",
-            log_colors={
-                "DEBUG": "cyan",
-                "INFO": "green",
-                "WARNING": "yellow",
-                "ERROR": "red",
-                "CRITICAL": "red,bg_white",
-            },
-        )
+    console_handler = colorlog.StreamHandler()
+    console_handler.setFormatter(
+        colorlog.ColoredFormatter(COLOR_FORMAT, log_colors=LOG_COLORS)
     )
 
     counter = LogCounter()
 
-    root_logger = logging.getLogger()
-    root_logger.addHandler(handler)
-    root_logger.addHandler(counter)
+    short_name = _ShortNameFilter()
+    console_handler.addFilter(short_name)
+
+    root = logging.getLogger("docco")
+    for handler in root.handlers:
+        handler.close()
+    root.handlers.clear()
+    root.addHandler(console_handler)
+    root.addHandler(counter)
+    root.propagate = False
 
     if log_file is not None:
         file_handler = logging.FileHandler(log_file, encoding="utf-8")
-        file_handler.setFormatter(logging.Formatter("%(levelname)-8s %(message)s"))
-        root_logger.addHandler(file_handler)
+        file_handler.setFormatter(logging.Formatter(PLAIN_FORMAT))
+        file_handler.addFilter(short_name)
+        root.addHandler(file_handler)
 
-    root_logger.setLevel(log_level)
-
+    root.setLevel(effective_level)
     return counter

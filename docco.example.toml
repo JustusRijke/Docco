@@ -1,0 +1,82 @@
+# Docco project configuration
+# Copy this file to docco.toml in your project root.
+# All plugins run automatically. Config sections provide per-plugin settings.
+
+# Input file(s) -- single path or list of paths (relative to this file)
+# file = "doc.md"
+# file = ["chapter1.md", "chapter2.md"]
+
+# Logging configuration
+# [log]
+# file = "docco.log"    # Write log output to file (in addition to console)
+# level = "debug"       # Log level: debug, info, warning, error, critical
+
+# Error handling
+# [error]
+# save_intermediate = true   # Save intermediate output on pipeline failure (default: true)
+
+# PDF page to SVG extraction (PREPROCESS)
+# [pdf2svg]
+# svg_dir = "assets"         # Output subdirectory relative to source file (default: "assets")
+# skip_if_exists = true      # Skip conversion if SVG already exists (default: true)
+
+# Translation and multilingual support (PREPROCESS + ENRICH)
+# [translation]
+# language = "en"                                        # Single-language filter mode
+# base_language = "en"                                   # Multi-language: base language code
+# languages = ["de", "fr"]                               # Target languages (forks pipeline)
+# terms = ["shared/terms.po"]                            # Shared PO files (lowest priority)
+# ignore_numbers = true                                  # Discard numeric-only msgids (default: true)
+# filename_template = "{filename}_{langcode}"            # Output filename pattern
+#
+# [translation.po]                                       # Additional PO files
+# de = "locales/de/doc.po"                               # Explicit PO path per language
+# fr = ["locales/fr/doc.po", "../library/locales/fr/shared.po"]
+
+# HTML stage configuration (CONVERT)
+# [html]
+# css = ["style.css"]                       # CSS files to embed (relative or absolute paths)
+# template = "custom.html"                  # Custom HTML template (default: built-in base.html)
+# js = ["app.js"]                           # Inline JS files
+# js_external = ["https://example.com/lib.js"]  # External JS URLs (<script src>)
+# title = "My Document"                     # HTML <title> (default: source filename stem)
+
+# Variable substitution: use $$varname$$ in markdown (ENRICH)
+# [vars]
+# version = "1.0"
+# author = "Jane Doe"
+
+# TOC (table of contents) configuration (ENRICH)
+# [toc]
+# start = 1    # Minimum heading level to include (default: 1)
+# end = 6      # Maximum heading level to include (default: 6)
+
+# Page layout directives (ENRICH)
+# [page]
+# add_pagedjs_screen_css = true   # Inject screen CSS for paged.js preview (default: true)
+
+# URL absolutization and validation (RENDER)
+# [urls]
+# enable = true      # Enable URL absolutization and validation (default: true)
+# test = true        # Validate that URLs exist/respond (default: true)
+# local_only = true  # Only validate file:// URLs, skip http(s):// checks (default: true)
+
+# HTML linting (RENDER)
+# [htmlhint]
+# enable = false     # Enable HTML linting with htmlhint (default: false)
+# level = "error"    # Log level for issues: info, warning, error (default: error)
+
+# PDF stage configuration (RENDER)
+# [pdf]
+# keep_html = true   # Write intermediate HTML to output directory for debugging
+
+# DPI downscaling and validation (POSTPROCESS)
+# [dpi]
+# max = 300   # Max image DPI; images below this are flagged with a warning (default: 300)
+
+# Skip writing PDF if it is visually identical to the existing output file (POSTPROCESS)
+# [diffpdf]
+# enable = false     # Enable skip-identical comparison (default: false)
+# threshold = 0.1    # Max allowed per-pixel difference (default: 0.1)
+# dpi = 96           # Resolution for visual comparison (default: 96)
+# skip_text = false  # Skip text content check (default: false)

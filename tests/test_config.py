@@ -1,190 +1,127 @@
-"""Tests for .docco config file integration via CLI."""
-
-from pathlib import Path
-from unittest.mock import patch
-
 import pytest
 
-from docco.cli import app
-from docco.parser import _apply_filename_template
+from docco.config import (
+    _merge_configs,
+    find_document_config,
+    find_project_config,
+    load_config,
+    load_project_config,
+)
 
 
-@pytest.fixture
-def fixture_dir():
-    return Path(__file__).parent / "fixtures"
+def test_find_project_config(tmp_path):
+    toml = tmp_path / "docco.toml"
+    toml.write_text('file = "doc.md"\n', encoding="utf-8")
+    sub = tmp_path / "sub" / "deep"
+    sub.mkdir(parents=True)
+
+    assert find_project_config(sub, stop_at=tmp_path) == toml
 
 
-# --- .docco config tests ---
+def test_find_project_config_not_found(tmp_path):
+    assert find_project_config(tmp_path) is None
 
 
-def test_cli_uses_config_file(fixture_dir, monkeypatch):
-    """CLI picks up 'file' from .docco when no argument given."""
-    monkeypatch.chdir(fixture_dir)
-    with patch("docco.cli.parse_markdown") as mock_parse:
-        mock_parse.return_value = ([fixture_dir / "simple.pdf"], 0)
-        app([], exit_on_error=False)
-        call_input = mock_parse.call_args[0][0]
-        assert call_input.name == "simple.md"
+def test_find_project_config_does_not_traverse_above_cwd(tmp_path, monkeypatch):
+    """Config above cwd is not found when start is inside cwd."""
+    toml = tmp_path / "docco.toml"
+    toml.write_text('file = "doc.md"\n', encoding="utf-8")
+    sub = tmp_path / "project"
+    sub.mkdir()
+    monkeypatch.chdir(sub)
+
+    assert find_project_config(sub) is None
 
 
-def test_cli_arg_overrides_config(fixture_dir, tmp_path, monkeypatch):
-    """Positional input_file overrides 'file' in .docco config."""
-    (tmp_path / ".docco").write_text(
-        f"file = '{fixture_dir / 'simple.md'}'\n", encoding="utf-8"
-    )
-    other = tmp_path / "other.md"
-    other.write_text("# Other", encoding="utf-8")
-    monkeypatch.chdir(tmp_path)
-
-    with patch("docco.cli.parse_markdown") as mock_parse:
-        mock_parse.return_value = ([tmp_path / "other.pdf"], 0)
-        app([str(other)], exit_on_error=False)
-        assert mock_parse.call_args[0][0].name == "other.md"
-
-
-def test_cli_no_input_no_config_exits(tmp_path, monkeypatch):
-    """Exits with error when no input_file and no .docco config."""
-    monkeypatch.chdir(tmp_path)
-    with pytest.raises(SystemExit) as exc_info:
-        app([], exit_on_error=False)
-    assert exc_info.value.code != 0
-
-
-def test_cli_config_in_parent_directory(fixture_dir, monkeypatch):
-    """CLI finds .docco in a parent directory when run from a subdirectory."""
-    subdir = fixture_dir / "subdir_for_config_test"
-    subdir.mkdir(exist_ok=True)
-    monkeypatch.chdir(subdir)
-
-    with patch("docco.cli.parse_markdown") as mock_parse:
-        mock_parse.return_value = ([fixture_dir / "simple.pdf"], 0)
-        app([], exit_on_error=False)
-        assert mock_parse.call_args[0][0].name == "simple.md"
-
-
-def test_cli_allow_python_from_config(tmp_path, monkeypatch):
-    """allow-python from config is passed to parse_markdown."""
+def test_find_document_config(tmp_path):
     md = tmp_path / "doc.md"
-    md.write_text("# Doc", encoding="utf-8")
-    (tmp_path / ".docco").write_text(
-        "file = 'doc.md'\nallow-python = true\n", encoding="utf-8"
-    )
-    monkeypatch.chdir(tmp_path)
+    md.write_text("# test", encoding="utf-8")
+    sidecar = tmp_path / "doc.toml"
+    sidecar.write_text('[vars]\ntitle = "Test"\n', encoding="utf-8")
 
-    with patch("docco.cli.parse_markdown") as mock_parse:
-        mock_parse.return_value = ([tmp_path / "doc.pdf"], 0)
-        app([], exit_on_error=False)
-        assert mock_parse.call_args[1]["config"].allow_python is True
+    assert find_document_config(md) == sidecar
 
 
-def test_cli_allow_python_flag_overrides_config(tmp_path, monkeypatch):
-    """--allow-python CLI flag works regardless of config."""
+def test_find_document_config_missing(tmp_path):
     md = tmp_path / "doc.md"
-    md.write_text("# Doc", encoding="utf-8")
-    (tmp_path / ".docco").write_text(
-        "file = 'doc.md'\nallow-python = false\n", encoding="utf-8"
-    )
-    monkeypatch.chdir(tmp_path)
-
-    with patch("docco.cli.parse_markdown") as mock_parse:
-        mock_parse.return_value = ([tmp_path / "doc.pdf"], 0)
-        app(["--allow-python"], exit_on_error=False)
-        assert mock_parse.call_args[1]["config"].allow_python is True
+    md.write_text("# test", encoding="utf-8")
+    assert find_document_config(md) is None
 
 
-def test_cli_output_path_from_config(tmp_path, monkeypatch):
-    """output path from config is used when -o not given."""
+def test_merge_configs_scalar_override():
+    base = {"a": 1, "b": 2}
+    override = {"b": 3, "c": 4}
+    assert _merge_configs(base, override) == {"a": 1, "b": 3, "c": 4}
+
+
+def test_merge_configs_list_append():
+    base = {"css": ["a.css"]}
+    override = {"css": ["b.css"]}
+    assert _merge_configs(base, override) == {"css": ["a.css", "b.css"]}
+
+
+def test_merge_configs_nested_dict():
+    base = {"html": {"css": ["a.css"], "template": "base.html"}}
+    override = {"html": {"css": ["b.css"]}}
+    result = _merge_configs(base, override)
+    assert result == {"html": {"css": ["a.css", "b.css"], "template": "base.html"}}
+
+
+def test_load_project_config_explicit_path(tmp_path):
+    config_file = tmp_path / "docco.toml"
+    config_file.write_text('file = "doc.md"\n\n[pdf]\ndpi = 300\n', encoding="utf-8")
+
+    result, config_dir = load_project_config(config_path=config_file)
+    assert result["pdf"]["dpi"] == 300
+    assert config_dir == config_file.parent
+
+
+def test_load_project_config_discovery(tmp_path):
+    config_file = tmp_path / "docco.toml"
+    config_file.write_text('file = "doc.md"\n', encoding="utf-8")
+    sub = tmp_path / "docs"
+    sub.mkdir()
+
+    result, config_dir = load_project_config(start=sub)
+    assert result["file"] == "doc.md"
+    assert config_dir == config_file.parent
+
+
+def test_load_project_config_no_config_raises(tmp_path):
+    with pytest.raises(ValueError, match="No docco.toml found"):
+        load_project_config(start=tmp_path)
+
+
+def test_load_config_merges_sidecar(tmp_path):
+    project = {"html": {"css": ["base.css"]}}
     md = tmp_path / "doc.md"
-    md.write_text("# Doc", encoding="utf-8")
-    out = tmp_path / "myout"
-    (tmp_path / ".docco").write_text(
-        f"file = 'doc.md'\noutput = '{out}'\n", encoding="utf-8"
-    )
-    monkeypatch.chdir(tmp_path)
+    md.write_text("# test", encoding="utf-8")
+    sidecar = tmp_path / "doc.toml"
+    sidecar.write_text('[html]\ncss = ["extra.css"]\n', encoding="utf-8")
 
-    with patch("docco.cli.parse_markdown") as mock_parse:
-        mock_parse.return_value = ([out / "doc.pdf"], 0)
-        app([], exit_on_error=False)
-        assert mock_parse.call_args[0][1] == out
+    result = load_config(md, project)
+    assert result["html"]["css"] == ["base.css", "extra.css"]
 
 
-def test_cli_output_flag_overrides_config(tmp_path, monkeypatch):
-    """-o CLI flag overrides config output path."""
+def test_load_config_no_sidecar(tmp_path):
+    project = {"file": "doc.md"}
+    md = tmp_path / "test.md"
+    md.write_text("# test", encoding="utf-8")
+
+    result = load_config(md, project)
+    assert result == project
+
+
+def test_load_config_normalizes_sidecar_with_normalizers(tmp_path):
+    project = {}
     md = tmp_path / "doc.md"
-    md.write_text("# Doc", encoding="utf-8")
-    cli_out = tmp_path / "cli_out"
-    cli_out.mkdir()
-    (tmp_path / ".docco").write_text(
-        "file = 'doc.md'\noutput = 'config_out'\n", encoding="utf-8"
-    )
-    monkeypatch.chdir(tmp_path)
+    md.write_text("# test", encoding="utf-8")
+    sidecar = tmp_path / "doc.toml"
+    sidecar.write_text('[html]\ncss = "style.css"\n', encoding="utf-8")
 
-    with patch("docco.cli.parse_markdown") as mock_parse:
-        mock_parse.return_value = ([cli_out / "doc.pdf"], 0)
-        app(["-o", str(cli_out)], exit_on_error=False)
-        assert mock_parse.call_args[0][1] == cli_out
-
-
-def test_cli_keep_intermediate_from_config(tmp_path, monkeypatch):
-    """keep-intermediate from config is passed to parse_markdown."""
-    md = tmp_path / "doc.md"
-    md.write_text("# Doc", encoding="utf-8")
-    (tmp_path / ".docco").write_text(
-        "file = 'doc.md'\nkeep-intermediate = true\n", encoding="utf-8"
-    )
-    monkeypatch.chdir(tmp_path)
-
-    with patch("docco.cli.parse_markdown") as mock_parse:
-        mock_parse.return_value = ([tmp_path / "doc.pdf"], 0)
-        app([], exit_on_error=False)
-        assert mock_parse.call_args[1]["config"].keep_intermediate is True
-
-
-def test_cli_createdir_creates_subdir(tmp_path, monkeypatch):
-    """createdir = true routes output to {output}/{stem}/."""
-    md = tmp_path / "doc.md"
-    md.write_text("# Doc", encoding="utf-8")
-    out = tmp_path / "out"
-    (tmp_path / ".docco").write_text(
-        f"file = 'doc.md'\noutput = '{out}'\ncreatedir = true\n", encoding="utf-8"
-    )
-    monkeypatch.chdir(tmp_path)
-
-    with patch("docco.cli.parse_markdown") as mock_parse:
-        mock_parse.return_value = ([out / "doc" / "doc.pdf"], 0)
-        app([], exit_on_error=False)
-        assert mock_parse.call_args[0][1] == out / "doc"
-        assert (out / "doc").exists()
-
-
-def test_cli_library_po_resolved_relative_to_config(tmp_path, monkeypatch):
-    """library_po relative paths are resolved relative to the .docco config dir."""
-    md = tmp_path / "doc.md"
-    md.write_text("# Doc", encoding="utf-8")
-    out = tmp_path / "out"
-    out.mkdir()
-    po = tmp_path / "lib.po"
-    po.write_text('msgid ""\nmsgstr ""\n', encoding="utf-8")
-    (tmp_path / ".docco").write_text(
-        f"file = 'doc.md'\noutput = '{out}'\n", encoding="utf-8"
-    )
-    monkeypatch.chdir(tmp_path)
-
-    with patch("docco.cli.parse_markdown") as mock_parse:
-        mock_parse.return_value = ([out / "doc.pdf"], 0)
-        app(["--library-po", "lib.po"], exit_on_error=False)
-        library_po_arg = mock_parse.call_args[1]["library_po_files"]
-        assert library_po_arg == [tmp_path / "lib.po"]
-
-
-# --- filename template tests ---
-
-
-def test_apply_filename_template_default():
-    assert _apply_filename_template("{filename}_{langcode}", "doc", "EN") == "doc_EN"
-
-
-def test_apply_filename_template_custom():
-    assert (
-        _apply_filename_template("{langcode}-{filename}", "report", "DE") == "DE-report"
-    )
+    resolved = str((tmp_path / "style.css").resolve())
+    normalizers = {
+        "html": lambda s, base: {**s, "css": [str((base / s["css"]).resolve())]}
+    }
+    result = load_config(md, project, normalizers=normalizers)
+    assert result["html"]["css"] == [resolved]

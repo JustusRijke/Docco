@@ -1,8 +1,11 @@
-no-inline-html: false
+blanks-around-tables: false
+blanks-around-lists: false
+blanks-around-headings: false
 first-line-heading: false
+heading-increment: false
 line-length:
   line_length: 255
 no-alt-text: false
-blanks-around-tables: false
 no-duplicate-heading: false
-blanks-around-lists: false
+no-inline-html: false
+single-h1: false

@@ -1,187 +1,145 @@
-"""CLI interface for Docco."""
-
+import argparse
 import logging
-import shutil
 import sys
 from pathlib import Path
-from typing import Annotated
 
-import cyclopts
-from cyclopts import Parameter
-from diffpdf import diffpdf
+from docco.config import load_config, load_project_config
+from docco.context import Context
+from docco.logging_config import LogCounter, setup_logging
+from docco.pipeline import PipelineError, build_pipeline, discover_stages, run_pipeline
 
-from docco.logging_config import redirect_to_debug, setup_logging
-from docco.parser import BuildConfig, parse_markdown
-from docco.pdf import html_to_pdf
-
-logger = logging.getLogger(__name__)
-
-CONFIG_FILENAME = ".docco"
+log = logging.getLogger("docco.cli")
 
 
-def _find_config_dir() -> Path | None:
-    """Walk up from CWD to find the directory containing .docco."""
-    current = Path.cwd().resolve()
-    while True:
-        if (current / CONFIG_FILENAME).is_file():
-            return current
-        parent = current.parent
-        if parent == current:
-            return None
-        current = parent
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        prog="docco", description="Markdown to PDF converter"
+    )
+    parser.add_argument("input", nargs="*", type=Path, help="Input markdown file(s)")
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=Path,
+        default=None,
+        help="Output directory (default: same directory as input)",
+    )
+    parser.add_argument("--verbose", action="store_true", help="Enable debug logging")
+    parser.add_argument(
+        "--config", type=Path, default=None, help="Path to project docco.toml"
+    )
+    return parser.parse_args(argv)
 
 
-app = cyclopts.App(
-    name="docco",
-    help="Convert Markdown to PDF with POT/PO translation support",
-    config=cyclopts.config.Toml(  # type: ignore[arg-type]
-        ".docco",
-        search_parents=True,
-        must_exist=False,
-        allow_unknown=True,
-    ),
-    result_action="return_value",
-)
+def _resolve_input_files(cli_inputs: list[Path], project_config: dict) -> list[Path]:
+    """Resolve input files from CLI args or project config."""
+    if cli_inputs:
+        return [p.resolve() for p in cli_inputs]
+
+    raw = project_config.get("file")
+    if raw is None:
+        log.error("No input files: pass as arguments or set 'file' in docco.toml")
+        sys.exit(1)
+
+    files = [raw] if isinstance(raw, str) else raw
+    if not files:
+        log.error("No input files: 'file' in docco.toml is empty")
+        sys.exit(1)
+    return [Path(f).resolve() for f in files]
 
 
-@app.default
-def main(
-    input_file: Annotated[Path | None, Parameter(name=["input-file", "file"])] = None,
-    *,
-    output: Annotated[Path, Parameter(name=["--output", "-o"])] = Path(),
-    keep_intermediate: bool = False,
-    verbose: Annotated[bool, Parameter(name=["--verbose", "-v"])] = False,
-    log_file: Path | None = None,
-    allow_python: bool = False,
-    createdir: bool = False,
-    filename_template: str | None = None,
-    dpi: int | None = None,
-    library_po: list[Path] | None = None,
-    skip_identical: bool = False,
-    diffpdf_threshold: float = 0.1,
-    diffpdf_dpi: int = 96,
-    diffpdf_skip_text: bool = False,
-) -> None:
-    """Convert Markdown (or HTML) to PDF."""
-    counter = setup_logging(verbose=verbose, log_file=log_file)
+_CONTENT_TYPE_EXT = {"markdown": ".md", "html": ".html", "pdf": ".pdf"}
+
+
+def _save_intermediate(error: PipelineError) -> None:
+    for ctx in error.contexts:
+        ext = _CONTENT_TYPE_EXT.get(ctx.content_type, ".tmp")
+        out = ctx.output_dir / (ctx.source_path.stem + f".intermediate{ext}")
+        if isinstance(ctx.content, bytes):
+            out.write_bytes(ctx.content)
+        else:
+            out.write_text(ctx.content, encoding="utf-8")
+        log.info("Intermediate output saved: %s", out)
+
+
+def _print_summary(generated: int, skipped: int, counter: LogCounter) -> None:
+    parts = [f"Generated {generated} file(s)"]
+    if skipped:
+        parts[0] = f"Generated {generated}, skipped {skipped} unchanged"
+    if counter.warning_count or counter.error_count:
+        parts.append(
+            f"{counter.warning_count} warning(s), {counter.error_count} error(s)"
+        )
+    log.info(" \u2014 ".join(parts))
+
+
+def main(argv: list[str] | None = None) -> None:
+    args = parse_args(argv)
+    counter = setup_logging(verbose=args.verbose)
 
     try:
-        if input_file is None:
-            print(
-                "error: No input file specified "
-                "(pass as argument or set 'file' in .docco)",
-                file=sys.stderr,
-            )
-            raise SystemExit(1)
+        available_stages = discover_stages()
+        normalizers = {
+            (cls.config_key or name): cls.normalize_config_section
+            for name, cls in available_stages.items()
+            if "normalize_config_section" in cls.__dict__
+        }
 
-        input_files = [input_file] if not isinstance(input_file, list) else input_file
-
-        config_dir = _find_config_dir()
-        if config_dir is not None:
-            input_files = [
-                config_dir / p if not p.is_absolute() else p for p in input_files
-            ]
-            if library_po:
-                library_po = [
-                    config_dir / p if not p.is_absolute() else p for p in library_po
-                ]
-
-        effective_output = output
-        if not createdir and not effective_output.exists():
-            effective_output.mkdir(parents=True)
-
-        all_output_files: list[Path] = []
-        total_skipped = 0
-        for ifile in input_files:
-            if not ifile.exists():
-                logger.error(f"Input file not found: {ifile}")
-                raise SystemExit(1)
-
-            valid_extensions = {".md", ".html", ".htm"}
-            if ifile.suffix.lower() not in valid_extensions:
-                logger.error(
-                    f"Invalid file type: {ifile.suffix}\n"
-                    f"Supported formats: {', '.join(sorted(valid_extensions))}"
-                )
-                raise SystemExit(1)
-
-            out_dir = effective_output / ifile.stem if createdir else effective_output
-            if not out_dir.exists():
-                out_dir.mkdir(parents=True)
-
-            if ifile.suffix.lower() in {".html", ".htm"}:
-                logger.info(f"Processing HTML: {ifile}")
-                output_pdf = out_dir / f"{ifile.stem}.pdf"
-                tmp_pdf = out_dir / f"{ifile.stem}.pdf-docco"
-                try:
-                    html_to_pdf(ifile, tmp_pdf)
-                    if skip_identical and output_pdf.exists():
-                        logger.info(f"Comparing PDF to existing: {output_pdf.name}")
-                        with redirect_to_debug():
-                            identical = diffpdf(
-                                output_pdf,
-                                tmp_pdf,
-                                threshold=diffpdf_threshold,
-                                dpi=diffpdf_dpi,
-                                skip_compare_text=diffpdf_skip_text,
-                            )
-                        if identical:
-                            logger.info(f"PDF unchanged, skipping: {output_pdf.name}")
-                            tmp_pdf.unlink()
-                            total_skipped += 1
-                        else:
-                            logger.info(f"PDF changed, overwriting: {output_pdf.name}")
-                            shutil.move(tmp_pdf, output_pdf)
-                    else:
-                        shutil.move(tmp_pdf, output_pdf)
-                except Exception:
-                    tmp_pdf.unlink(missing_ok=True)
-                    raise
-                all_output_files.append(output_pdf)
-            else:
-                output_files, skipped = parse_markdown(
-                    ifile,
-                    out_dir,
-                    config=BuildConfig(
-                        keep_intermediate=keep_intermediate,
-                        allow_python=allow_python,
-                        filename_template=filename_template,
-                        dpi=dpi,
-                        skip_identical=skip_identical,
-                        diffpdf_threshold=diffpdf_threshold,
-                        diffpdf_dpi=diffpdf_dpi,
-                        skip_compare_text=diffpdf_skip_text,
-                    ),
-                    library_po_files=library_po,
-                )
-                all_output_files.extend(output_files)
-                total_skipped += skipped
-
-        generated = len(all_output_files) - total_skipped
-        summary = (
-            f"Generated {generated}, skipped {total_skipped} unchanged"
-            if total_skipped
-            else f"Successfully generated {generated} output file(s)"
+        project_config, config_dir = load_project_config(
+            config_path=args.config, normalizers=normalizers
         )
-        if counter.error_count > 0 or counter.warning_count > 0:
-            parts = []
-            if counter.error_count > 0:
-                parts.append(f"{counter.error_count} error(s)")
-            if counter.warning_count > 0:
-                parts.append(f"{counter.warning_count} warning(s)")
-            logger.warning(f"{summary} — completed with {', '.join(parts)}")
-        else:
-            logger.info(summary)
-    except SystemExit:
-        raise
-    except Exception as e:
-        logger.error(f"Error: {e}", exc_info=True)
-        raise SystemExit(1)
 
+        # Reconfigure logging from [log] section
+        log_section = project_config.get("log", {})
+        if log_section:
+            counter = setup_logging(
+                verbose=args.verbose,
+                log_file=Path(log_section["file"]) if "file" in log_section else None,
+                level=log_section.get("level"),
+            )
 
-def entry_point() -> None:  # pragma: no cover
-    app()
+        source_files = _resolve_input_files(args.input, project_config)
 
+        generated = 0
+        skipped = 0
 
-if __name__ == "__main__":  # pragma: no cover
-    entry_point()
+        for source_path in source_files:
+            if not source_path.is_file():
+                log.error("Input file not found: %s", source_path)
+                sys.exit(1)
+
+            output_dir = args.output.resolve() if args.output else source_path.parent
+            output_dir.mkdir(parents=True, exist_ok=True)
+            config = load_config(source_path, project_config, normalizers=normalizers)
+            suffix = source_path.suffix.lower()
+            if suffix in {".html", ".htm"}:
+                context = Context.from_html_file(
+                    source_path, output_dir, config, config_dir
+                )
+            else:
+                context = Context.from_file(source_path, output_dir, config, config_dir)
+            pipeline = build_pipeline(
+                config, available_stages, input_type=context.content_type
+            )
+            try:
+                results = run_pipeline(pipeline, context)
+            except PipelineError as e:
+                error_cfg = config.get("error", {})
+                if error_cfg.get("save_intermediate", True):
+                    _save_intermediate(e)
+                raise RuntimeError(str(e)) from e
+
+            for ctx in results:
+                if ctx.artifacts.get("skipped"):  # pragma: no cover
+                    skipped += 1
+                    continue
+                output_path = ctx.output_dir / (ctx.source_path.stem + ".pdf")
+                output_path.write_bytes(ctx.content)  # type: ignore[arg-type]
+                generated += 1
+                log.info("Written: %s", output_path)
+
+        _print_summary(generated, skipped, counter)
+    except RuntimeError:
+        sys.exit(1)
+    except Exception as e:  # noqa: BLE001
+        log.error("%s", e)
+        sys.exit(1)

@@ -1,57 +1,69 @@
-[build-system]
-requires = [
-    "hatchling",
-    "hatch-vcs",
-]
-build-backend = "hatchling.build"
-
 [project]
 name = "docco"
-dynamic = ["version"]
-description = "Convert Markdown files with YAML frontmatter and CSS stylesheets to professional A4 PDFs"
+description = "Plugin-based Markdown to PDF converter"
 readme = "README.md"
+requires-python = ">=3.14"
 license = "MIT"
 license-files = ["LICENSE"]
-authors = [{name = "Justus Rijke", email="justusrijke@gmail.com"}]
-requires-python = ">=3.10.0"
+authors = [{ name = "Justus Rijke", email = "justusrijke@gmail.com" }]
 classifiers = [
-    "Programming Language :: Python :: 3",
-    "Development Status :: 4 - Beta",
-    "Operating System :: Microsoft :: Windows",
-    "Operating System :: POSIX :: Linux",
-    "Typing :: Typed",
+  "Development Status :: 4 - Beta",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Typing :: Typed",
 ]
+dynamic = ["version"]
 
 dependencies = [
-    "colorlog>=6.10.1",
-    "cyclopts>=4.6.0",
-    "diffpdf>=1.2.0",
-    "markdown-it-py>=4.0.0",
-    "mdit-py-plugins>=0.5.0",
-    "pyyaml>=6.0.3",
-    "playwright>=1.57.0",
-    "polib>=1.2.0",
-    "translate-toolkit>=3.17.4",
-    # Add a lower bound for unpinned transitive dependencies
-    "cffi>=2.0.0",
-    "ply>=3.11",
-    "pycparser>=2.21",
+  "colorlog",
+  "diffpdf>=1.2.0",
+  "markdown-it-py",
+  "mdit-py-plugins",
+  "playwright",
+  "polib>=1.2.0",
+  "pymupdf",
+  "translate-toolkit>=3.19.3",
 ]
 
 [project.urls]
 Homepage = "https://github.com/JustusRijke/Docco"
 Issues = "https://github.com/JustusRijke/Docco/issues"
 
+[project.scripts]
+docco = "docco.cli:main"
+
+[project.entry-points."docco.stages"]
+vars = "docco.plugins.vars:Stage"
+translation_filter = "docco.plugins.translation:FilterStage"
+inline = "docco.plugins.inline:Stage"
+html = "docco.plugins.html:Stage"
+toc = "docco.plugins.toc:Stage"
+page = "docco.plugins.page:Stage"
+pdf = "docco.plugins.pdf:Stage"
+diffpdf = "docco.plugins.diffpdf:Stage"
+dpi = "docco.plugins.dpi:Stage"
+translation = "docco.plugins.translation:Stage"
+pdf2svg = "docco.plugins.pdf2svg:Stage"
+page-bg = "docco.plugins.page_bg:Stage"
+htmlhint = "docco.plugins.htmlhint:Stage"
+urls = "docco.plugins.urls:Stage"
+
 [dependency-groups]
 dev = [
-    "pytest>=9",
-    "pytest-cov>=6",
-    "ruff>=0.10",
-    "ty>=0.0.8",
+  "pre-commit",
+  "pytest",
+  "pytest-cov",
+  "ruff",
+  "ty",
 ]
 
-[project.scripts]
-docco = "docco.cli:entry_point"
+[build-system]
+requires = [
+  "hatch-vcs",
+  "hatchling",
+]
+build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/docco"]
@@ -64,30 +76,39 @@ local_scheme = "no-local-version"
 
 # Pytest configuration. More info: https://docs.pytest.org/en/stable/reference/reference.html#ini-options-ref
 [tool.pytest]
-strict = true
-testpaths = ["tests"]
-filterwarnings = ["error"] # Treat all warnings as errors (e.g., deprecation warnings)
 addopts = [
-    "-v", # Verbose output
-    "--cov", # Enable coverage 
-    "--cov-branch", # Make sure to cover every decision branch
-    "--cov-report=term-missing", # Report which lines aren't covered
-    "--cov-report=xml", # Dump to XML for Codecov
+  "--cov-branch",                           # Make sure to cover every decision branch
+  "--cov-report=term-missing",              # Report which lines aren't covered
+  "--cov-report=xml",                       # Dump to XML for Codecov
+  "--cov=src/docco",                        # Enable coverage for docco package
+  "-v",                                     # Verbose output
 ]
+filterwarnings = [
+  "error"
+]                                           # Treat all warnings as errors (e.g., deprecation warnings)
+python_files = ["test_*.py", "tests*.py"]
+strict = true
+testpaths = ["src/docco/plugins", "tests"]
 
 # Ruff configuration. More info: https://docs.astral.sh/ruff/configuration/
 [tool.ruff.lint]
 preview = true
 extend-select = [
-    "I", # Sort imports
-    "ANN", # Enforce type annotations
-    "PT", # Common style issues or inconsistencies with pytest-based tests
-    "PLW1514", # Must specify file encoding
-    "PTH", # Use PathLib
+  "I",             # Sort imports
+  "ANN",           # Enforce type annotations
+  "PT",            # Common style issues or inconsistencies with pytest-based tests
+  "PLW1514",       # Must specify file encoding
+  "PTH",           # Use PathLib
 ]
 
 [tool.ruff.lint.isort]
-combine-as-imports = true # Combines "as" imports on the same line
+combine-as-imports = true  # Combines "as" imports on the same line
 
+# Do not enforce type annotations for tests
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["ANN"] # Do not enforce type annotations for tests
+"tests/**" = ["ANN"]
+"src/docco/plugins/**/tests*.py" = ["ANN"]
+"conftest.py" = ["ANN"]
+
+[tool.tombi.format.rules]
+trailing-comment-alignment = true
