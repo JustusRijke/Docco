@@ -30,6 +30,7 @@ dependencies = [
   "greenlet>=3.3.2",
   "iniconfig>=2.3.0",
   "lxml>=6.0.2",
+  "nodeenv>=1.10.0",
   "packaging>=25.0",
   "typing-extensions>=4.15.0",
 
