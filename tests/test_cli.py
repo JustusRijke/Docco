@@ -132,7 +132,7 @@ def test_main_file_from_config(tmp_path):
     md = tmp_path / "doc.md"
     md.write_text("# From config\n", encoding="utf-8")
     config = tmp_path / "docco.toml"
-    config.write_text(f'file = "{md}"\n', encoding="utf-8")
+    config.write_text(f'file = "{md.as_posix()}"\n', encoding="utf-8")
     out = tmp_path / "out"
 
     main(["-o", str(out), "--config", str(config)])
@@ -147,7 +147,7 @@ def test_main_file_list_from_config(tmp_path):
     b.write_text("# B\n", encoding="utf-8")
     config = tmp_path / "docco.toml"
     config.write_text(
-        f'file = ["{a}", "{b}"]\n',
+        f'file = ["{a.as_posix()}", "{b.as_posix()}"]\n',
         encoding="utf-8",
     )
     out = tmp_path / "out"
@@ -165,7 +165,7 @@ def test_main_cli_overrides_config_file(tmp_path):
     config_md.write_text("# Config\n", encoding="utf-8")
     config = tmp_path / "docco.toml"
     config.write_text(
-        f'file = "{config_md}"\n',
+        f'file = "{config_md.as_posix()}"\n',
         encoding="utf-8",
     )
     out = tmp_path / "out"
@@ -182,7 +182,7 @@ def test_main_log_config(tmp_path):
     log_file = tmp_path / "docco.log"
     config = tmp_path / "docco.toml"
     config.write_text(
-        f'file = "test.md"\n\n[log]\nfile = "{log_file}"\nlevel = "debug"\n',
+        f'file = "test.md"\n\n[log]\nfile = "{log_file.as_posix()}"\nlevel = "debug"\n',
         encoding="utf-8",
     )
     out = tmp_path / "out"
