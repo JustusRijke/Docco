@@ -31,14 +31,16 @@ Docco must run on Windows, Linux, and macOS. Use `Path.as_posix()` when embeddin
 ## Testing
 
 - `conftest.py` has shared fixtures: `tmp_md`, `tmp_config`, `markdown_context`, `project_toml`, `output_dir`
-- Plugin tests live alongside code: `src/docco/plugins/<name>/tests.py`
+- Plugin tests live alongside code: `src/docco/plugins/<name>/test_edgecase.py` (edge cases only) and `test_regression.py` (example-based happy path)
+- The happy path is covered by running the plugin's `example/` through the full pipeline (`test_regression.py`); do not duplicate this in `test_edgecase.py`
+- `test_edgecase.py` should be short -- only the branches the example cannot reach (e.g. invalid config, missing tool). A long `test_edgecase.py` is a code smell: the production code likely has too much defensive logic or is too complex
 - Core tests in `tests/` directory
 - pytest discovers both via `python_files = ["test_*.py", "tests*.py"]` and `testpaths = ["tests", "src/docco/plugins"]`
 - Coverage config is in `pyproject.toml` under `[tool.pytest.ini_options]`
 
 ## Adding a New Plugin
 
-1. Create `src/docco/plugins/<name>/` with `__init__.py`, `tests.py`, `docs/README.md`
+1. Create `src/docco/plugins/<name>/` with `__init__.py`, `test_edgecase.py`, `docs/README.md`, and an `example/` directory
 2. Implement `Stage` class with `name`, `consumes`, `produces`, `phase`, `process()`
 3. Use `after = ("other_plugin",)` for soft ordering within the same phase
 4. Register in `pyproject.toml` under `[project.entry-points."docco.stages"]`
