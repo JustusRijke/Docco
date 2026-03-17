@@ -35,8 +35,8 @@ class Stage(BaseStage):
         }
         for name, value in vars_config.items():
             if name in RESERVED_VARS:
-                self.log.warning(
-                    "Variable '%s' is reserved and cannot be redeclared", name
+                raise ValueError(
+                    f"Variable '{name}' is reserved and cannot be redeclared"
                 )
             else:
                 variables[name] = str(value)
