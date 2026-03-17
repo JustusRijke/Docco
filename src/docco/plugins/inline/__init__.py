@@ -37,6 +37,8 @@ def _process_one_pass(content: str, base_dir: Path) -> str:
             raise FileNotFoundError(msg)
 
         file_content = full_path.read_text(encoding="utf-8")
+        if full_path.suffix == ".html":
+            file_content = "\n".join(line.strip() for line in file_content.splitlines())
         file_content = _rebase_inline_paths(file_content, full_path.parent)
 
         placeholders = set(_PLACEHOLDER_RE.findall(file_content))

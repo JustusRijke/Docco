@@ -19,11 +19,13 @@ Pass arguments to fill `{{placeholder}}` variables inside the fragment:
 ```
 
 `snippets/greeting.md`:
+
 ```markdown
 {{greeting}}, {{name}}!
 ```
 
 Result:
+
 ```markdown
 Hello, World!
 ```
@@ -38,6 +40,7 @@ See [`src/docco/plugins/inline/example/`](../example/) for a working example tha
 
 ## Notes
 
+- When inlining `.html` files, each line is stripped of leading/trailing whitespace (empty lines are preserved to enable markdown formatting). This prevents HTML tags from being malformed (e.g., `>` escaped as `&gt;`).
 - Raises `FileNotFoundError` if the referenced file does not exist.
 - Raises `ValueError` if nesting exceeds 10 iterations (circular reference guard).
 - Unused arguments and unfulfilled placeholders produce warnings.
