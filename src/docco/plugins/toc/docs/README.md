@@ -45,8 +45,15 @@ Add the `{.toc-ignore}` class to a heading to exclude it and all its sub-section
 
 The heading remains visible in the document but is omitted from the TOC and not numbered.
 
+## Example
+
+A working example is in `src/docco/plugins/toc/example/`. Run it with:
+
+```sh
+cd src/docco/plugins/toc/example
+docco
+```
+
 ## Notes
 
 - Requires the `html` stage to run first (needs heading IDs).
-- paged.js must be present in the template (provided by the built-in `base.html`).
-- If `<!-- toc -->` is absent, scripts are still injected (for landscape support), but no TOC is rendered.
