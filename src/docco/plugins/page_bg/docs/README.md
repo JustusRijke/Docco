@@ -37,3 +37,7 @@ Multiple directives in the same document each get a unique class (`page_bg_0`, `
 to avoid CSS collisions.
 
 No `[page-bg]` config section is needed — all parameters are supplied inline via the directive.
+
+## Example
+
+See [`example/example.md`](../example/example.md).
