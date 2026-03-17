@@ -1,20 +1,6 @@
-import pytest
-
-from docco.context import ContentType, Context
+from conftest import make_ctx
+from docco.context import ContentType
 from docco.plugins.pdf import _RENDERING_COMPLETE_JS, Stage
-
-
-@pytest.fixture
-def html_context(tmp_path):
-    md = tmp_path / "test.md"
-    md.write_text("", encoding="utf-8")
-    return Context(
-        source_path=md,
-        output_dir=tmp_path / "out",
-        config={},
-        content="<html><head></head><body><h1>Hello</h1></body></html>",
-        content_type=ContentType.HTML,
-    )
 
 
 def test_rendering_complete_script_content():
@@ -22,49 +8,43 @@ def test_rendering_complete_script_content():
     assert "Paged.registerHandlers" in _RENDERING_COMPLETE_JS
 
 
-def test_pdf_stage(html_context):
-    result = Stage().process(html_context)
-
+def test_pdf_stage(tmp_path):
+    result = Stage().process(
+        make_ctx(
+            tmp_path,
+            "<html><head></head><body><h1>Hello</h1></body></html>",
+            content_type=ContentType.HTML,
+        )
+    )
     assert result.content_type == ContentType.PDF
-    assert isinstance(result.content, bytes)
     assert result.content[:5] == b"%PDF-"
 
 
 def test_pdf_stage_no_head(tmp_path):
-    """HTML without <head> falls back to injecting before </body>."""
-    ctx = Context(
-        source_path=tmp_path / "test.md",
-        output_dir=tmp_path / "out",
-        config={},
-        content="<html><body><p>No head</p></body></html>",
-        content_type=ContentType.HTML,
+    result = Stage().process(
+        make_ctx(
+            tmp_path,
+            "<html><body><p>No head</p></body></html>",
+            content_type=ContentType.HTML,
+        )
     )
-    result = Stage().process(ctx)
     assert result.content[:5] == b"%PDF-"
 
 
 def test_pdf_stage_bare_html(tmp_path):
-    """HTML without any closing tags appends the script at the end."""
-    ctx = Context(
-        source_path=tmp_path / "test.md",
-        output_dir=tmp_path / "out",
-        config={},
-        content="<p>Bare</p>",
-        content_type=ContentType.HTML,
+    result = Stage().process(
+        make_ctx(tmp_path, "<p>Bare</p>", content_type=ContentType.HTML)
     )
-    result = Stage().process(ctx)
     assert result.content[:5] == b"%PDF-"
 
 
 def test_keep_html(tmp_path):
-    out = tmp_path / "out"
-    out.mkdir()
-    ctx = Context(
-        source_path=tmp_path / "test.md",
-        output_dir=out,
-        config={"pdf": {"keep_html": True}},
-        content="<html><head></head><body><p>Hi</p></body></html>",
-        content_type=ContentType.HTML,
+    ctx = make_ctx(
+        tmp_path,
+        "<html><head></head><body><p>Hi</p></body></html>",
+        {"pdf": {"keep_html": True}},
+        ContentType.HTML,
     )
+    ctx.output_dir.mkdir(parents=True, exist_ok=True)
     Stage().process(ctx)
-    assert (out / "test.html").exists()
+    assert (ctx.output_dir / "test.html").exists()
