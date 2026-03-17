@@ -76,7 +76,9 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: test-output-ubuntu-${{ matrix.dependencies }}
-          path: tests/output/
+          path: |
+            **/example*/
+            **/test*/
           retention-days: 7
 
       - name: Upload coverage reports to Codecov
