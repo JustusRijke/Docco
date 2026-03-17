@@ -29,10 +29,8 @@ end = 4     # Maximum heading level to include (default: 6)
 ## How it works
 
 1. `<!-- toc -->` is replaced with `<nav data-toc-start="N" data-toc-end="N">`.
-2. `create_toc.js` scans headings and populates the `<nav>` with numbered links.
-3. `toc_handler.js` registers paged.js handlers:
-   - `TocHandler` builds the TOC before paged.js parses the document.
-   - `LandscapeHandler` sets `window.pagedJsRenderingComplete = true` after all pages are rendered, which `pdf` uses as a completion signal.
+2. `create_toc.js` scans headings, assigns counters, and populates the `<nav>` with numbered links.
+3. `toc_handler.js` registers `TocHandler` (a paged.js handler) which calls `createToc` in `beforeParsed`, so the TOC is built before paged.js lays out the document.
 
 ## Ignoring headings
 
