@@ -47,10 +47,6 @@ class Stage(BaseStage):
         with sync_playwright() as p:
             browser = p.chromium.launch(
                 headless=True,
-                args=[
-                    "--font-render-hinting=none",
-                    "--disable-font-subpixel-positioning",
-                ],
             )
             page = browser.new_page()
             page.on("console", _handle_console)
