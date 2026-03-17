@@ -52,3 +52,7 @@ skip_if_exists = true   # Skip conversion if SVG already exists (default: true)
 ### `skip_if_exists`
 
 When `true` (the default), conversion is skipped if the output SVG file already exists. This speeds up repeated builds. Set to `false` to always regenerate.
+
+## Example
+
+See [`example/example.md`](../example/example.md).
