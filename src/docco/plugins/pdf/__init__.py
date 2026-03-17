@@ -45,7 +45,13 @@ class Stage(BaseStage):
             html += script_tag
 
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
+            browser = p.chromium.launch(
+                headless=True,
+                args=[
+                    "--font-render-hinting=none",
+                    "--disable-font-subpixel-positioning",
+                ],
+            )
             page = browser.new_page()
             page.on("console", _handle_console)
             page.on("pageerror", lambda exc: log.error("Chromium error: %s", exc))

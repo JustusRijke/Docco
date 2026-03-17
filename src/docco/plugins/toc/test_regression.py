@@ -11,7 +11,7 @@ EXAMPLE_DIR = Path(__file__).parent / "example"
 
 def test_toc_example_no_diff(monkeypatch):
     monkeypatch.chdir(PLUGINS_DIR)
-    main(["toc/example/example.toml"])
+    main(["toc/example/example.md"])
     result = subprocess.run(
         ["git", "diff", "--name-only", str(EXAMPLE_DIR)],
         capture_output=True,

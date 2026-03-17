@@ -2,19 +2,17 @@
 msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8\n"
 
-msgid "[translation.po] de = [\"copyright_de.po\"] nl = [\"copyright_nl.po\"]"
+msgid "Dieser Abschnitt erscheint nur in der deutschen Version."
 msgstr ""
 
-msgid ""
-"[translation] base_language = \"en\" languages = [\"de\", \"nl\"] terms = "
-"[\"terms.po\"]"
+msgid "Hello World"
+msgstr "Hallo Welt"
+
+msgid "Nur auf Deutsch"
 msgstr ""
 
-msgid "file = \"example.md\""
+msgid "TERM"
 msgstr ""
 
-#~ msgid "Hello World"
-#~ msgstr "Hallo Welt"
-
-#~ msgid "This is a simple multilingual document example."
-#~ msgstr "Dies ist ein einfaches mehrsprachiges Dokumentbeispiel."
+msgid "This is a simple multilingual document example."
+msgstr "Dies ist ein einfaches mehrsprachiges Dokumentbeispiel."

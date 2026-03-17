@@ -21,6 +21,18 @@
     -moz-osx-font-smoothing: grayscale;
 
     line-height: 1.2;
+
+    /* Disable subpixel antialiasing */
+    -webkit-text-stroke: 0;
+
+    /* Force consistent font size computation */
+    text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
+}
+
+/* Force exact pixel sizes on everything */
+html {
+    zoom: 1;
 }
 
 /* Fixed fonts */
