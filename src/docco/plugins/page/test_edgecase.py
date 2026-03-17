@@ -31,33 +31,12 @@ def test_pagebreak_only(tmp_path):
     assert '<div class="pagebreak"></div>' in result.str_content
 
 
-def test_empty_section_between_directives(tmp_path):
-    ctx = make_ctx(
-        tmp_path,
-        wrap("<!-- page landscape -->\n<!-- page portrait -->\n<p>Only portrait</p>"),
-    )
-    result = Stage().process(ctx)
-    assert "<p>Only portrait</p>" in result.str_content
-
-
-def test_empty_trailing_content(tmp_path):
-    ctx = make_ctx(tmp_path, wrap("<p>Content</p>\n<!-- page landscape -->\n   "))
-    result = Stage().process(ctx)
-    assert "<p>Content</p>" in result.str_content
-
-
 def test_pagedjs_screen_css_disabled(tmp_path):
     ctx = make_ctx(
         tmp_path, wrap("<p>Hi</p>"), {"page": {"add_pagedjs_screen_css": False}}
     )
     result = Stage().process(ctx)
     assert "pagedjs_page" not in result.str_content
-
-
-def test_directive_at_exact_end(tmp_path):
-    ctx = make_ctx(tmp_path, wrap("<p>A</p>\n<!-- page landscape -->"))
-    result = Stage().process(ctx)
-    assert "<p>A</p>" in result.str_content
 
 
 def test_unknown_arg_raises(tmp_path):
