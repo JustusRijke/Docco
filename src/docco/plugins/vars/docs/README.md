@@ -29,3 +29,7 @@ Author:  $$author$$
 ## Notes
 
 - `PATH`, `DAY`, `MONTH`, and `YEAR` are reserved and cannot be redeclared in `[vars]`.
+
+## Example
+
+See [`example/example.md`](../example/example.md).

@@ -1,0 +1,4 @@
+file = "example.md"
+
+[dpi]
+max = 50

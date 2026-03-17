@@ -19,11 +19,13 @@ Pass arguments to fill `{{placeholder}}` variables inside the fragment:
 ```
 
 `snippets/greeting.md`:
+
 ```markdown
 {{greeting}}, {{name}}!
 ```
 
 Result:
+
 ```markdown
 Hello, World!
 ```
@@ -32,13 +34,13 @@ Hello, World!
 
 Inlined files may themselves contain inline directives. Processing is iterative (up to 10 levels deep).
 
-### HTML files
+## Example
 
-When inlining `.html` files, each line is stripped of leading/trailing whitespace.
+See [`src/docco/plugins/inline/example/`](../example/) for a working example that inlines a nested fragment.
 
 ## Notes
 
-- Inline directives inside fenced code blocks (`` ``` ``) are ignored.
+- When inlining `.html` files, each line is stripped of leading/trailing whitespace (empty lines are preserved to enable markdown formatting). This prevents HTML tags from being malformed (e.g., `>` escaped as `&gt;`).
 - Raises `FileNotFoundError` if the referenced file does not exist.
 - Raises `ValueError` if nesting exceeds 10 iterations (circular reference guard).
 - Unused arguments and unfulfilled placeholders produce warnings.

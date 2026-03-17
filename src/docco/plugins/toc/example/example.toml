@@ -1,0 +1,5 @@
+file = "example.md"
+
+[toc]
+start = 2
+end = 4

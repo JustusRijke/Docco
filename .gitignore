@@ -13,5 +13,14 @@ wheels/
 .coverage
 coverage.xml
 
-# Examples (temporary ignore)
-examples/
+# Intermediate output
+*.intermediate.html
+*.intermediate.md
+
+# Translation assets
+*.pot
+
+# Test output
+docco.log
+**/example/diffpdf
+**/example/*.html

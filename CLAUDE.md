@@ -15,6 +15,10 @@ for user-facing docs. Per-plugin docs live in `src/docco/plugins/<name>/docs/REA
 - **Tests:** `uv run pytest --no-header -q` (target 100% branch coverage always)
 - **Playwright:** `uv run playwright install chromium --only-shell`
 
+## Platform Compatibility
+
+Docco must run on Windows, Linux, and macOS. Use `Path.as_posix()` when embedding paths in TOML strings, and avoid OS-specific assumptions in code and tests.
+
 ## Code Conventions
 
 - Every plugin class is named `Stage` and inherits from `docco.pipeline.Stage`

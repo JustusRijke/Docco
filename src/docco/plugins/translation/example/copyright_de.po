@@ -1,0 +1,3 @@
+# Shared German copyright notice (translation.po example)
+msgid "Copyright 2025 Docco Team. All rights reserved."
+msgstr "Copyright 2025 Docco Team. Alle Rechte vorbehalten."

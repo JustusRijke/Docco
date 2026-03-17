@@ -54,17 +54,11 @@ def _process_body(body: str, directives: list[tuple[str, dict[str, str]]]) -> st
 
     for full_match, attrs in orientation_directives:
         idx = body.find(full_match)
-        if idx > current_pos:
-            section_content = body[current_pos:idx].strip()
-            if section_content:
-                sections.append((current_orientation, section_content))
+        sections.append((current_orientation, body[current_pos:idx].strip()))
         current_orientation = _orientation(attrs) or current_orientation
         current_pos = idx + len(full_match)
 
-    if current_pos < len(body):
-        remaining = body[current_pos:].strip()
-        if remaining:
-            sections.append((current_orientation, remaining))
+    sections.append((current_orientation, body[current_pos:].strip()))
 
     result = "\n".join(
         f'<div class="section-wrapper {orientation}">\n{content}\n</div>'

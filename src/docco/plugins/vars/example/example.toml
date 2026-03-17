@@ -1,0 +1,4 @@
+file = "example.md"
+
+[vars]
+foo = "bar"

@@ -29,10 +29,8 @@ end = 4     # Maximum heading level to include (default: 6)
 ## How it works
 
 1. `<!-- toc -->` is replaced with `<nav data-toc-start="N" data-toc-end="N">`.
-2. `create_toc.js` scans headings and populates the `<nav>` with numbered links.
-3. `toc_handler.js` registers paged.js handlers:
-   - `TocHandler` builds the TOC before paged.js parses the document.
-   - `LandscapeHandler` sets `window.pagedJsRenderingComplete = true` after all pages are rendered, which `pdf` uses as a completion signal.
+2. `create_toc.js` scans headings, assigns counters, and populates the `<nav>` with numbered links.
+3. `toc_handler.js` registers `TocHandler` (a paged.js handler) which calls `createToc` in `beforeParsed`, so the TOC is built before paged.js lays out the document.
 
 ## Ignoring headings
 
@@ -45,8 +43,15 @@ Add the `{.toc-ignore}` class to a heading to exclude it and all its sub-section
 
 The heading remains visible in the document but is omitted from the TOC and not numbered.
 
+## Example
+
+A working example is in `src/docco/plugins/toc/example/`. Run it with:
+
+```sh
+cd src/docco/plugins/toc/example
+docco
+```
+
 ## Notes
 
 - Requires the `html` stage to run first (needs heading IDs).
-- paged.js must be present in the template (provided by the built-in `base.html`).
-- If `<!-- toc -->` is absent, scripts are still injected (for landscape support), but no TOC is rendered.

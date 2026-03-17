@@ -121,6 +121,7 @@ combine-as-imports = true  # Combines "as" imports on the same line
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["ANN"]
 "src/docco/plugins/**/tests*.py" = ["ANN"]
+"src/docco/plugins/**/test_*.py" = ["ANN"]
 "conftest.py" = ["ANN"]
 
 [tool.tombi.format.rules]

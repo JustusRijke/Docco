@@ -40,7 +40,7 @@ def _extract_svg(pdf_path: Path, page_num_1indexed: int) -> str:
                 x1 = max(b[2] for b in bounds)
                 y1 = max(b[3] for b in bounds)
                 crop_box = fitz.Rect(x0, y0, x1, y1)
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001  # pragma: no cover
             log.warning("Could not calculate tight bounds, using full page: %s", e)
 
         page.set_cropbox(crop_box)

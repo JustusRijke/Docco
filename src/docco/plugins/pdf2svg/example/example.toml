@@ -1,0 +1,4 @@
+file = "example.md"
+
+[pdf2svg]
+skip_if_exists = false
