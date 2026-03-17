@@ -8,6 +8,8 @@ from docco.context import ContentType, Context, Phase
 from docco.pipeline import Stage as BaseStage
 from docco.utils import tmp_file
 
+_LEVELS = frozenset({"info", "warning", "error"})
+
 
 def _downscale_pdf_images(pdf_path: Path, target_dpi: int) -> None:
     gs_cmd = shutil.which("gswin64c") or shutil.which("gs")
@@ -49,7 +51,7 @@ def _downscale_pdf_images(pdf_path: Path, target_dpi: int) -> None:
             log.error("Ghostscript failed: %s", e.stderr.decode())
 
 
-def _check_image_dpi(pdf_bytes: bytes, threshold: int) -> None:
+def _check_image_dpi(pdf_bytes: bytes, threshold: int, level: str) -> None:
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     try:
         for page_num in range(len(doc)):
@@ -69,7 +71,7 @@ def _check_image_dpi(pdf_bytes: bytes, threshold: int) -> None:
                 if min_dpi < threshold * 0.95:
                     expected_w = int(width_in * threshold)
                     expected_h = int(height_in * threshold)
-                    log.warning(
+                    getattr(log, level)(
                         "Page %d, Image #%d: %dx%d @ %.0f DPI (actual), expected %dx%d @ %d DPI",
                         page_num + 1,
                         img_idx + 1,
@@ -89,17 +91,22 @@ class Stage(BaseStage):
     consumes = ContentType.PDF
     produces = ContentType.PDF
     phase = Phase.POSTPROCESS
-    valid_config_keys = frozenset({"max"})
+    valid_config_keys = frozenset({"max", "level"})
 
     def process(self, context: Context) -> Context:
         assert isinstance(context.content, bytes)
-        target_dpi: int = self.get_config(context).get("max", 300)
+        cfg = self.get_config(context)
+        target_dpi: int = cfg.get("max", 300)
+        level: str = cfg.get("level", "warning")
+        if level not in _LEVELS:
+            msg = f"[dpi] invalid level '{level}', must be one of: {', '.join(sorted(_LEVELS))}"
+            raise ValueError(msg)
 
         with tmp_file(".pdf", context.content) as tmp_path:
             _downscale_pdf_images(tmp_path, target_dpi)
             context.content = tmp_path.read_bytes()
 
-        _check_image_dpi(context.content, target_dpi)
+        _check_image_dpi(context.content, target_dpi, level)
         self.log.info("Checked image DPI (max %d)", target_dpi)
         return context
 

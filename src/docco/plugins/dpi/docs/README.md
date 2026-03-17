@@ -6,7 +6,8 @@ Downscales images in the rendered PDF and warns about images still below the tar
 
 ```toml
 [dpi]
-max = 300   # Max image DPI; images below this are flagged with a warning (default: 300)
+max = 300       # Max image DPI; images exceeding this are downscaled (default: 300)
+level = "warning"  # Log level for low-DPI images: "info", "warning", or "error" (default: "warning")
 ```
 
 ## Example
