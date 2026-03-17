@@ -1,3 +1,7 @@
+[log]
+file = "docco.log"
+level = "debug"
+
 [html]
 css = "../../../tests/assets/multiplatform.css"
 
@@ -11,3 +15,4 @@ keep_html = true  # Write intermediate HTML to output directory for debugging
 [diffpdf]
 enable = true
 store = true
+skip_text = true

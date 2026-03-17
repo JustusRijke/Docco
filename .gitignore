@@ -20,5 +20,6 @@ coverage.xml
 *.pot
 
 # Test output
+docco.log
 **/example/diffpdf
 **/example/*.html
