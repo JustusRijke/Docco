@@ -2,9 +2,8 @@ file = "example.md"
 
 [translation]
 base_language = "en"
-languages = ["de", "nl"]
+languages = ["de"]
 terms = ["terms.po"]
 
 [translation.po]
 de = ["copyright_de.po"]
-nl = ["copyright_nl.po"]

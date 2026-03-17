@@ -1,5 +1,0 @@
-# Shared Dutch copyright notice (library PO example)
-# Used as --library-po to supply boilerplate translations across all documents.
-# Document-level PO files take precedence over these translations.
-msgid "Copyright 2025 Docco Team. All rights reserved."
-msgstr "Copyright 2025 Docco Team. Alle rechten voorbehouden."
