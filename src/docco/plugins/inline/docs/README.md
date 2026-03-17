@@ -32,13 +32,12 @@ Hello, World!
 
 Inlined files may themselves contain inline directives. Processing is iterative (up to 10 levels deep).
 
-### HTML files
+## Example
 
-When inlining `.html` files, each line is stripped of leading/trailing whitespace.
+See [`src/docco/plugins/inline/example/`](../example/) for a working example that inlines a nested fragment.
 
 ## Notes
 
-- Inline directives inside fenced code blocks (`` ``` ``) are ignored.
 - Raises `FileNotFoundError` if the referenced file does not exist.
 - Raises `ValueError` if nesting exceeds 10 iterations (circular reference guard).
 - Unused arguments and unfulfilled placeholders produce warnings.

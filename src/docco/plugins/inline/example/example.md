@@ -1,1 +1,1 @@
-<!-- inline src="inline.md" -->
+<!-- inline src="inline.md" foo="bar" -->
