@@ -1,8 +1,24 @@
+import logging
 from pathlib import Path
 
 import pytest
 
 from docco.context import Context
+
+
+@pytest.fixture(autouse=True)
+def reset_docco_logger():
+    log = logging.getLogger("docco")
+    original_propagate = log.propagate
+    original_level = log.level
+    original_handlers = log.handlers[:]
+    yield
+    for h in log.handlers:
+        if h not in original_handlers:
+            h.close()
+    log.handlers = original_handlers
+    log.propagate = original_propagate
+    log.level = original_level
 
 
 @pytest.fixture

@@ -8,14 +8,6 @@ from docco.logging_config import LogCounter
 from docco.pipeline import PipelineError
 
 
-@pytest.fixture(autouse=True)
-def reset_docco_logger():
-    log = logging.getLogger("docco")
-    original_propagate = log.propagate
-    yield
-    log.propagate = original_propagate
-
-
 def test_parse_args_single_input():
     args = parse_args(["input.md", "-o", "out"])
     assert len(args.input) == 1
