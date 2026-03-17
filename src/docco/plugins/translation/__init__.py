@@ -64,11 +64,11 @@ def _strip_covered_msgids(pot_path: Path, terms: list[Path]) -> None:
         return
     covered: set[str] = set()
     for path in terms:
-        for entry in polib.pofile(str(path)).translated_entries():
+        for entry in polib.pofile(str(path)):
             covered.add(entry.msgid)
     if not covered:
         names = ", ".join(p.name for p in terms)
-        log.warning("terms configured but contains no translated entries: %s", names)
+        log.warning("terms configured but contains no entries: %s", names)
         return
     pf = polib.pofile(str(pot_path))
     for entry in [e for e in pf if e.msgid in covered]:
