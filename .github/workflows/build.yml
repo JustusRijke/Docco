@@ -45,6 +45,9 @@ jobs:
       - name: Install Ghostscript
         run: sudo apt-get install -y ghostscript
 
+      - name: Install htmlhint
+        run: npm install -g htmlhint
+
       - name: Install locked dependencies
         if: matrix.dependencies == 'locked'
         run: uv sync --locked
@@ -211,6 +214,9 @@ jobs:
           } else {
             throw "Could not find bin directory in $ghostscriptDir"
           }
+
+      - name: Install htmlhint
+        run: npm install -g htmlhint
 
       - name: Install locked dependencies
         if: matrix.dependencies == 'locked'
