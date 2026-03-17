@@ -1,21 +1,10 @@
-# Edge-case tests only. The happy path is covered by test_regression.py. Only keep tests for code paths not exercised there.
+# Edge-case tests only. The happy path is covered by test_regression.py.
 import logging
 
 import pytest
 
-from docco.context import Context
+from conftest import make_ctx
 from docco.plugins.inline import Stage
-
-
-def make_ctx(tmp_path, content):
-    md = tmp_path / "doc.md"
-    md.write_text(content, encoding="utf-8")
-    return Context.from_file(md, tmp_path / "out", {})
-
-
-def test_no_directives(tmp_path):
-    result = Stage().process(make_ctx(tmp_path, "No inlines here"))
-    assert result.content == "No inlines here"
 
 
 def test_file_not_found(tmp_path):

@@ -3,7 +3,16 @@ from pathlib import Path
 
 import pytest
 
-from docco.context import Context
+from docco.context import ContentType, Context
+
+
+def make_ctx(tmp_path, content, config=None, content_type=ContentType.MARKDOWN):
+    md = tmp_path / "test.md"
+    md.write_text("# placeholder", encoding="utf-8")
+    ctx = Context.from_file(md, tmp_path / "out", config or {})
+    ctx.content = content
+    ctx.content_type = content_type
+    return ctx
 
 
 @pytest.fixture(autouse=True)

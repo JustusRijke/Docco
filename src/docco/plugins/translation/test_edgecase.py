@@ -100,29 +100,20 @@ def test_stage_missing_po_raises(tmp_path):
         Stage().process(_ctx(tmp_path, langcode="de"))
 
 
-def test_stage_out_of_sync_warns(tmp_path, caplog):
-    _po(tmp_path / "doc_DE.po", {"OldString": "Alter Text"})
+@pytest.mark.parametrize(
+    ("entries", "flags", "expected_keyword"),
+    [
+        ({"OldString": "Alter Text"}, None, "sync"),
+        ({"Hello": "Hallo", "World": "Welt"}, {"Hello": ["fuzzy"]}, "fuzzy"),
+        ({"Hello": "Hallo", "World": ""}, None, "untranslated"),
+    ],
+    ids=["out-of-sync", "fuzzy", "untranslated"],
+)
+def test_stage_warns(tmp_path, caplog, entries, flags, expected_keyword):
+    _po(tmp_path / "doc_DE.po", entries, flags=flags)
     with caplog.at_level(logging.WARNING, logger="docco.plugins.translation"):
         Stage().process(_ctx(tmp_path, langcode="de"))
-    assert any("sync" in r.message.lower() for r in caplog.records)
-
-
-def test_stage_fuzzy_warns(tmp_path, caplog):
-    _po(
-        tmp_path / "doc_DE.po",
-        {"Hello": "Hallo", "World": "Welt"},
-        flags={"Hello": ["fuzzy"]},
-    )
-    with caplog.at_level(logging.WARNING, logger="docco.plugins.translation"):
-        Stage().process(_ctx(tmp_path, langcode="de"))
-    assert any("fuzzy" in r.message.lower() for r in caplog.records)
-
-
-def test_stage_untranslated_warns(tmp_path, caplog):
-    _po(tmp_path / "doc_DE.po", {"Hello": "Hallo", "World": ""})
-    with caplog.at_level(logging.WARNING, logger="docco.plugins.translation"):
-        Stage().process(_ctx(tmp_path, langcode="de"))
-    assert any("untranslated" in r.message.lower() for r in caplog.records)
+    assert any(expected_keyword in r.message.lower() for r in caplog.records)
 
 
 def test_stage_single_po_no_merge(tmp_path):
