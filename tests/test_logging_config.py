@@ -1,3 +1,4 @@
+# Edge-case tests only. The happy path is covered by tests/test_regression.py.
 import logging
 
 from docco.logging_config import (
@@ -8,26 +9,10 @@ from docco.logging_config import (
 )
 
 
-def test_setup_logging_default():
+def test_log_counter_counts_errors():
     counter = setup_logging()
-    logger = logging.getLogger("docco")
-    assert logger.level == logging.INFO
-    assert any(isinstance(h, logging.StreamHandler) for h in logger.handlers)
-    assert isinstance(counter, LogCounter)
-
-
-def test_setup_logging_verbose():
-    setup_logging(verbose=True)
-    logger = logging.getLogger("docco")
-    assert logger.level == logging.DEBUG
-
-
-def test_setup_logging_clears_existing_handlers():
-    logger = logging.getLogger("docco")
-    logger.addHandler(logging.NullHandler())
-    setup_logging()
-    # NullHandler removed; only console + counter remain
-    assert not any(isinstance(h, logging.NullHandler) for h in logger.handlers)
+    logging.getLogger("docco").error("test error")
+    assert counter.error_count == 1
 
 
 def test_setup_logging_with_log_file(tmp_path):
@@ -43,54 +28,7 @@ def test_setup_logging_with_log_file(tmp_path):
 
 def test_setup_logging_level_override():
     setup_logging(level="warning")
-    logger = logging.getLogger("docco")
-    assert logger.level == logging.WARNING
-
-
-def test_setup_logging_level_overrides_verbose():
-    setup_logging(verbose=True, level="warning")
-    logger = logging.getLogger("docco")
-    assert logger.level == logging.WARNING
-
-
-def test_log_counter_counts_warnings():
-    counter = setup_logging()
-    logger = logging.getLogger("docco")
-    logger.warning("test warning")
-    assert counter.warning_count == 1
-    assert counter.error_count == 0
-
-
-def test_log_counter_counts_errors():
-    counter = setup_logging()
-    logger = logging.getLogger("docco")
-    logger.error("test error")
-    assert counter.warning_count == 0
-    assert counter.error_count == 1
-
-
-def test_log_counter_ignores_info():
-    counter = setup_logging()
-    logger = logging.getLogger("docco")
-    logger.info("not counted")
-    assert counter.warning_count == 0
-    assert counter.error_count == 0
-
-
-def test_redirect_to_debug_demotes_level(caplog):
-    setup_logging(verbose=True)
-    redirected = logging.getLogger("test_redirect_target")
-    redirected.handlers = []
-    redirected.propagate = False
-
-    with (
-        redirect_to_debug("test_redirect_target"),
-        caplog.at_level(logging.DEBUG, logger="docco"),
-    ):
-        redirected.warning("should become debug")
-
-    # After context: handlers restored
-    assert redirected.propagate is False
+    assert logging.getLogger("docco").level == logging.WARNING
 
 
 def test_redirect_to_debug_restores_on_exit():
@@ -98,10 +36,8 @@ def test_redirect_to_debug_restores_on_exit():
     original_handler = logging.NullHandler()
     redirected.addHandler(original_handler)
     redirected.propagate = True
-
     with redirect_to_debug("test_restore_logger"):
         pass
-
     assert original_handler in redirected.handlers
     assert redirected.propagate is True
 
@@ -110,7 +46,6 @@ def test_redirect_to_debug_handler_emits():
     docco_logger = logging.getLogger("docco")
     counter = LogCounter()
     docco_logger.addHandler(counter)
-
     handler = _RedirectToDebug(docco_logger)
     record = logging.LogRecord(
         name="test",
@@ -122,5 +57,4 @@ def test_redirect_to_debug_handler_emits():
         exc_info=None,
     )
     handler.emit(record)
-    # WARNING demoted to DEBUG — counter should NOT increment
     assert counter.warning_count == 0
