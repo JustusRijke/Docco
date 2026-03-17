@@ -1,0 +1,1 @@
+<!-- inline src="inline.md" -->

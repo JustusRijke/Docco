@@ -21,6 +21,7 @@ coverage.xml
 
 # Test output
 **/example/diffpdf
+**/example/example.html
 
 # Examples (temporary ignore)
 examples/
