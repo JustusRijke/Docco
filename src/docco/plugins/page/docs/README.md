@@ -38,7 +38,25 @@ The required `@page` rules and paged.js named page CSS are injected automaticall
 
 ## Landscape handler script
 
-A paged.js `LandscapeHandler` is injected into every document. It runs after rendering and adds the `landscape_page` class to any page paged.js has marked as `pagedjs_landscape_page`, allowing CSS to target landscape pages directly.
+When orientation directives are present, a paged.js `LandscapeHandler` script is injected. It runs after rendering and adds the `landscape_page` class to any page paged.js has marked as `pagedjs_landscape_page`, allowing CSS to target landscape pages directly.
+
+## Example
+
+```markdown
+Page 1
+
+<!-- page break -->
+
+Page 2
+
+<!-- page landscape -->
+
+Page 3 (landscape)
+
+<!-- page portrait -->
+
+Page 4 (portrait)
+```
 
 ## Notes
 
