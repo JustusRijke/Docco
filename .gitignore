@@ -15,6 +15,7 @@ coverage.xml
 
 # Intermediate output
 *.intermediate.html
+*.intermediate.md
 
 # Translation assets
 *.pot

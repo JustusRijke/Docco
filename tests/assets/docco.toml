@@ -3,7 +3,7 @@ file = "docco.log"
 level = "debug"
 
 [html]
-css = "../../../tests/assets/multiplatform.css"
+css = "multiplatform.css"
 
 [htmlhint]
 enable = true
