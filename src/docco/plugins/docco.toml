@@ -1,0 +1,6 @@
+[html]
+css = "../../../tests/assets/multiplatform.css"
+
+[diffpdf]
+enable = true
+store = true

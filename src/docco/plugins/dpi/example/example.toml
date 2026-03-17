@@ -2,6 +2,3 @@ file = "example.md"
 
 [dpi]
 max = 50
-
-[diffpdf]
-enable = true

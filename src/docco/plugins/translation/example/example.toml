@@ -8,6 +8,3 @@ terms = ["terms.po"]
 [translation.po]
 de = ["copyright_de.po"]
 nl = ["copyright_nl.po"]
-
-[diffpdf]
-enable = true

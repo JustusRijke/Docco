@@ -1,0 +1,40 @@
+/* Cross-platform rendering normalization */
+
+* {
+    /* Disable platform-specific kerning (prevents spacing differences) */
+    font-feature-settings: "kern" 0;
+
+    /* Disable ligatures (can vary by platform) */
+    font-variant-ligatures: none;
+
+    /* Use geometric precision instead of platform-optimized rendering */
+    text-rendering: geometricPrecision;
+
+    /* Explicit letter spacing (overrides platform defaults) */
+    letter-spacing: 0;
+
+    /* Explicit word spacing (overrides platform defaults) */
+    word-spacing: 0;
+
+    /* Disable font smoothing variations */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    line-height: 1.2;
+}
+
+/* Fixed fonts */
+@font-face {
+    font-family: 'Open Sans';
+    src: url('OpenSans-Regular.ttf') format('truetype');
+}
+
+@font-face {
+    font-family: 'Open Sans';
+    src: url('OpenSans-Bold.ttf') format('truetype');
+    font-weight: bold;
+}
+
+body {
+    font-family: 'Open Sans';
+}

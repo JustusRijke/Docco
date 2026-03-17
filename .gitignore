@@ -13,11 +13,14 @@ wheels/
 .coverage
 coverage.xml
 
-# Examples (temporary ignore)
-examples/
-
 # Intermediate output
 *.intermediate.html
 
 # Translation assets
 *.pot
+
+# Test output
+**/example/diffpdf
+
+# Examples (temporary ignore)
+examples/

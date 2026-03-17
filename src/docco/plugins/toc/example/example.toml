@@ -3,6 +3,3 @@ file = "example.md"
 [toc]
 start = 2
 end = 4
-
-[diffpdf]
-enable = true

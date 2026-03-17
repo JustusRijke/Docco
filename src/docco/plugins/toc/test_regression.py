@@ -5,12 +5,13 @@ from pathlib import Path
 
 from docco.cli import main
 
+PLUGINS_DIR = Path(__file__).parent.parent
 EXAMPLE_DIR = Path(__file__).parent / "example"
 
 
 def test_toc_example_no_diff(monkeypatch):
-    monkeypatch.chdir(EXAMPLE_DIR)
-    main(["-o", str(EXAMPLE_DIR)])
+    monkeypatch.chdir(PLUGINS_DIR)
+    main(["toc/example/example.toml"])
     result = subprocess.run(
         ["git", "diff", "--name-only", str(EXAMPLE_DIR)],
         capture_output=True,
