@@ -1,0 +1,18 @@
+#
+msgid ""
+msgstr "Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "Dieser Abschnitt erscheint nur in der deutschen Version."
+msgstr ""
+
+msgid "Hello World"
+msgstr "Hallo Welt"
+
+msgid "Nur auf Deutsch"
+msgstr ""
+
+msgid "TERM"
+msgstr ""
+
+msgid "This is a simple multilingual document example."
+msgstr "Dies ist ein einfaches mehrsprachiges Dokumentbeispiel."

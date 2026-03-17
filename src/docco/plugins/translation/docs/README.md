@@ -30,7 +30,7 @@ Wrap language-specific content in filter directives:
 [translation]
 base_language = "en"
 languages = ["de", "fr"]
-terms = ["shared/terms.po"]             # Optional: shared PO files (lowest priority)
+terms = ["shared/terms.po"]             # Optional: terms (strings that will not be translated)
 ignore_numbers = true                   # Discard numeric-only msgids (default: true)
 filename_template = "{filename}_{langcode}"  # Default output naming
 ```

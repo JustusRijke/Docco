@@ -1,0 +1,3 @@
+# Terminology (strings that will not be translated)
+msgid "TERM"
+msgstr ""

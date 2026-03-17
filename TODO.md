@@ -1,6 +1,4 @@
 ## Must have
-
-- na afronden PT manual, zooi overnemen naar examples
 - documenteren downloaden fonts
 - appendix support
 - acknowledgements section in readme.md
@@ -9,17 +7,13 @@
 ## Nice to have
 
 - syntax aanpassen directives, aan laten sluiten op functies markdown-py, pandoc, quarto, ...
-- html tester (valid html?), ook toepassen op inlines
 - pdf beveiligen (geen copy/paste? flatten?)
 - if/endif directives icm arguments gebruiken uit frontmatter, tbv meerdere modellen maken met 1 md file
-- highlight TODO's
+- highlight TODO's -> todo plugin
 - Warn when using "screen" units (e.g, "px") -> lint?
-- docco config file is @.docco, change this to docco.toml ; also update the example and documentation
 
 ## Won't have
 
 - add cli option "watch", where docco will watch for changes in a folder in the given md/css file, and regenerate the pdf immediately, or (much more complex) create a vscode plugin.
-- use git version tag and/or branch+commit id instead of hardcoded version info (both pyproject.toml and the cli version info), or suggest a better way (best practice)
-- coverage: GitHub dependabot/actions (win&deb)
 - laat Claude inspireren door [GitHub - ljpengelen/markdown-to-pdf: A script to convert Markdown to PDF](https://github.com/ljpengelen/markdown-to-pdf)
 - comments mogelijk maken, en optioneel zichtbaar in pdf (geel gearceerde) en log output

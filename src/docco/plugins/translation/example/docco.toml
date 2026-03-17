@@ -1,0 +1,13 @@
+file = "example.md"
+
+[translation]
+base_language = "en"
+languages = ["de", "nl"]
+terms = ["terms.po"]
+
+[translation.po]
+de = ["copyright_de.po"]
+nl = ["copyright_nl.po"]
+
+[diffpdf]
+enable = true
