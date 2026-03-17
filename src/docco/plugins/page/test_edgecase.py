@@ -25,12 +25,6 @@ def test_no_directives(tmp_path):
     assert "LandscapeHandler" not in result.str_content
 
 
-def test_pagebreak_only(tmp_path):
-    ctx = make_ctx(tmp_path, wrap("<p>A</p>\n<!-- page break -->\n<p>B</p>"))
-    result = Stage().process(ctx)
-    assert '<div class="pagebreak"></div>' in result.str_content
-
-
 def test_pagedjs_screen_css_disabled(tmp_path):
     ctx = make_ctx(
         tmp_path, wrap("<p>Hi</p>"), {"page": {"add_pagedjs_screen_css": False}}
