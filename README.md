@@ -55,6 +55,7 @@ All plugins run automatically. Config sections in `docco.toml` provide per-plugi
 | [pdf](./src/docco/plugins/pdf/docs/README.md) | PDF rendering via Playwright/Chromium |
 | [diffpdf](./src/docco/plugins/diffpdf/docs/README.md) | Skip writing identical PDFs |
 | [dpi](./src/docco/plugins/dpi/docs/README.md) | Image DPI downscaling and validation |
+| [upload](./src/docco/plugins/upload/docs/README.md) | SFTP upload of the generated PDF |
 
 For information on writing your own plugins, see the [plugin development guide](./src/docco/plugins/README.md).
 

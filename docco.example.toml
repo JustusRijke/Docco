@@ -74,6 +74,15 @@
 # [dpi]
 # max = 300   # Max image DPI; images below this are flagged with a warning (default: 300)
 
+# SFTP upload (POSTPROCESS)
+# [upload]
+# enable = true                # set to false to skip upload while keeping config (default: true)
+# host = "sftp.example.com"
+# port = 22                    # default
+# user = "myuser"
+# password = "mypassword"
+# path = "/remote/uploads"     # remote directory; filename is derived from the source file
+
 # Skip writing PDF if it is visually identical to the existing output file (POSTPROCESS)
 # [diffpdf]
 # enable = false     # Enable skip-identical comparison (default: false)
