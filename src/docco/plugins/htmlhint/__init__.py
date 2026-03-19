@@ -24,7 +24,8 @@ class Stage(BaseStage):
             self.log.info("Skipped (disabled)")
             return context
 
-        if not shutil.which("htmlhint"):
+        htmlhint = shutil.which("htmlhint")
+        if not htmlhint:
             msg = f"htmlhint not found. Install it: {_INSTALL_URL}"
             raise RuntimeError(msg)
 
@@ -32,10 +33,9 @@ class Stage(BaseStage):
         if level not in _LEVELS:
             msg = f"[htmlhint] invalid level '{level}', must be one of: {', '.join(sorted(_LEVELS))}"
             raise ValueError(msg)
-
         with tmp_file(".html", context.content) as tmp_path:
             result = subprocess.run(
-                ["htmlhint", str(tmp_path)],
+                [htmlhint, str(tmp_path)],
                 capture_output=True,
                 text=True,
                 encoding="utf-8",
