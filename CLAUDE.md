@@ -2,9 +2,12 @@
 
 ## Project Overview
 
-Plugin-based Markdown-to-PDF converter. See [ARCHITECTURE.md](./ARCHITECTURE.md)
-for design, module structure, and decision rationale. See [README.md](./README.md)
-for user-facing docs. Per-plugin docs live in `src/docco/plugins/<name>/docs/README.md`.
+Plugin-based Markdown-to-PDF converter.
+
+- [README.md](./README.md) -- user-facing docs
+- [ARCHITECTURE.md](./ARCHITECTURE.md) -- design, module structure, decision rationale
+- [src/docco/plugins/README.md](./src/docco/plugins/README.md) -- plugin development guide
+- Per-plugin docs: `src/docco/plugins/<name>/docs/README.md`
 
 ## Quick Reference
 
