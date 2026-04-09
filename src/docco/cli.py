@@ -133,7 +133,8 @@ def main(argv: list[str] | None = None) -> None:
                     skipped += 1
                     continue
                 output_path = ctx.output_dir / (ctx.source_path.stem + ".pdf")
-                output_path.write_bytes(ctx.content)  # type: ignore[arg-type]
+                assert isinstance(ctx.content, bytes)
+                output_path.write_bytes(ctx.content)
                 generated += 1
                 log.info("Written: %s", output_path)
 

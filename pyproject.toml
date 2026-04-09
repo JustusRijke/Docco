@@ -17,7 +17,7 @@ dynamic = ["version"]
 
 dependencies = [
   "colorlog>=6.10.1",
-  "diffpdf>=1.2.1",
+  "diffpdf>=1.2.2",
   "markdown-it-py>=4.0.0",
   "mdit-py-plugins>=0.5.0",
   "paramiko>=4.0.0",
@@ -27,12 +27,8 @@ dependencies = [
   "translate-toolkit>=3.17.4",
 
   # Add a lower bound for unpinned transitive dependencies
-  "cffi>=2.0.0",
   "colorama>=0.4.6",
-  "greenlet>=3.3.2",
   "iniconfig>=2.3.0",
-  "lxml>=6.0.2",
-  "nodeenv>=1.10.0",
   "packaging>=25.0",
   "pycparser>=3.0",
   "typing-extensions>=4.15.0",
@@ -40,10 +36,6 @@ dependencies = [
   # Vulnerabilities
   "cryptography>=46.0.7",
   "pygments>=2.20.0",
-
-  # TODO: move to pixelmatch-fast
-  "llvmlite>=0.46.0",
-  "numpy>=2.4.3",
 ]
 
 [project.urls]
@@ -76,6 +68,7 @@ dev = [
   "pytest>=7.2.1",
   "pytest-cov>=7.0.0",
   "ruff>=0.15.5",
+  "tomli>=2.4.1",
   "ty>=0.0.21",
 ]
 
