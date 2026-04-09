@@ -1,6 +1,6 @@
 version = 1
 revision = 3
-requires-python = ">=3.14"
+requires-python = ">=3.14.0"
 
 [[package]]
 name = "bcrypt"
@@ -252,9 +252,12 @@ dependencies = [
     { name = "colorlog" },
     { name = "cryptography" },
     { name = "diffpdf" },
+    { name = "greenlet" },
     { name = "iniconfig" },
+    { name = "lxml" },
     { name = "markdown-it-py" },
     { name = "mdit-py-plugins" },
+    { name = "nodeenv" },
     { name = "packaging" },
     { name = "paramiko" },
     { name = "playwright" },
@@ -282,9 +285,12 @@ requires-dist = [
     { name = "colorlog", specifier = ">=6.10.1" },
     { name = "cryptography", specifier = ">=46.0.7" },
     { name = "diffpdf", specifier = ">=1.2.2" },
+    { name = "greenlet", specifier = ">=3.3.2" },
     { name = "iniconfig", specifier = ">=2.3.0" },
+    { name = "lxml", specifier = ">=6.0.2" },
     { name = "markdown-it-py", specifier = ">=4.0.0" },
     { name = "mdit-py-plugins", specifier = ">=0.5.0" },
+    { name = "nodeenv", specifier = ">=1.10.0" },
     { name = "packaging", specifier = ">=25.0" },
     { name = "paramiko", specifier = ">=4.0.0" },
     { name = "playwright", specifier = ">=1.58.0" },
