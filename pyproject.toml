@@ -37,6 +37,10 @@ dependencies = [
   "pycparser>=3.0",
   "typing-extensions>=4.15.0",
 
+  # Vulnerabilities
+  "cryptography>=46.0.7",
+  "pygments>=2.20.0",
+
   # TODO: move to pixelmatch-fast
   "llvmlite>=0.46.0",
   "numpy>=2.4.3",
