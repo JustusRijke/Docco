@@ -2,7 +2,7 @@
 name = "docco"
 description = "Plugin-based Markdown to PDF converter"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.14.0"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "Justus Rijke", email = "justusrijke@gmail.com" }]
@@ -28,7 +28,10 @@ dependencies = [
 
   # Add a lower bound for unpinned transitive dependencies
   "colorama>=0.4.6",
+  "greenlet>=3.3.2",
   "iniconfig>=2.3.0",
+  "lxml>=6.0.2",
+  "nodeenv>=1.10.0",
   "packaging>=25.0",
   "pycparser>=3.0",
   "typing-extensions>=4.15.0",
