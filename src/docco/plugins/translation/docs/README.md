@@ -43,6 +43,13 @@ The document title stem is always stripped from the POT. Additional msgids can b
 | `ignore_numbers` | `true`  | Discard integer-only msgids (decimals/floats are kept, as the decimal separator varies by locale) |
 | `ignore_dates`   | `true`  | Discard numeric date strings like `01-02-2011`, `2013/04/04`                                      |
 | `ignore_chars`   | `true`  | Discard single-character msgids like `a`, `?`, `!`                                                |
+| `ignore_regex`   | —       | Discard msgids matching a regular expression                                                      |
+
+Example — discard dimension strings like `98 x 6,5`:
+
+```toml
+ignore_regex = '^\d[\d,.]* x \d[\d,.]*$'
+```
 
 Use `terms` to filter out shared strings across documents by providing their translations.
 

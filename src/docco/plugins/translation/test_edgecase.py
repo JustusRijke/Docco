@@ -126,27 +126,71 @@ def test_stage_single_po_no_merge(tmp_path):
     ["01-02-2011", "1-2-2013", "2013-04-04", "01/03/04", "2024.12.31"],
 )
 def test_strip_pot_ignore_dates(tmp_path, date):
-    from docco.plugins.translation import _extract_pot, _strip_pot
+    from docco.plugins.translation import (
+        _build_ignore_pattern,
+        _extract_pot,
+        _strip_pot,
+    )
 
     html = f"<html><body><p>{date}</p></body></html>"
     pot = tmp_path / "doc.pot"
     _extract_pot(html, pot, "doc")
-    _strip_pot(pot, "doc", ignore_numbers=False, ignore_dates=True)
-    import polib
-
+    _strip_pot(
+        pot,
+        "doc",
+        _build_ignore_pattern(
+            {"ignore_numbers": False, "ignore_dates": True, "ignore_chars": False}
+        ),
+    )
     assert all(e.msgid != date for e in polib.pofile(str(pot)))
 
 
 @pytest.mark.parametrize("char", ["a", "?", "!", ".", " "])
 def test_strip_pot_ignore_chars(tmp_path, char):
-    from docco.plugins.translation import _extract_pot, _strip_pot
+    from docco.plugins.translation import (
+        _build_ignore_pattern,
+        _extract_pot,
+        _strip_pot,
+    )
 
     html = f"<html><body><p>{char}</p><p>Hello</p></body></html>"
     pot = tmp_path / "doc.pot"
     _extract_pot(html, pot, "doc")
-    _strip_pot(pot, "doc", ignore_numbers=False, ignore_chars=True)
-    import polib
-
+    _strip_pot(
+        pot,
+        "doc",
+        _build_ignore_pattern(
+            {"ignore_numbers": False, "ignore_dates": False, "ignore_chars": True}
+        ),
+    )
     msgids = [e.msgid for e in polib.pofile(str(pot))]
     assert char not in msgids
+    assert "Hello" in msgids
+
+
+def test_strip_pot_ignore_regex(tmp_path):
+    from docco.plugins.translation import (
+        _build_ignore_pattern,
+        _extract_pot,
+        _strip_pot,
+    )
+
+    html = "<html><body><p>98 x 6,5</p><p>foobar 98 x 6,5</p><p>Hello</p></body></html>"
+    pot = tmp_path / "doc.pot"
+    _extract_pot(html, pot, "doc")
+    _strip_pot(
+        pot,
+        "doc",
+        _build_ignore_pattern(
+            {
+                "ignore_numbers": False,
+                "ignore_dates": False,
+                "ignore_chars": False,
+                "ignore_regex": r"^\d[\d,.]* x \d[\d,.]*$",
+            }
+        ),
+    )
+    msgids = [e.msgid for e in polib.pofile(str(pot))]
+    assert "98 x 6,5" not in msgids
+    assert "foobar 98 x 6,5" in msgids
     assert "Hello" in msgids

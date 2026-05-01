@@ -79,18 +79,13 @@ def _strip_covered_msgids(pot_path: Path, terms: list[Path]) -> None:
 def _strip_pot(
     pot_path: Path,
     stem: str,
-    ignore_numbers: bool,
-    ignore_dates: bool = False,
-    ignore_chars: bool = False,
+    ignore: re.Pattern | None = None,
 ) -> None:
     pf = polib.pofile(str(pot_path))
     for entry in [
         e
         for e in pf
-        if e.msgid == stem
-        or (ignore_numbers and e.msgid.strip().lstrip("-").isdigit())
-        or (ignore_dates and bool(_DATE_RE.match(e.msgid)))
-        or (ignore_chars and len(e.msgid.strip()) <= 1)
+        if e.msgid == stem or (ignore is not None and bool(ignore.search(e.msgid)))
     ]:
         pf.remove(entry)
     pf.save(str(pot_path))
@@ -163,7 +158,25 @@ def _resolve_paths(raw: str | list, base_dir: Path) -> list[Path]:
     return [(base_dir / str(p)).resolve() for p in items]
 
 
-_DATE_RE = re.compile(r"^\s*\d{1,4}[-/\.]\d{1,2}[-/\.]\d{1,4}\s*$")
+_BUILTIN_PATTERNS = {
+    "ignore_numbers": r"^\s*-?\d+\s*$",
+    "ignore_dates": r"^\s*\d{1,4}[-/\.]\d{1,2}[-/\.]\d{1,4}\s*$",
+    "ignore_chars": r"^\s*.?\s*$",
+}
+
+
+_BUILTIN_DEFAULTS = {"ignore_numbers": True, "ignore_dates": True, "ignore_chars": True}
+
+
+def _build_ignore_pattern(cfg: dict) -> re.Pattern | None:
+    parts = [
+        p for k, p in _BUILTIN_PATTERNS.items() if cfg.get(k, _BUILTIN_DEFAULTS[k])
+    ]
+    raw = cfg.get("ignore_regex")
+    if raw:
+        parts.append(raw)
+    return re.compile("|".join(f"(?:{p})" for p in parts)) if parts else None
+
 
 _TRANSLATION_STATIC_KEYS = frozenset(
     {
@@ -176,6 +189,7 @@ _TRANSLATION_STATIC_KEYS = frozenset(
         "ignore_numbers",
         "ignore_dates",
         "ignore_chars",
+        "ignore_regex",
     }
 )
 
@@ -311,20 +325,12 @@ class Stage(BaseStage):
             "translation_original_stem", context.source_path.stem
         )
 
-        ignore_numbers: bool = cfg.get("ignore_numbers", True)
-        ignore_dates: bool = cfg.get("ignore_dates", True)
-        ignore_chars: bool = cfg.get("ignore_chars", True)
+        ignore = _build_ignore_pattern(cfg)
 
         if langcode == base_language.lower():
             pot_path = base_dir / f"{original_stem}.pot"
             _extract_pot(context.content, pot_path, original_stem)
-            _strip_pot(
-                pot_path,
-                context.source_path.stem,
-                ignore_numbers,
-                ignore_dates,
-                ignore_chars,
-            )
+            _strip_pot(pot_path, context.source_path.stem, ignore)
             self.log.debug("Extracted POT for base language")
             return context
 
@@ -348,13 +354,7 @@ class Stage(BaseStage):
         # Extract per-language POT and check sync against the doc PO
         pot_path = base_dir / f"{lang_stem}.pot"
         _extract_pot(context.content, pot_path, original_stem)
-        _strip_pot(
-            pot_path,
-            context.source_path.stem,
-            ignore_numbers,
-            ignore_dates,
-            ignore_chars,
-        )
+        _strip_pot(pot_path, context.source_path.stem, ignore)
         _strip_covered_msgids(pot_path, [*terms, *extra_po])
         if not _check_sync(pot_path, doc_po):
             self.log.warning(
