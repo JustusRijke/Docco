@@ -76,12 +76,16 @@ def _strip_covered_msgids(pot_path: Path, terms: list[Path]) -> None:
     pf.save(str(pot_path))
 
 
-def _strip_pot(pot_path: Path, stem: str, ignore_numbers: bool) -> None:
+def _strip_pot(
+    pot_path: Path, stem: str, ignore_numbers: bool, ignore_dates: bool = False
+) -> None:
     pf = polib.pofile(str(pot_path))
     for entry in [
         e
         for e in pf
-        if e.msgid == stem or (ignore_numbers and e.msgid.strip().lstrip("-").isdigit())
+        if e.msgid == stem
+        or (ignore_numbers and e.msgid.strip().lstrip("-").isdigit())
+        or (ignore_dates and bool(_DATE_RE.match(e.msgid)))
     ]:
         pf.remove(entry)
     pf.save(str(pot_path))
@@ -154,6 +158,8 @@ def _resolve_paths(raw: str | list, base_dir: Path) -> list[Path]:
     return [(base_dir / str(p)).resolve() for p in items]
 
 
+_DATE_RE = re.compile(r"^\s*\d{1,4}[-/\.]\d{1,2}[-/\.]\d{1,4}\s*$")
+
 _TRANSLATION_STATIC_KEYS = frozenset(
     {
         "language",
@@ -163,6 +169,7 @@ _TRANSLATION_STATIC_KEYS = frozenset(
         "terms",
         "po",
         "ignore_numbers",
+        "ignore_dates",
     }
 )
 
@@ -299,11 +306,12 @@ class Stage(BaseStage):
         )
 
         ignore_numbers: bool = cfg.get("ignore_numbers", True)
+        ignore_dates: bool = cfg.get("ignore_dates", True)
 
         if langcode == base_language.lower():
             pot_path = base_dir / f"{original_stem}.pot"
             _extract_pot(context.content, pot_path, original_stem)
-            _strip_pot(pot_path, context.source_path.stem, ignore_numbers)
+            _strip_pot(pot_path, context.source_path.stem, ignore_numbers, ignore_dates)
             self.log.debug("Extracted POT for base language")
             return context
 
@@ -327,7 +335,7 @@ class Stage(BaseStage):
         # Extract per-language POT and check sync against the doc PO
         pot_path = base_dir / f"{lang_stem}.pot"
         _extract_pot(context.content, pot_path, original_stem)
-        _strip_pot(pot_path, context.source_path.stem, ignore_numbers)
+        _strip_pot(pot_path, context.source_path.stem, ignore_numbers, ignore_dates)
         _strip_covered_msgids(pot_path, [*terms, *extra_po])
         if not _check_sync(pot_path, doc_po):
             self.log.warning(

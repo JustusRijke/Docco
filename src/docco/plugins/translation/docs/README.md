@@ -32,10 +32,11 @@ base_language = "en"
 languages = ["de", "fr"]
 terms = ["shared/terms.po"]             # Optional: terms (strings that will not be translated)
 ignore_numbers = true                   # Discard numeric-only msgids (default: true)
+ignore_dates = true                     # Discard numeric date msgids like 01-02-2011, 2013/04/04 (default: true)
 filename_template = "{filename}_{langcode}"  # Default output naming
 ```
 
-The document title stem is always stripped from the POT. Integer-only msgids are stripped by default via `ignore_numbers` (decimals/floats are kept, as the decimal separator varies by locale). Use `terms` to filter out other shared strings by providing their translations there.
+The document title stem is always stripped from the POT. Integer-only msgids are stripped by default via `ignore_numbers` (decimals/floats are kept, as the decimal separator varies by locale). Numeric date strings (e.g. `01-02-2011`, `2013/04/04`) are stripped by default via `ignore_dates`. Use `terms` to filter out other shared strings by providing their translations there.
 
 ### PO file resolution
 

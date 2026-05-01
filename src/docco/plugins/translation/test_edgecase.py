@@ -119,3 +119,19 @@ def test_stage_warns(tmp_path, caplog, entries, flags, expected_keyword):
 def test_stage_single_po_no_merge(tmp_path):
     _po(tmp_path / "doc_DE.po", {"Hello": "Hallo", "World": "Welt"})
     assert "Hallo" in Stage().process(_ctx(tmp_path, langcode="de")).str_content
+
+
+@pytest.mark.parametrize(
+    "date",
+    ["01-02-2011", "1-2-2013", "2013-04-04", "01/03/04", "2024.12.31"],
+)
+def test_strip_pot_ignore_dates(tmp_path, date):
+    from docco.plugins.translation import _extract_pot, _strip_pot
+
+    html = f"<html><body><p>{date}</p></body></html>"
+    pot = tmp_path / "doc.pot"
+    _extract_pot(html, pot, "doc")
+    _strip_pot(pot, "doc", ignore_numbers=False, ignore_dates=True)
+    import polib
+
+    assert all(e.msgid != date for e in polib.pofile(str(pot)))
