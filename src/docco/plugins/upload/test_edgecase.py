@@ -1,5 +1,6 @@
 # Edge-case tests only. The happy path is covered by test_regression.py.
 
+import logging
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -38,11 +39,85 @@ def test_disabled_skips_upload(tmp_path):
     mock_ssh.assert_not_called()
 
 
+def _ask_ctx(tmp_path, answer):
+    return make_ctx(
+        tmp_path,
+        content=b"%PDF-1.4",
+        config={
+            "upload": {
+                "enable": "ask",
+                "host": "sftp.example.com",
+                "user": "u",
+                "password": "p",
+                "path": "/out",
+            }
+        },
+        content_type=ContentType.PDF,
+    ), answer
+
+
+def test_ask_yes_uploads(tmp_path):
+    ctx, _ = _ask_ctx(tmp_path, "y")
+    mock_sftp = MagicMock()
+    mock_ssh = MagicMock()
+    mock_ssh.__enter__ = lambda s: s
+    mock_ssh.__exit__ = MagicMock(return_value=False)
+    mock_ssh.open_sftp.return_value.__enter__ = lambda s: mock_sftp
+    mock_ssh.open_sftp.return_value.__exit__ = MagicMock(return_value=False)
+    with (
+        patch("builtins.input", return_value="y"),
+        patch("paramiko.SSHClient", return_value=mock_ssh),
+    ):
+        result = Stage().process(ctx)
+    assert result is ctx
+    mock_sftp.putfo.assert_called_once()
+
+
+def test_ask_no_skips(tmp_path):
+    ctx, _ = _ask_ctx(tmp_path, "")
+    with (
+        patch("builtins.input", return_value=""),
+        patch("paramiko.SSHClient") as mock_ssh,
+    ):
+        result = Stage().process(ctx)
+    assert result is ctx
+    mock_ssh.assert_not_called()
+
+
+def test_default_false_logs_and_skips(tmp_path, caplog):
+    caplog.set_level(logging.INFO)
+    ctx = make_ctx(
+        tmp_path,
+        content=b"%PDF-1.4",
+        config={
+            "upload": {
+                "host": "sftp.example.com",
+                "user": "u",
+                "password": "p",
+                "path": "/out",
+            }
+        },
+        content_type=ContentType.PDF,
+    )
+    with patch("paramiko.SSHClient") as mock_ssh:
+        result = Stage().process(ctx)
+    assert result is ctx
+    mock_ssh.assert_not_called()
+    assert "disabled" in caplog.text
+
+
 def test_missing_key_raises(tmp_path):
     ctx = make_ctx(
         tmp_path,
         content=b"%PDF-1.4",
-        config={"upload": {"host": "sftp.example.com", "user": "u", "path": "/out"}},
+        config={
+            "upload": {
+                "enable": True,
+                "host": "sftp.example.com",
+                "user": "u",
+                "path": "/out",
+            }
+        },
         content_type=ContentType.PDF,
     )
     with pytest.raises(ValueError, match="missing required config key: password"):
@@ -55,6 +130,7 @@ def test_upload(tmp_path):
         content=b"%PDF-1.4",
         config={
             "upload": {
+                "enable": True,
                 "host": "sftp.example.com",
                 "port": 2222,
                 "user": "myuser",

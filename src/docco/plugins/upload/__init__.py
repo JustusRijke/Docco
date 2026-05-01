@@ -19,7 +19,13 @@ class Stage(BaseStage):
     def process(self, context: Context) -> Context:
         assert isinstance(context.content, bytes)
         cfg = self.get_config(context)
-        if not cfg or not cfg.get("enable", True):
+        if not cfg:
+            return context
+        enable = cfg.get("enable", False)
+        if enable == "ask":
+            answer = input("Upload PDF? [y/N] ").strip().lower()
+            enable = answer == "y"
+        if not enable:
             self.log.info("Upload disabled, skipping")
             return context
 
