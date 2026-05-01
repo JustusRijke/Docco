@@ -112,28 +112,23 @@ def _update_po(pot_path: Path, po_path: Path) -> None:
         tmp.unlink(missing_ok=True)
 
 
-def _check_sync(pot_path: Path, po_path: Path) -> bool:
+def _parsefile(path: Path):  # noqa: ANN202
     from translate.storage import po as po_mod
 
-    pot_ids = {
-        u.source
-        for u in po_mod.pofile.parsefile(str(pot_path)).units
-        if u.istranslatable()
-    }
-    po_ids = {
-        u.source
-        for u in po_mod.pofile.parsefile(str(po_path)).units
-        if u.istranslatable()
-    }
+    try:
+        return po_mod.pofile.parsefile(str(path))
+    except Exception as e:
+        raise OSError(f"{path.name}: {e}") from e
+
+
+def _check_sync(pot_path: Path, po_path: Path) -> bool:
+    pot_ids = {u.source for u in _parsefile(pot_path).units if u.istranslatable()}
+    po_ids = {u.source for u in _parsefile(po_path).units if u.istranslatable()}
     return pot_ids == po_ids
 
 
 def _po_stats(po_path: Path) -> dict[str, int]:
-    from translate.storage import po as po_mod
-
-    units = [
-        u for u in po_mod.pofile.parsefile(str(po_path)).units if u.istranslatable()
-    ]
+    units = [u for u in _parsefile(po_path).units if u.istranslatable()]
     translated = sum(1 for u in units if u.istranslated() and not u.isfuzzy())
     fuzzy = sum(1 for u in units if u.isfuzzy())
     untranslated = sum(1 for u in units if not u.istranslated() and not u.isfuzzy())
@@ -335,8 +330,9 @@ class Stage(BaseStage):
             return context
 
         # Target language: resolve PO paths and apply translation
+        config_dir = context.config_dir
         terms_raw: str | list = cfg.get("terms", [])
-        terms: list[Path] = _resolve_paths(terms_raw, base_dir) if terms_raw else []
+        terms: list[Path] = _resolve_paths(terms_raw, config_dir) if terms_raw else []
 
         # Default doc PO is always included; [translation.po] entries are extras merged alongside
         filename_template: str = cfg.get("filename_template", "{filename}_{langcode}")
@@ -345,11 +341,17 @@ class Stage(BaseStage):
         )
         doc_po = base_dir / f"{lang_stem}.po"
         extra_raw = cfg.get(f"po_{langcode}") or cfg.get("po", {}).get(langcode)
-        extra_po: list[Path] = _resolve_paths(extra_raw, base_dir) if extra_raw else []
+        extra_po: list[Path] = (
+            _resolve_paths(extra_raw, config_dir) if extra_raw else []
+        )
 
         if not doc_po.exists():
             msg = f"PO file missing for '{langcode.upper()}': {doc_po}"
             raise FileNotFoundError(msg)
+        for path in [*terms, *extra_po]:
+            if not path.exists():
+                msg = f"PO file not found: {path}"
+                raise FileNotFoundError(msg)
 
         # Extract per-language POT and check sync against the doc PO
         pot_path = base_dir / f"{lang_stem}.pot"

@@ -14,7 +14,7 @@ HTML = "<html><body><h1>Hello</h1><p>World</p></body></html>"
 BASE_CONFIG: dict = {"translation": {"languages": ["de"], "base_language": "en"}}
 
 
-def _ctx(tmp_path, config=BASE_CONFIG, langcode=None):
+def _ctx(tmp_path, config=BASE_CONFIG, langcode=None, config_dir=None):
     src = tmp_path / "doc.md"
     src.write_text("# Hello\n", encoding="utf-8")
     ctx = Context(
@@ -23,6 +23,7 @@ def _ctx(tmp_path, config=BASE_CONFIG, langcode=None):
         config=dict(config),
         content=HTML,
         content_type=ContentType.HTML,
+        config_dir=config_dir or tmp_path,
     )
     if langcode:
         ctx.artifacts["translation_langcode"] = langcode
@@ -98,6 +99,51 @@ def test_stage_passthrough_no_langcode(tmp_path):
 def test_stage_missing_po_raises(tmp_path):
     with pytest.raises(FileNotFoundError, match="PO file missing"):
         Stage().process(_ctx(tmp_path, langcode="de"))
+
+
+def test_stage_missing_extra_po_raises(tmp_path):
+    _po(tmp_path / "doc_DE.po", {"Hello": "Hallo"})
+    config = {
+        "translation": {
+            "languages": ["de"],
+            "base_language": "en",
+            "po": {"de": "missing.po"},
+        }
+    }
+    with pytest.raises(FileNotFoundError, match="missing.po"):
+        Stage().process(_ctx(tmp_path, config=config, langcode="de"))
+
+
+def test_stage_extra_po_resolved_relative_to_config_dir(tmp_path):
+    # config_dir differs from source dir; extra PO lives in config_dir
+    config_dir = tmp_path / "cfg"
+    config_dir.mkdir()
+    src_dir = tmp_path / "src"
+    src_dir.mkdir()
+    _po(src_dir / "doc_DE.po", {"Hello": "Hallo", "World": "Welt"})
+    _po(config_dir / "extra_de.po", {"Hello": "Hallo"})
+    config = {
+        "translation": {
+            "languages": ["de"],
+            "base_language": "en",
+            "po": {"de": "extra_de.po"},
+        }
+    }
+    ctx = _ctx(tmp_path, config=config, langcode="de", config_dir=config_dir)
+    ctx.source_path = src_dir / "doc_DE.md"
+    ctx.source_path.write_text("", encoding="utf-8")
+    ctx.artifacts["translation_langcode"] = "de"
+    ctx.artifacts["translation_original_stem"] = "doc"
+    Stage().process(ctx)  # must not raise FileNotFoundError
+
+
+def test_parsefile_error_includes_filename(tmp_path):
+    from docco.plugins.translation import _parsefile
+
+    bad = tmp_path / "broken.po"
+    bad.write_text("garbage\n", encoding="utf-8")
+    with pytest.raises(Exception, match="broken.po"):
+        _parsefile(bad)
 
 
 @pytest.mark.parametrize(
