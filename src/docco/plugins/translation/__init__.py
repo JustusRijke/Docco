@@ -278,9 +278,7 @@ class Stage(BaseStage):
     def validate_config(self, config: dict) -> None:
         _validate_translation_config(config)
 
-    def _apply_translation(
-        self, context: Context, po_path: Path, langcode: str
-    ) -> None:
+    def _warn_translation_quality(self, po_path: Path, langcode: str) -> None:
         stats = _po_stats(po_path)
         if stats["fuzzy"] > 0:
             self.log.warning(
@@ -294,6 +292,11 @@ class Stage(BaseStage):
                 stats["untranslated"],
                 langcode.upper(),
             )
+
+    def _apply_translation(
+        self, context: Context, po_path: Path, langcode: str
+    ) -> None:
+        self._warn_translation_quality(po_path, langcode)
         assert isinstance(context.content, str)
         context.content = _apply_po(context.content, po_path)
 
@@ -367,11 +370,13 @@ class Stage(BaseStage):
 
         all_po = [*terms, *extra_po, doc_po]
         if len(all_po) == 1:
-            self._apply_translation(context, all_po[0], langcode)
+            self._apply_translation(context, doc_po, langcode)
         else:
+            self._warn_translation_quality(doc_po, langcode)
             with tmp_file(".po") as merged_path:
                 _merge_po(all_po, merged_path)
-                self._apply_translation(context, merged_path, langcode)
+                context.content = _apply_po(context.content, merged_path)
+                assert isinstance(context.content, str)
 
         self.log.info("Applied translation: %s", langcode.upper())
         return context
