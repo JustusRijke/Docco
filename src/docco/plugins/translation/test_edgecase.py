@@ -135,3 +135,18 @@ def test_strip_pot_ignore_dates(tmp_path, date):
     import polib
 
     assert all(e.msgid != date for e in polib.pofile(str(pot)))
+
+
+@pytest.mark.parametrize("char", ["a", "?", "!", ".", " "])
+def test_strip_pot_ignore_chars(tmp_path, char):
+    from docco.plugins.translation import _extract_pot, _strip_pot
+
+    html = f"<html><body><p>{char}</p><p>Hello</p></body></html>"
+    pot = tmp_path / "doc.pot"
+    _extract_pot(html, pot, "doc")
+    _strip_pot(pot, "doc", ignore_numbers=False, ignore_chars=True)
+    import polib
+
+    msgids = [e.msgid for e in polib.pofile(str(pot))]
+    assert char not in msgids
+    assert "Hello" in msgids
