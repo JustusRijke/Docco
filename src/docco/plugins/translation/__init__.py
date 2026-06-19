@@ -228,12 +228,18 @@ class FilterStage(BaseStage):
             return context
 
         # Multi-language mode: fork here, one context per language
-        if not languages and not base_language:
+        if not base_language and not languages:
             return context
 
-        if not languages or not base_language:
-            msg = "translation plugin requires both 'languages' and 'base_language' in [translation] config"
+        if languages and not base_language:
+            msg = "translation plugin requires 'base_language' when 'languages' is set in [translation] config"
             raise ValueError(msg)
+
+        # Deduplicate: skip any language in `languages` that matches base_language
+        target_langs = [
+            l for l in sorted(languages) if l.lower() != base_language.lower()
+        ]
+        all_langs = [base_language] + target_langs
 
         stem = context.source_path.stem
         results: list[Context] = []
@@ -251,13 +257,7 @@ class FilterStage(BaseStage):
             ctx.artifacts["translation_original_stem"] = stem
             return ctx
 
-        # Base language
-        base_content = _apply_filter(context.content, base_language)
-        results.append(_make_context(base_language.upper(), base_content))
-        self.log.info("Filtered for base language: %s", base_language.upper())
-
-        # Target languages
-        for lang in sorted(languages):
+        for lang in all_langs:
             filtered = _apply_filter(context.content, lang)
             results.append(_make_context(lang.upper(), filtered))
             self.log.info("Filtered for language: %s", lang.upper())

@@ -3,6 +3,7 @@
 
 import logging
 from pathlib import Path
+from typing import cast
 
 import polib
 import pytest
@@ -85,6 +86,32 @@ def test_filter_missing_base_language_raises(tmp_path):
     ctx.content_type = ContentType.MARKDOWN
     with pytest.raises(ValueError, match="base_language"):
         FilterStage().process(ctx)
+
+
+def test_filter_base_language_only_produces_one_output(tmp_path):
+    ctx = _ctx(tmp_path, config={"translation": {"base_language": "nl"}})
+    ctx.content_type = ContentType.MARKDOWN
+    ctx.content = "hello"
+    result = FilterStage().process(ctx)
+    assert isinstance(result, list)
+    assert len(result) == 1
+    item = result[0]
+    assert isinstance(item, Context)
+    assert item.source_path.stem == "doc_NL"
+
+
+def test_filter_deduplicates_base_language_in_languages(tmp_path):
+    ctx = _ctx(
+        tmp_path,
+        config={"translation": {"base_language": "nl", "languages": ["nl", "de"]}},
+    )
+    ctx.content_type = ContentType.MARKDOWN
+    ctx.content = "hello"
+    result = FilterStage().process(ctx)
+    assert isinstance(result, list)
+    assert len(result) == 2
+    stems = {r.source_path.stem for r in cast(list[Context], result)}
+    assert stems == {"doc_NL", "doc_DE"}
 
 
 def test_filter_unknown_config_key_raises():
