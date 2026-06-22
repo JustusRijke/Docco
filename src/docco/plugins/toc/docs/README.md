@@ -37,7 +37,8 @@ end = 4     # Maximum heading level to include (default: 6)
 Add the `{.toc-ignore}` class to a heading to exclude it and all its sub-sections from the TOC:
 
 ```markdown
-## Internal Notes {.toc-ignore}
+{.toc-ignore}
+## Internal Notes (excluded from the TOC)
 ### This sub-section is also excluded
 ```
 
