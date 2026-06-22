@@ -11,7 +11,9 @@ class Stage(BaseStage):
     produces = ContentType.PDF
     phase = Phase.POSTPROCESS
     after = ("dpi",)
-    valid_config_keys = frozenset({"enable", "threshold", "dpi", "skip_text", "store"})
+    valid_config_keys = frozenset(
+        {"enable", "threshold", "dpi", "skip_text", "store", "delete_diff_images"}
+    )
 
     def process(self, context: Context) -> Context:
         assert isinstance(context.content, bytes)
@@ -26,7 +28,14 @@ class Stage(BaseStage):
         dpi = cfg.get("dpi", 96)
         skip_text = cfg.get("skip_text", False)
         store = cfg.get("store", False)
+        delete_diff_images = cfg.get("delete_diff_images", True)
         output_dir = existing_path.parent / "diffpdf" if store else None
+
+        if store and delete_diff_images and output_dir and output_dir.is_dir():
+            stem = existing_path.stem
+            for f in output_dir.iterdir():
+                if f.name.startswith(stem + "_"):
+                    f.unlink()
 
         with tmp_file(".pdf", context.content) as tmp_path:
             identical = diffpdf_lib.diffpdf(

@@ -34,3 +34,44 @@ def test_differs_keeps_new(tmp_path):
         result = Stage().process(ctx)
     assert "skipped" not in result.artifacts
     assert result.content == b"%PDF-new"
+
+
+def test_delete_diff_images(tmp_path):
+    ctx = make_ctx(
+        tmp_path,
+        b"%PDF-new",
+        {"diffpdf": {"enable": True, "store": True}},
+        ContentType.PDF,
+    )
+    ctx.output_dir.mkdir(parents=True, exist_ok=True)
+    (ctx.output_dir / "test.pdf").write_bytes(b"%PDF-old")
+    diff_dir = ctx.output_dir / "diffpdf"
+    diff_dir.mkdir()
+    # matches the doc stem "test_" prefix → should be deleted
+    stale = diff_dir / "test_vs_tmp_page1_diff.png"
+    stale.write_bytes(b"stale")
+    # belongs to a different doc → must be preserved
+    other = diff_dir / "other_vs_tmp_page1_diff.png"
+    other.write_bytes(b"other")
+    with patch("docco.plugins.diffpdf.diffpdf_lib.diffpdf", return_value=False):
+        Stage().process(ctx)
+    assert not stale.exists()
+    assert other.exists()
+
+
+def test_delete_diff_images_disabled(tmp_path):
+    ctx = make_ctx(
+        tmp_path,
+        b"%PDF-new",
+        {"diffpdf": {"enable": True, "store": True, "delete_diff_images": False}},
+        ContentType.PDF,
+    )
+    ctx.output_dir.mkdir(parents=True, exist_ok=True)
+    (ctx.output_dir / "test.pdf").write_bytes(b"%PDF-old")
+    diff_dir = ctx.output_dir / "diffpdf"
+    diff_dir.mkdir()
+    stale = diff_dir / "test_vs_tmp_page1_diff.png"
+    stale.write_bytes(b"stale")
+    with patch("docco.plugins.diffpdf.diffpdf_lib.diffpdf", return_value=False):
+        Stage().process(ctx)
+    assert stale.exists()
