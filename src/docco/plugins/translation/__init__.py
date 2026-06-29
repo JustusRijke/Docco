@@ -217,6 +217,8 @@ class FilterStage(BaseStage):
         cfg = self.get_config(context)
 
         languages: list[str] = cfg.get("languages", [])
+        if isinstance(languages, str):
+            languages = [languages]
         base_language: str = cfg.get("base_language", "")
         filename_template: str = cfg.get("filename_template", "{filename}_{langcode}")
 
