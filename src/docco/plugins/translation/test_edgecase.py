@@ -46,6 +46,17 @@ def _po(
     pf.save(str(path))
 
 
+def test_extract_pot_skips_style_and_script(tmp_path):
+    from docco.plugins.translation import _extract_pot
+
+    html = "<html><head><style>.foo { color: red; }</style></head><body><script>var x=1;</script><p>Hello</p></body></html>"
+    pot = tmp_path / "doc.pot"
+    _extract_pot(html, pot, "doc")
+    msgids = [e.msgid for e in polib.pofile(str(pot))]
+    assert all("color" not in m and "var x" not in m for m in msgids)
+    assert "Hello" in msgids
+
+
 def test_strip_covered_no_terms(tmp_path):
     _strip_covered_msgids(tmp_path / "x.pot", [])
 

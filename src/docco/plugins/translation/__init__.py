@@ -37,7 +37,9 @@ def _clean_po(po_path: Path) -> None:
 
 
 def _extract_pot(html: str, pot_path: Path, source_name: str) -> None:
-    stripped = re.sub(r'\s+id="[^"]*"', "", html).encode("utf-8")
+    stripped = re.sub(r"<style\b[^>]*>.*?</style>", "", html, flags=re.DOTALL)
+    stripped = re.sub(r"<script\b[^>]*>.*?</script>", "", stripped, flags=re.DOTALL)
+    stripped = re.sub(r'\s+id="[^"]*"', "", stripped).encode("utf-8")
     buf = BytesIO(stripped)
     buf.name = source_name
     with pot_path.open("wb") as f:
