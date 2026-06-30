@@ -159,6 +159,19 @@ def test_urls_http_url_unreachable(tmp_path):
     assert "unreachable.example" in result.str_content
 
 
+def test_urls_absolutizes_inline_style_url(tmp_path):
+    (tmp_path / "bg.png").write_bytes(b"PNG")
+    result = Stage().process(
+        make_ctx(
+            tmp_path,
+            "<div style=\"background: url('bg.png');\"></div>",
+            content_type=HTML,
+        )
+    )
+    assert "file://" in result.str_content
+    assert "bg.png" in result.str_content
+
+
 def test_urls_no_urls(tmp_path):
     result = Stage().process(
         make_ctx(tmp_path, "<p>No URLs here.</p>", content_type=HTML)

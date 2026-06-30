@@ -39,7 +39,7 @@ def _fix_style_block_urls(html: str, base_dir: Path) -> str:
 def _absolutize_html_urls(html: str, base_dir: Path) -> str:
     base_url = base_dir.resolve().as_uri()
 
-    def replace_url(m: re.Match) -> str:
+    def replace_attr_url(m: re.Match) -> str:
         attr, quote, url = m.group(1), m.group(2), m.group(3)
         if any(
             url.startswith(p) for p in ("#", "http://", "https://", "file://", "data:")
@@ -47,7 +47,13 @@ def _absolutize_html_urls(html: str, base_dir: Path) -> str:
             return m.group(0)
         return f"{attr}={quote}{urljoin(base_url + '/', url)}{quote}"
 
-    return re.sub(r'((?:src|href))=(["\'])(.*?)\2', replace_url, html)
+    sentinel = base_dir / "_"
+
+    def replace_style_attr(m: re.Match) -> str:
+        return f"style={m.group(1)}{_absolutize_css_urls(m.group(2), sentinel)}{m.group(1)}"
+
+    html = re.sub(r'((?:src|href))=(["\'])(.*?)\2', replace_attr_url, html)
+    return re.sub(r'style=(["\'])(.*?)\1', replace_style_attr, html, flags=re.DOTALL)
 
 
 def _extract_file_urls(html: str) -> list[str]:
