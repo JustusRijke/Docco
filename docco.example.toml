@@ -68,7 +68,9 @@
 
 # PDF stage configuration (RENDER)
 # [pdf]
-# keep_html = true   # Write intermediate HTML to output directory for debugging
+# title = "<filename>"   # PDF title; "<filename>" uses source filename stem (default)
+# author = "Jane Doe"    # PDF author
+# keep_html = true       # Write intermediate HTML to output directory for debugging
 
 # DPI downscaling and validation (POSTPROCESS)
 # [dpi]

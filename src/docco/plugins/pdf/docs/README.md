@@ -6,8 +6,10 @@ Renders HTML to PDF using Playwright (headless Chromium).
 
 ```toml
 [pdf]
-dpi = 300       # Downscale embedded images to this DPI using Ghostscript (default: no downscaling)
-keep_html = true  # Write intermediate HTML to output directory for debugging
+title = "<filename>"  # PDF document title; "<filename>" uses the source filename stem
+author = "Jane Doe"   # PDF document author
+keep_html = true      # Write intermediate HTML to output directory for debugging
+dpi = 300             # Downscale embedded images to this DPI using Ghostscript (default: no downscaling)
 ```
 
 ## How it works

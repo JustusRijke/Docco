@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import fitz
 from playwright.sync_api import ConsoleMessage, sync_playwright
 
 from docco.context import ContentType, Context, Phase
@@ -30,7 +31,7 @@ class Stage(BaseStage):
     produces = ContentType.PDF
     phase = Phase.RENDER
     after = ("htmlhint", "urls")
-    valid_config_keys = frozenset({"keep_html"})
+    valid_config_keys = frozenset({"keep_html", "author", "title"})
 
     def process(self, context: Context) -> Context:
         assert isinstance(context.content, str)
@@ -63,11 +64,21 @@ class Stage(BaseStage):
             pdf_bytes = page.pdf(print_background=True, prefer_css_page_size=True)
             browser.close()
 
+        cfg = self.get_config(context)
+        title = cfg.get("title", "<filename>")
+        if title == "<filename>":
+            title = context.source_path.stem
+        author = cfg.get("author", "")
+        doc = fitz.open("pdf", pdf_bytes)
+        doc.set_metadata({"title": title, "author": author})
+        pdf_bytes = doc.tobytes()
+        doc.close()
+
         context.content = pdf_bytes
         context.content_type = ContentType.PDF
         self.log.info("Rendered HTML to PDF")
 
-        if self.get_config(context).get("keep_html"):
+        if cfg.get("keep_html"):
             out = context.output_dir / f"{context.source_path.stem}.html"
             out.write_text(html, encoding="utf-8")
             self.log.debug("Written intermediate HTML: %s", out)
