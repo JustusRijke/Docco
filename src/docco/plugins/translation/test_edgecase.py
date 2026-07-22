@@ -134,9 +134,12 @@ def test_stage_passthrough_no_langcode(tmp_path):
     assert Stage().process(_ctx(tmp_path)).content == HTML
 
 
-def test_stage_missing_po_raises(tmp_path):
-    with pytest.raises(FileNotFoundError, match="PO file missing"):
+def test_stage_missing_po_creates_and_warns(tmp_path, caplog):
+    doc_po = tmp_path / "doc_DE.po"
+    with caplog.at_level(logging.WARNING):
         Stage().process(_ctx(tmp_path, langcode="de"))
+    assert doc_po.exists()
+    assert "PO file missing" in caplog.text
 
 
 def test_stage_missing_extra_po_raises(tmp_path):

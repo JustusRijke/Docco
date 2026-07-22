@@ -352,9 +352,6 @@ class Stage(BaseStage):
             _resolve_paths(extra_raw, config_dir) if extra_raw else []
         )
 
-        if not doc_po.exists():
-            msg = f"PO file missing for '{langcode.upper()}': {doc_po}"
-            raise FileNotFoundError(msg)
         for path in [*terms, *extra_po]:
             if not path.exists():
                 msg = f"PO file not found: {path}"
@@ -365,7 +362,15 @@ class Stage(BaseStage):
         _extract_pot(context.content, pot_path, original_stem)
         _strip_pot(pot_path, context.source_path.stem, ignore)
         _strip_covered_msgids(pot_path, [*terms, *extra_po])
-        if not _check_sync(pot_path, doc_po):
+
+        if not doc_po.exists():
+            self.log.warning(
+                "PO file missing for '%s'; creating untranslated %s",
+                langcode.upper(),
+                doc_po.name,
+            )
+            shutil.copyfile(pot_path, doc_po)
+        elif not _check_sync(pot_path, doc_po):
             self.log.warning(
                 "PO out of sync for '%s' -- document has changed, updating",
                 langcode.upper(),
