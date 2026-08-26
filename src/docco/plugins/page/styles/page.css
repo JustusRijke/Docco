@@ -1,10 +1,10 @@
 /* Page setup */
 @page {
-    size: A4 portrait;
+    size: portrait;
 }
 
 @page landscape {
-    size: A4 landscape;
+    size: landscape;
 }
 
 /* 
