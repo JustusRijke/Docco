@@ -46,6 +46,7 @@ All plugins run automatically. Config sections in `docco.toml` provide per-plugi
 | [translation](./src/docco/plugins/translation/docs/README.md) | Language filtering and PO-based translation |
 | [inline](./src/docco/plugins/inline/docs/README.md) | `<!-- inline src="file" -->` embedding |
 | [pdf2svg](./src/docco/plugins/pdf2svg/docs/README.md) | `<!-- pdf2svg -->` PDF page to SVG extraction |
+| [qr](./src/docco/plugins/qr/docs/README.md) | `<!-- qr -->` QR code generation as SVG |
 | [html](./src/docco/plugins/html/docs/README.md) | Markdown to HTML conversion |
 | [toc](./src/docco/plugins/toc/docs/README.md) | Table of contents (`<!-- toc -->`) |
 | [page_bg](./src/docco/plugins/page_bg/docs/README.md) | `<!-- page-bg -->` background image injection |

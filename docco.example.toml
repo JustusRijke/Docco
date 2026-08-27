@@ -20,6 +20,11 @@
 # svg_dir = "assets"         # Output subdirectory relative to source file (default: "assets")
 # skip_if_exists = true      # Skip conversion if SVG already exists (default: true)
 
+# QR code generation (PREPROCESS)
+# [qr]
+# svg_dir = "assets"         # Output subdirectory relative to source file (default: "assets")
+# skip_if_exists = true      # Skip generation if SVG already exists (default: true)
+
 # Translation and multilingual support (PREPROCESS + ENRICH)
 # [translation]
 # language = "en"                                        # Single-language filter mode
