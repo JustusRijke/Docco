@@ -99,7 +99,9 @@ class Stage(BaseStage):
             inject += f"<script>\n{_LANDSCAPE_HANDLER_JS}</script>\n"
         if page_config.get("add_pagedjs_screen_css", True):
             inject += f"<style>\n{_PAGEDJS_SCREEN_CSS}</style>\n"
-        context.content = context.content.replace("</head>", f"{inject}</head>", 1)
+        # ponytail: inject before the html plugin's <style> so user CSS wins
+        anchor = "<style>" if "<style>" in context.content else "</head>"
+        context.content = context.content.replace(anchor, f"{inject}{anchor}", 1)
         if has_directives:
             self.log.info("Processed page layout directives")
         else:
