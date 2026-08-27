@@ -279,6 +279,19 @@ class Stage(BaseStage):
     phase = Phase.ENRICH
     after = ("vars",)
 
+    @classmethod
+    def normalize_config_section(cls, section: dict, base_dir: Path) -> dict:
+        """Resolve terms/po paths relative to the config file that declares them."""
+        result = dict(section)
+        for key in ("terms", *[k for k in result if k.startswith("po_")]):
+            if result.get(key):
+                result[key] = [str(p) for p in _resolve_paths(result[key], base_dir)]
+        result["po"] = {
+            lang: [str(p) for p in _resolve_paths(raw, base_dir)]
+            for lang, raw in result.get("po", {}).items()
+        }
+        return result
+
     def validate_config(self, config: dict) -> None:
         _validate_translation_config(config)
 
@@ -336,10 +349,8 @@ class Stage(BaseStage):
             self.log.debug("Extracted POT for base language")
             return context
 
-        # Target language: resolve PO paths and apply translation
-        config_dir = context.config_dir
-        terms_raw: str | list = cfg.get("terms", [])
-        terms: list[Path] = _resolve_paths(terms_raw, config_dir) if terms_raw else []
+        # Target language: PO paths were made absolute by normalize_config_section
+        terms: list[Path] = [Path(p) for p in cfg.get("terms", [])]
 
         # Default doc PO is always included; [translation.po] entries are extras merged alongside
         filename_template: str = cfg.get("filename_template", "{filename}_{langcode}")
@@ -348,9 +359,7 @@ class Stage(BaseStage):
         )
         doc_po = base_dir / f"{lang_stem}.po"
         extra_raw = cfg.get(f"po_{langcode}") or cfg.get("po", {}).get(langcode)
-        extra_po: list[Path] = (
-            _resolve_paths(extra_raw, config_dir) if extra_raw else []
-        )
+        extra_po: list[Path] = [Path(p) for p in extra_raw] if extra_raw else []
 
         for path in [*terms, *extra_po]:
             if not path.exists():

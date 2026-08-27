@@ -145,37 +145,28 @@ def test_stage_missing_po_creates_and_warns(tmp_path, caplog):
 def test_stage_missing_extra_po_raises(tmp_path):
     _po(tmp_path / "doc_DE.po", {"Hello": "Hallo"})
     config = {
-        "translation": {
-            "languages": ["de"],
-            "base_language": "en",
-            "po": {"de": "missing.po"},
-        }
+        "translation": Stage.normalize_config_section(
+            {
+                "languages": ["de"],
+                "base_language": "en",
+                "po": {"de": "missing.po"},
+            },
+            tmp_path,
+        )
     }
     with pytest.raises(FileNotFoundError, match="missing.po"):
         Stage().process(_ctx(tmp_path, config=config, langcode="de"))
 
 
-def test_stage_extra_po_resolved_relative_to_config_dir(tmp_path):
-    # config_dir differs from source dir; extra PO lives in config_dir
-    config_dir = tmp_path / "cfg"
-    config_dir.mkdir()
-    src_dir = tmp_path / "src"
-    src_dir.mkdir()
-    _po(src_dir / "doc_DE.po", {"Hello": "Hallo", "World": "Welt"})
-    _po(config_dir / "extra_de.po", {"Hello": "Hallo"})
-    config = {
-        "translation": {
-            "languages": ["de"],
-            "base_language": "en",
-            "po": {"de": "extra_de.po"},
-        }
-    }
-    ctx = _ctx(tmp_path, config=config, langcode="de", config_dir=config_dir)
-    ctx.source_path = src_dir / "doc_DE.md"
-    ctx.source_path.write_text("", encoding="utf-8")
-    ctx.artifacts["translation_langcode"] = "de"
-    ctx.artifacts["translation_original_stem"] = "doc"
-    Stage().process(ctx)  # must not raise FileNotFoundError
+def test_normalize_resolves_paths_relative_to_declaring_config(tmp_path):
+    # Paths resolve against the TOML that declares them, not the project config dir
+    section = Stage.normalize_config_section(
+        {"terms": "terms.po", "po": {"de": "extra_de.po"}, "po_fr": ["extra_fr.po"]},
+        tmp_path,
+    )
+    assert section["terms"] == [str(tmp_path / "terms.po")]
+    assert section["po"]["de"] == [str(tmp_path / "extra_de.po")]
+    assert section["po_fr"] == [str(tmp_path / "extra_fr.po")]
 
 
 def test_parsefile_error_includes_filename(tmp_path):
