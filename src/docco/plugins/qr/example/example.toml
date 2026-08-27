@@ -1,0 +1,4 @@
+file = "example.md"
+
+[qr]
+skip_if_exists = false
