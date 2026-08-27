@@ -24,6 +24,7 @@ dependencies = [
   "playwright>=1.58.0",
   "polib>=1.2.0",
   "pymupdf>=1.25.5",
+  "segno>=1.6.6",
   "translate-toolkit>=3.17.4",
 
   # Add a lower bound for unpinned transitive dependencies
@@ -60,6 +61,7 @@ diffpdf = "docco.plugins.diffpdf:Stage"
 dpi = "docco.plugins.dpi:Stage"
 translation = "docco.plugins.translation:Stage"
 pdf2svg = "docco.plugins.pdf2svg:Stage"
+qr = "docco.plugins.qr:Stage"
 page-bg = "docco.plugins.page_bg:Stage"
 htmlhint = "docco.plugins.htmlhint:Stage"
 urls = "docco.plugins.urls:Stage"
