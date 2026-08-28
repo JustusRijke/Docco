@@ -31,7 +31,7 @@ class Stage(BaseStage):
     produces = ContentType.PDF
     phase = Phase.RENDER
     after = ("htmlhint", "urls")
-    valid_config_keys = frozenset({"keep_html", "author", "title"})
+    valid_config_keys = frozenset({"keep_html", "author", "title", "png", "png_dpi"})
 
     def process(self, context: Context) -> Context:
         assert isinstance(context.content, str)
@@ -72,6 +72,17 @@ class Stage(BaseStage):
         doc = fitz.open("pdf", pdf_bytes)
         doc.set_metadata({"title": title, "author": author})
         pdf_bytes = doc.tobytes()
+
+        if cfg.get("png"):
+            zoom = cfg.get("png_dpi", 150) / 72
+            for index in range(len(doc)):
+                out = (
+                    context.output_dir
+                    / f"{context.source_path.stem}-{index + 1:03d}.png"
+                )
+                doc[index].get_pixmap(matrix=fitz.Matrix(zoom, zoom)).save(out)
+                self.log.info("Written PNG: %s", out)
+
         doc.close()
 
         context.content = pdf_bytes

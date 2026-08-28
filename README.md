@@ -53,7 +53,7 @@ All plugins run automatically. Config sections in `docco.toml` provide per-plugi
 | [page](./src/docco/plugins/page/docs/README.md) | Page breaks and orientation changes |
 | [urls](./src/docco/plugins/urls/docs/README.md) | URL absolutization and validation |
 | [htmlhint](./src/docco/plugins/htmlhint/docs/README.md) | HTML linting (opt-in) |
-| [pdf](./src/docco/plugins/pdf/docs/README.md) | PDF rendering via Playwright/Chromium |
+| [pdf](./src/docco/plugins/pdf/docs/README.md) | PDF rendering via Playwright/Chromium, optional PNG export |
 | [diffpdf](./src/docco/plugins/diffpdf/docs/README.md) | Skip writing identical PDFs |
 | [dpi](./src/docco/plugins/dpi/docs/README.md) | Image DPI downscaling and validation |
 | [upload](./src/docco/plugins/upload/docs/README.md) | SFTP upload of the generated PDF |

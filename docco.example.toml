@@ -76,6 +76,8 @@
 # title = "<filename>"   # PDF title; "<filename>" uses source filename stem (default)
 # author = "Jane Doe"    # PDF author
 # keep_html = true       # Write intermediate HTML to output directory for debugging
+# png = true             # Also export each page as <stem>-<page>.png (default: false)
+# png_dpi = 150          # PNG resolution in DPI (default: 150)
 
 # DPI downscaling and validation (POSTPROCESS)
 # [dpi]

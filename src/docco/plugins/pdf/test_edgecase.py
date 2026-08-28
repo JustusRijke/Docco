@@ -47,3 +47,12 @@ def test_explicit_title_and_author(tmp_path):
     meta = _metadata(result.content)
     assert meta["title"] == "My Doc"
     assert meta["author"] == "Alice"
+
+
+def test_png_export(tmp_path):
+    ctx = _make_pdf_ctx(tmp_path, {"pdf": {"png": True, "png_dpi": 72}})
+    result = Stage().process(ctx)
+    pngs = sorted(ctx.output_dir.glob("test-*.png"))
+    assert [p.name for p in pngs] == ["test-001.png"]
+    assert pngs[0].read_bytes().startswith(b"\x89PNG")
+    assert result.content_type == ContentType.PDF
