@@ -44,7 +44,7 @@ class Stage(BaseStage):
                 log.debug("SVG already exists, skipping: %s", svg_path)
             else:
                 svg_dir.mkdir(parents=True, exist_ok=True)
-                segno.make_qr(url).save(svg_path)
+                segno.make_qr(url).save(svg_path, border=0)
                 log.info("Written SVG: %s", svg_path)
 
             replacement = "" if quiet else f"{svg_dir_name}/{out_name}"
