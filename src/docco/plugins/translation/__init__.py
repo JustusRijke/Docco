@@ -150,9 +150,30 @@ def _apply_po(html: str, po_path: Path) -> str:
         return out.getvalue().decode("utf-8")
 
 
-def _resolve_paths(raw: str | list, base_dir: Path) -> list[Path]:
+_REMOVE_PREFIX = "!"
+
+
+def _resolve_paths(raw: str | list, base_dir: Path) -> list[str]:
+    """Resolve to absolute paths, keeping a leading removal prefix."""
     items = [raw] if isinstance(raw, str) else list(raw)
-    return [(base_dir / str(p)).resolve() for p in items]
+    resolved = []
+    for item in items:
+        prefix = _REMOVE_PREFIX if item.startswith(_REMOVE_PREFIX) else ""
+        path = (base_dir / item.removeprefix(_REMOVE_PREFIX)).resolve()
+        resolved.append(f"{prefix}{path}")
+    return resolved
+
+
+def _active_paths(raw: list[str]) -> list[Path]:
+    """Drop entries that a prefixed entry removes."""
+    removed = {
+        p.removeprefix(_REMOVE_PREFIX) for p in raw if p.startswith(_REMOVE_PREFIX)
+    }
+    kept = [p for p in raw if not p.startswith(_REMOVE_PREFIX)]
+    if unmatched := removed - set(kept):
+        msg = f"'{_REMOVE_PREFIX}' entry matches no configured PO file: {', '.join(sorted(unmatched))}"
+        raise ValueError(msg)
+    return [Path(p) for p in kept if p not in removed]
 
 
 _BUILTIN_PATTERNS = {
@@ -285,9 +306,9 @@ class Stage(BaseStage):
         result = dict(section)
         for key in ("terms", *[k for k in result if k.startswith("po_")]):
             if result.get(key):
-                result[key] = [str(p) for p in _resolve_paths(result[key], base_dir)]
+                result[key] = _resolve_paths(result[key], base_dir)
         result["po"] = {
-            lang: [str(p) for p in _resolve_paths(raw, base_dir)]
+            lang: _resolve_paths(raw, base_dir)
             for lang, raw in result.get("po", {}).items()
         }
         return result
@@ -350,7 +371,7 @@ class Stage(BaseStage):
             return context
 
         # Target language: PO paths were made absolute by normalize_config_section
-        terms: list[Path] = [Path(p) for p in cfg.get("terms", [])]
+        terms = _active_paths(cfg.get("terms", []))
 
         # Default doc PO is always included; [translation.po] entries are extras merged alongside
         filename_template: str = cfg.get("filename_template", "{filename}_{langcode}")
@@ -359,7 +380,7 @@ class Stage(BaseStage):
         )
         doc_po = base_dir / f"{lang_stem}.po"
         extra_raw = cfg.get(f"po_{langcode}") or cfg.get("po", {}).get(langcode)
-        extra_po: list[Path] = [Path(p) for p in extra_raw] if extra_raw else []
+        extra_po = _active_paths(extra_raw or [])
 
         for path in [*terms, *extra_po]:
             if not path.exists():

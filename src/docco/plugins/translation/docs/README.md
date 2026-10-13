@@ -67,6 +67,16 @@ de = "copyright_de.po"
 fr = ["copyright_fr.po", "shared_fr.po"]  # multiple extras; later wins
 ```
 
+Lists are appended when a document config is merged onto the project config. To drop an inherited file, repeat its path with a `!` prefix (works for `terms` too):
+
+```toml
+# docco.toml                      # doc.toml
+[translation.po]                  [translation.po]
+fr = ["foo.po", "bar.po"]         fr = ["!bar.po"]  # fr uses foo.po only
+```
+
+The path is relative to the config file that declares it, and must point at a configured file; otherwise an error is raised.
+
 The document PO (`doc_de.po`) is always required. Missing it produces a warning and skips that language.
 
 ## How it works
