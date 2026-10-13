@@ -9,7 +9,12 @@ import polib
 import pytest
 
 from docco.context import ContentType, Context
-from docco.plugins.translation import FilterStage, Stage, _strip_covered_msgids
+from docco.plugins.translation import (
+    FilterStage,
+    Stage,
+    _active_paths,
+    _strip_covered_msgids,
+)
 
 HTML = "<html><body><h1>Hello</h1><p>World</p></body></html>"
 BASE_CONFIG: dict = {"translation": {"languages": ["de"], "base_language": "en"}}
@@ -167,6 +172,16 @@ def test_normalize_resolves_paths_relative_to_declaring_config(tmp_path):
     assert section["terms"] == [str(tmp_path / "terms.po")]
     assert section["po"]["de"] == [str(tmp_path / "extra_de.po")]
     assert section["po_fr"] == [str(tmp_path / "extra_fr.po")]
+
+
+def test_child_config_removes_inherited_po(tmp_path):
+    child_dir = tmp_path / "docs"
+    parent = Stage.normalize_config_section({"terms": ["foo.po", "bar.po"]}, tmp_path)
+    child = Stage.normalize_config_section({"terms": ["!../bar.po"]}, child_dir)
+    merged = [*parent["terms"], *child["terms"]]
+    assert _active_paths(merged) == [tmp_path / "foo.po"]
+    with pytest.raises(ValueError, match="bar.po"):
+        _active_paths(child["terms"])
 
 
 def test_parsefile_error_includes_filename(tmp_path):

@@ -37,6 +37,7 @@
 # [translation.po]                                       # Additional PO files
 # de = "locales/de/doc.po"                               # Explicit PO path per language
 # fr = ["locales/fr/doc.po", "../library/locales/fr/shared.po"]
+# fr = ["!locales/fr/doc.po"]                            # In a document config: drop an inherited PO file (also for terms)
 
 # HTML stage configuration (CONVERT)
 # [html]
